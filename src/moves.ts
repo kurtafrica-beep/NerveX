@@ -1,4 +1,4 @@
-export type BranchKey = 'c' | 't' | 'r';
+export type BranchKey = 'c' | 't' | 'r' | 'q';
 
 export type Move = {
   id: string;
@@ -14,8 +14,9 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string }> = {
   c: { name: 'Confidence', tag: 'Gets you in.' },
   t: { name: 'Talk', tag: 'Keeps it going.' },
   r: { name: 'Read', tag: 'Tells you when.' },
+  q: { name: 'Cues', tag: 'How it lands. Built on Vanessa Van Edwards’ work on warmth and competence.' },
 };
-export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r'];
+export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r', 'q'];
 
 // [title, the move, the rep, the upgrade]
 const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
@@ -54,6 +55,18 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ['Name what you see', '“You look busy, I’ll be quick.” Then be quick.', 'Name it once, accurately.', 'Name a good one: “You look like you’re having a great night.”'],
     ['Take a no well', 'Ask for something small. If it is a no: “No worries.” Mean it.', 'One no, taken clean. No second ask.', 'Stay friendly with them for the rest of the night.'],
     ['Wait for the yes', 'Two clear green lights before you ask for anything.', 'Count them: they ask you a question, they stay when they could leave.', 'Write both signals in your line before you say what you asked.'],
+  ],
+  q: [
+    ['Eyebrow flash hello', 'When you greet someone, lift your eyebrows for a beat as you say hi.', 'Five greetings with the flash.', 'Add their name to the hello.'],
+    ['Keep your hands in view', 'One whole conversation with your hands visible. Out of pockets, off your phone.', 'Hands seen from start to finish.', 'Do it standing, with nothing to hold.'],
+    ['Face them fully', 'Point your toes, torso and head at the person talking. Not just your face.', 'One conversation, fully fronted.', 'Turn to face someone the moment they start talking.'],
+    ['The slow triple nod', 'When they finish a thought, nod three times, slowly, and wait.', 'Use it once and count how much more they say.', 'Use it in a group to pull a quiet person in.'],
+    ['Swap the stock opener', 'Skip “What do you do?” Try “Working on anything exciting lately?”', 'One conversation started with a better question.', 'Write a spark question of your own and use it twice.'],
+    ['Land it flat', 'Say your point and let your voice drop at the end. No rising question tone.', 'Three statements that end down, not up.', 'Introduce yourself the same way: name, one fact, voice down.'],
+    ['Pause instead of um', 'One conversation where every “um” or “like” becomes a short silence.', 'Notice them. Fewer counts.', 'Tell a whole story with none.'],
+    ['Talk with your hands', 'Tell a story and show sizes, steps or directions with your hands as you go.', 'One story, hands working.', 'Use your hands to count off three points.'],
+    ['Lean in at the good part', 'When they say something that interests you, lean in a little and let a slow smile come.', 'Catch it once and do it on purpose.', 'Let them see you react before you say anything.'],
+    ['Warm and capable in one ask', 'Ask for something you want. Stand tall and keep your voice low and steady, then smile when they answer.', 'One ask with both: steady, then warm.', 'Make the ask to someone who intimidates you.'],
   ],
 };
 

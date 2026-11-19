@@ -158,7 +158,9 @@ export function Seg<K extends string>({
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.key)}
             style={[seg.item, tall && { minHeight: 50, borderRadius: 26 }, on && seg.on]}>
-            <Text style={labelStyle}>{o.label}</Text>
+            <Text style={labelStyle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+              {o.label}
+            </Text>
             {o.sub ? <Text style={[seg.sub, on && { color: C.surface }]}>{o.sub}</Text> : null}
           </Pressable>
         );
@@ -170,7 +172,7 @@ const seg = StyleSheet.create({
   wrap: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 999, backgroundColor: C.bgDeep },
   item: { flex: 1, minHeight: 42, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   on: { backgroundColor: C.ink },
-  label: { fontFamily: F.semi, fontSize: 15, color: C.muted },
+  label: { fontFamily: F.semi, fontSize: 14, color: C.muted },
   sub: { fontFamily: F.medium, fontSize: 12, color: C.muted },
 });
 

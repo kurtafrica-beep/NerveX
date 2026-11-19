@@ -43,7 +43,7 @@ export function You({ onOpenMove, onError }: { onOpenMove: (id: string) => void;
         </View>
         <Tree count={n.count} onOpenMove={onOpenMove} />
         <View style={s.stats}>
-          <Stat value={`${n.doneCount}/30`} label="Moves" />
+          <Stat value={`${n.doneCount}/40`} label="Moves" />
           <Stat value={String(n.streak)} label="Streak" />
           <Stat value={String(n.kudosReceived)} label="Kudos" />
         </View>

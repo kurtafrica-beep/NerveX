@@ -5,17 +5,19 @@ import { C, F } from '../theme';
 
 const APEX = { x: 170, y: 16 };
 const ENDS: Record<BranchKey, { x: number; y: number }> = {
-  c: { x: 22, y: 248 },
-  t: { x: 170, y: 276 },
-  r: { x: 318, y: 248 },
+  c: { x: 24, y: 252 },
+  t: { x: 122, y: 266 },
+  r: { x: 218, y: 266 },
+  q: { x: 316, y: 252 },
 };
 const LABELS: Record<BranchKey, { x: number; y: number; anchor: 'start' | 'middle' | 'end' }> = {
-  c: { x: 4, y: 280, anchor: 'start' },
-  t: { x: 170, y: 306, anchor: 'middle' },
-  r: { x: 336, y: 280, anchor: 'end' },
+  c: { x: 4, y: 282, anchor: 'start' },
+  t: { x: 122, y: 294, anchor: 'middle' },
+  r: { x: 218, y: 294, anchor: 'middle' },
+  q: { x: 336, y: 282, anchor: 'end' },
 };
 
-// Three branches of ten. A node fills in once you have a line for that move.
+// Four branches of ten. A node fills in once you have a line for that move.
 export function Tree({ count, onOpenMove }: { count: Record<string, number>; onOpenMove: (id: string) => void }) {
   return (
     <Svg width="100%" viewBox="0 0 340 314" style={{ aspectRatio: 340 / 314 }}>
@@ -28,7 +30,7 @@ export function Tree({ count, onOpenMove }: { count: Record<string, number>; onO
         return (
           <G key={b}>
             {moves.map((m) => {
-              const f = 0.1 + 0.9 * (m.n / 10);
+              const f = 0.16 + 0.84 * (m.n / 10);
               const x = APEX.x + (ENDS[b].x - APEX.x) * f;
               const y = APEX.y + (ENDS[b].y - APEX.y) * f;
               const on = !!count[m.id];
@@ -39,8 +41,11 @@ export function Tree({ count, onOpenMove }: { count: Record<string, number>; onO
                 </G>
               );
             })}
-            <SvgText x={LABELS[b].x} y={LABELS[b].y} textAnchor={LABELS[b].anchor} fontFamily={F.displayBold} fontSize={15} fill={C.ink}>
-              {`${BRANCH[b].name.toUpperCase()} ${done}/10`}
+            <SvgText x={LABELS[b].x} y={LABELS[b].y} textAnchor={LABELS[b].anchor} fontFamily={F.displayBold} fontSize={14} fill={C.ink}>
+              {BRANCH[b].name.toUpperCase()}
+            </SvgText>
+            <SvgText x={LABELS[b].x} y={LABELS[b].y + 16} textAnchor={LABELS[b].anchor} fontFamily={F.displayBold} fontSize={14} fill={C.accent}>
+              {`${done}/10`}
             </SvgText>
           </G>
         );
