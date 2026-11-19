@@ -8,6 +8,8 @@ type AuthApi = {
   session: Session | null;
   ready: boolean;
   signInWithGoogle: () => Promise<string>;
+  signInWithEmail: (email: string, password: string) => Promise<string>;
+  signUpWithEmail: (name: string, email: string, password: string) => Promise<{ error: string; confirm: boolean }>;
   signOut: () => Promise<void>;
 };
 
@@ -37,7 +39,65 @@ async function signInWithGoogle(): Promise<string> {
   if (!code) return 'Google sign-in did not finish. Try again.';
 
   const exchanged = await supabase.auth.exchangeCodeForSession(code);
-  return exchanged.error ? 'Sign-in did not finish. Try again.' : '';
+  if (!exchanged.error) return '';
+  // The link handler below may have used the code first.
+  const { data: now } = await supabase.auth.getSession();
+  return now.session ? '' : 'Sign-in did not finish. Try again.';
+}
+
+function emailProblem(error: { code?: string; message?: string } | null): string {
+  if (!error) return '';
+  switch (error.code) {
+    case 'invalid_credentials':
+      return 'Wrong email or password.';
+    case 'email_not_confirmed':
+      return 'Confirm your email first. Open the link in the message we sent, then sign in.';
+    case 'user_already_exists':
+    case 'email_exists':
+      return 'That email already has an account. Sign in instead.';
+    case 'weak_password':
+      return 'Pick a longer password: at least 8 characters.';
+    case 'email_address_invalid':
+    case 'validation_failed':
+      return 'That email address does not look right.';
+    case 'email_address_not_authorized':
+      return 'The confirmation email could not be sent to that address. Ask Kurt to turn off email confirmation, or use Google.';
+    case 'over_email_send_rate_limit':
+    case 'over_request_rate_limit':
+      return 'Too many attempts. Wait a minute and try again.';
+    case 'signup_disabled':
+    case 'email_provider_disabled':
+      return 'Email sign-up is turned off for Nerve right now.';
+    default:
+      return 'That did not work. Check your connection and try again.';
+  }
+}
+
+async function signInWithEmail(email: string, password: string): Promise<string> {
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  return emailProblem(error);
+}
+
+// Resolves confirm: true when the account exists but the email link must be opened first.
+async function signUpWithEmail(name: string, email: string, password: string): Promise<{ error: string; confirm: boolean }> {
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: { data: { full_name: name.trim().slice(0, 80) }, emailRedirectTo: Linking.createURL('auth') },
+  });
+  if (error) return { error: emailProblem(error), confirm: false };
+  // With confirmation on, an address that is already registered comes back with no identities.
+  if (data.user && !data.session && (data.user.identities?.length ?? 0) === 0) {
+    return { error: 'That email already has an account. Sign in instead.', confirm: false };
+  }
+  return { error: '', confirm: !data.session };
+}
+
+// Finishes sign-in when the app is opened from an email confirmation link.
+async function finishFromLink(url: string | null) {
+  if (!url) return;
+  const code = first((Linking.parse(url).queryParams ?? {}).code);
+  if (code) await supabase.auth.exchangeCodeForSession(code).catch(() => undefined);
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -55,8 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(next);
       setReady(true);
     });
+    Linking.getInitialURL().then(finishFromLink);
+    const link = Linking.addEventListener('url', (event) => finishFromLink(event.url));
     return () => {
       alive = false;
+      link.remove();
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -66,6 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       ready,
       signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
       signOut: async () => {
         await supabase.auth.signOut();
       },

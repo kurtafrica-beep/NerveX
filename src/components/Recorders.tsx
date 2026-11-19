@@ -35,7 +35,10 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
   const last = useRef(0);
   const stopping = useRef(false);
 
-  if (state.isRecording) last.current = state.durationMillis;
+  // Remember the running length: the recorder reports zero once it stops.
+  useEffect(() => {
+    if (state.isRecording) last.current = state.durationMillis;
+  }, [state.isRecording, state.durationMillis]);
 
   const start = useCallback(async (): Promise<string> => {
     const permission = await requestRecordingPermissionsAsync();

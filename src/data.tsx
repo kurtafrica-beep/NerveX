@@ -95,7 +95,7 @@ async function uploadRecording(uid: string, rec: Recording): Promise<string> {
 export function DataProvider({ uid, children }: { uid: string; children: React.ReactNode }) {
   const [store, setStore] = useState<Store>(EMPTY);
   const [skip, setSkip] = useState(0);
-  const [clock, setClock] = useState(Date.now());
+  const [clock, setClock] = useState(() => Date.now());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async () => {
@@ -125,17 +125,17 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
   }, []);
 
   useEffect(() => {
-    reload();
-    const soon = () => {
+    const soon = (delay = 300) => {
       if (timer.current) clearTimeout(timer.current);
-      timer.current = setTimeout(reload, 300);
+      timer.current = setTimeout(reload, delay);
     };
+    soon(0);
     const channel = supabase
       .channel('nerve-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lines' }, soon)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, soon)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'kudos' }, soon)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'challenges' }, soon)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lines' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'kudos' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'challenges' }, () => soon())
       .subscribe();
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active') {

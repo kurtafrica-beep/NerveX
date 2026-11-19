@@ -19,6 +19,17 @@ Android app built with Expo (React Native). The backend is a Supabase project: G
 | `src/config.ts` | Supabase URL and publishable key, recording limits |
 | `.github/workflows/android-apk.yml` | Builds an installable APK on every push to `main` |
 
+## Sign-in: email and password
+
+People can create an account with a name, email and password, or use Google.
+
+By default Supabase asks new email accounts to confirm their address, and its built-in mail service only delivers to members of your Supabase organisation. For anyone else to sign up by email, do one of these in the Supabase dashboard for the **Nerve** project:
+
+- Turn off **Confirm email** under Authentication, Sign In / Providers, Email. Accounts then work the moment they are created.
+- Or keep confirmation on and connect your own mail service under Authentication, Emails, SMTP settings.
+
+There is no password reset screen yet.
+
 ## One-time setup: Google sign-in
 
 Sign-in will not work until Google and Supabase know about each other.
