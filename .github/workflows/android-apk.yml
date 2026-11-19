@@ -1,0 +1,59 @@
+name: Android test build
+
+# Builds an installable APK and attaches it to a GitHub release, so the
+# install link is always:
+#   https://github.com/<owner>/<repo>/releases/latest/download/nerve.apk
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Generate the Android project
+        run: npx expo prebuild --platform android --no-install
+        env:
+          EXPO_NO_TELEMETRY: 1
+
+      - name: Build the APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Publish the APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk nerve.apk
+          tag="build-${{ github.run_number }}"
+          gh release create "$tag" nerve.apk \
+            --title "Nerve test build ${{ github.run_number }}" \
+            --notes "Install on Android: download nerve.apk and open it. Built from ${{ github.sha }}." \
+            --latest
