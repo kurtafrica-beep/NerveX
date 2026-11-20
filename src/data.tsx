@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState } from 'react-native';
 import { BUCKET } from './config';
 import { BY, MOVES, ORDER, unlocked, type Move } from './moves';
+import type { ReactionKey } from './reactions';
 import { supabase } from './supabase';
 
 export type Profile = { id: string; name: string; avatar_url: string | null };
@@ -19,7 +20,7 @@ export type Line = {
   created_at: string;
 };
 export type Comment = { id: string; line_id: string; author: string; body: string; created_at: string };
-export type Kudos = { line_id: string; author: string };
+export type Kudos = { line_id: string; author: string; kind: ReactionKey };
 export type Challenge = { id: string; author: string; target: string; move: string; until: string; created_at: string };
 export type Recording = { kind: MediaKind; uri: string; seconds: number };
 
@@ -50,7 +51,7 @@ type Api = Store & {
   tonight: Tonight;
   skipTonight: () => void;
   nameOf: (id: string) => string;
-  kudosFor: (lineId: string) => string[];
+  kudosFor: (lineId: string) => Kudos[];
   commentsFor: (lineId: string) => Comment[];
   partnersFor: (moveId: string) => string[];
   partnersOfLine: (line: Line) => string[];
@@ -60,7 +61,7 @@ type Api = Store & {
   // actions: resolve '' on success or a message to show
   dropLine: (input: { move: string; line: string; upgrade: boolean; recording: Recording | null }) => Promise<string>;
   deleteLine: (line: Line) => Promise<string>;
-  toggleKudos: (lineId: string) => Promise<string>;
+  react: (lineId: string, kind: ReactionKey) => Promise<string>;
   addComment: (lineId: string, body: string) => Promise<string>;
   deleteComment: (id: string) => Promise<string>;
   toggleChallenge: (target: string, moveId: string) => Promise<string>;
@@ -104,7 +105,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       supabase.from('profiles').select('id,name,avatar_url'),
       supabase.from('lines').select('*').order('created_at', { ascending: false }).limit(300),
       supabase.from('comments').select('*').order('created_at', { ascending: true }).limit(3000),
-      supabase.from('kudos').select('line_id,author').limit(10000),
+      supabase.from('kudos').select('line_id,author,kind').limit(10000),
       supabase.from('challenges').select('*').gt('until', since),
     ]);
     if (p.error || l.error || c.error || k.error || ch.error) {
@@ -246,18 +247,19 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       return '';
     };
 
-    const toggleKudos: Api['toggleKudos'] = async (lineId) => {
-      const has = kudos.some((x) => x.line_id === lineId && x.author === uid);
+    // Same reaction again takes it back; a different one replaces it.
+    const react: Api['react'] = async (lineId, kind) => {
+      const current = kudos.find((x) => x.line_id === lineId && x.author === uid);
       // Show it straight away; the reload confirms or corrects it.
-      setStore((prev) => ({
-        ...prev,
-        kudos: has
-          ? prev.kudos.filter((x) => !(x.line_id === lineId && x.author === uid))
-          : [...prev.kudos, { line_id: lineId, author: uid }],
-      }));
-      const { error } = has
-        ? await supabase.from('kudos').delete().eq('line_id', lineId).eq('author', uid)
-        : await supabase.from('kudos').insert({ line_id: lineId });
+      setStore((prev) => {
+        const rest = prev.kudos.filter((x) => !(x.line_id === lineId && x.author === uid));
+        return { ...prev, kudos: current?.kind === kind ? rest : [...rest, { line_id: lineId, author: uid, kind }] };
+      });
+      const { error } = !current
+        ? await supabase.from('kudos').insert({ line_id: lineId, kind })
+        : current.kind === kind
+          ? await supabase.from('kudos').delete().eq('line_id', lineId).eq('author', uid)
+          : await supabase.from('kudos').update({ kind }).eq('line_id', lineId).eq('author', uid);
       await reload();
       return error ? SAVE_FAILED : '';
     };
@@ -299,7 +301,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       tonight,
       skipTonight: () => setSkip((n) => n + 1),
       nameOf,
-      kudosFor: (lineId) => kudos.filter((x) => x.line_id === lineId).map((x) => x.author),
+      kudosFor: (lineId) => kudos.filter((x) => x.line_id === lineId),
       commentsFor: (lineId) => comments.filter((x) => x.line_id === lineId),
       partnersFor,
       partnersOfLine,
@@ -308,7 +310,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       myChallengeTo,
       dropLine,
       deleteLine,
-      toggleKudos,
+      react,
       addComment,
       deleteComment,
       toggleChallenge,

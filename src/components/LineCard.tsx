@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { stamp, useNerve, type Line } from '../data';
 import { BY } from '../moves';
+import { REACT, REACTIONS } from '../reactions';
 import { C, F } from '../theme';
 import { Avatar, Card, ConfirmLink, Pill, T } from '../ui';
 import { RemoteMedia } from './Media';
@@ -9,12 +10,14 @@ import { RemoteMedia } from './Media';
 export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove: (id: string) => void; onError: (message: string) => void }) {
   const n = useNerve();
   const [open, setOpen] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
 
   const move = BY[line.move];
   const author = n.profiles[line.author];
   const kudos = n.kudosFor(line.id);
+  const mine = kudos.find((x) => x.author === n.uid);
   const comments = n.commentsFor(line.id);
   const shown = open ? comments : comments.slice(-1);
   const mates = n.partnersOfLine(line);
@@ -50,14 +53,23 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
       ) : null}
       {mates.length ? <T v="small">Together with {mates.map(n.nameOf).join(', ')}</T> : null}
 
+      {kudos.length ? (
+        <View style={s.chips}>
+          {REACTIONS.filter((r) => kudos.some((x) => x.kind === r.k)).map((r) => (
+            <View key={r.k} style={s.chip} accessibilityLabel={`${kudos.filter((x) => x.kind === r.k).length} ${r.t}`}>
+              <T style={s.chipText}>
+                {r.e} {kudos.filter((x) => x.kind === r.k).length}
+              </T>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       <View style={s.acts}>
         <Pill
-          label={kudos.length ? `Kudos ${kudos.length}` : 'Kudos'}
-          on={kudos.includes(n.uid)}
-          onPress={async () => {
-            const problem = await n.toggleKudos(line.id);
-            if (problem) onError(problem);
-          }}
+          label={mine ? `${REACT[mine.kind].e} ${REACT[mine.kind].t}` : 'React'}
+          on={!!mine}
+          onPress={() => setPicking((v) => !v)}
         />
         <Pill label={comments.length ? String(comments.length) : ''} icon="comment" onPress={() => setOpen((v) => !v)} />
         <View style={{ flex: 1 }} />
@@ -71,6 +83,29 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
           />
         ) : null}
       </View>
+
+      {picking ? (
+        <View style={s.grid} accessibilityLabel="React to this line">
+          {REACTIONS.map((r) => {
+            const on = mine?.kind === r.k;
+            return (
+              <Pressable
+                key={r.k}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                onPress={async () => {
+                  setPicking(false);
+                  const problem = await n.react(line.id, r.k);
+                  if (problem) onError(problem);
+                }}
+                style={({ pressed }) => [s.react, on && s.reactOn, pressed && { opacity: 0.8 }]}>
+                <T style={s.emoji}>{r.e}</T>
+                <T style={[s.reactText, on && { color: C.accent }]}>{r.t}</T>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
 
       {shown.length ? (
         <View style={{ gap: 8 }}>
@@ -121,6 +156,14 @@ const s = StyleSheet.create({
   who: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   move: { fontFamily: F.display, fontSize: 30, lineHeight: 31, color: C.accent },
   acts: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: C.bg },
+  chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 20 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  react: { width: '31.5%', minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
+  reactOn: { borderColor: C.accent, backgroundColor: C.accentSoft },
+  emoji: { fontSize: 26, lineHeight: 32 },
+  reactText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, textAlign: 'center' },
   comment: { backgroundColor: C.bg, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
   meta: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   cname: { fontFamily: F.semi, fontSize: 15, color: C.ink },

@@ -29,7 +29,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
       }
       ListHeaderComponent={
         <View style={{ gap: 12, marginBottom: 12 }}>
-          <T v="sub">Lines from your circle. Give kudos or say something.</T>
+          <T v="sub">Lines from your circle. React or say something.</T>
           {n.error ? (
             <View style={s.notice}>
               <T v="small">{n.error}</T>

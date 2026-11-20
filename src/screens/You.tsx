@@ -53,7 +53,7 @@ export function You({
         <View style={s.stats}>
           <Stat value={`${n.doneCount}/150`} label="Moves" />
           <Stat value={String(n.streak)} label="Streak" />
-          <Stat value={String(n.kudosReceived)} label="Kudos" />
+          <Stat value={String(n.kudosReceived)} label="Reactions" />
         </View>
       </Card>
 
