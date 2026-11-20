@@ -7,22 +7,20 @@ const APEX = { x: 190, y: 16 };
 // Branch ends sit on one line; labels alternate between two rows so neighbours never touch.
 const ENDS: Record<BranchKey, { x: number; y: number }> = {
   c: { x: 22, y: 300 },
-  t: { x: 89, y: 300 },
-  r: { x: 156, y: 300 },
-  q: { x: 224, y: 300 },
-  v: { x: 291, y: 300 },
+  t: { x: 106, y: 300 },
+  q: { x: 190, y: 300 },
+  v: { x: 274, y: 300 },
   s: { x: 358, y: 300 },
 };
 const LABELS: Record<BranchKey, { x: number; y: number; anchor: 'start' | 'middle' | 'end' }> = {
   c: { x: 4, y: 324, anchor: 'start' },
-  t: { x: 89, y: 356, anchor: 'middle' },
-  r: { x: 156, y: 324, anchor: 'middle' },
-  q: { x: 224, y: 356, anchor: 'middle' },
-  v: { x: 291, y: 324, anchor: 'middle' },
-  s: { x: 376, y: 356, anchor: 'end' },
+  t: { x: 106, y: 356, anchor: 'middle' },
+  q: { x: 190, y: 324, anchor: 'middle' },
+  v: { x: 274, y: 356, anchor: 'middle' },
+  s: { x: 376, y: 324, anchor: 'end' },
 };
 
-// Six branches of ten. A node fills in once you have a line for that move.
+// Five branches of ten. A node fills in once you have a line for that move.
 export function Tree({ count, onOpenMove }: { count: Record<string, number>; onOpenMove: (id: string) => void }) {
   return (
     <Svg width="100%" viewBox="0 0 380 374" style={{ aspectRatio: 380 / 374 }}>

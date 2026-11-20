@@ -1,4 +1,4 @@
-export type BranchKey = 'c' | 't' | 'r' | 'q' | 'v' | 's';
+export type BranchKey = 'c' | 't' | 'q' | 'v' | 's';
 
 export type Move = {
   id: string;
@@ -13,12 +13,11 @@ export type Move = {
 export const BRANCH: Record<BranchKey, { name: string; tag: string }> = {
   c: { name: 'Confidence', tag: 'Gets you in.' },
   t: { name: 'Talk', tag: 'Keeps it going.' },
-  r: { name: 'Read', tag: 'Tells you when.' },
   q: { name: 'Cues', tag: 'How it lands. Built on Vanessa Van Edwards’ work on warmth and competence.' },
   v: { name: 'Voice', tag: 'How it sounds. Built on Vinh Giang’s teaching on vocal foundations and connection.' },
   s: { name: 'Sell', tag: 'How to get a yes. Built on Alex Hormozi’s sales frameworks. Only sell what you believe helps them.' },
 };
-export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r', 'q', 'v', 's'];
+export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'q', 'v', 's'];
 
 // [title, the move, the rep, the upgrade]
 const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
@@ -45,18 +44,6 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ['Disagree, kindly', '“I see it differently.” Say why in one sentence.', 'One honest disagreement, no apology after.', 'Ask what would change their mind, then answer the same question.'],
     ['Bring a third person in', 'Two of you are talking. Pull in someone nearby with a question.', 'One person added.', 'Introduce them to each other by name and one detail.'],
     ['Carry ten minutes', 'One person you just met, ten minutes, started by you.', 'Check the clock after, not during.', 'Do it with your phone out of reach.'],
-  ],
-  r: [
-    ['Spot who is open', 'Stand somewhere busy. Find five people who look up for a hello.', 'Five. Slow pace, looking around, no headphones.', 'Say hi to one of them.'],
-    ['Spot the no', 'Find five people who are clearly busy. Leave them alone.', 'Five. Headphones, fast walk, eyes down.', 'Name the exact signal for each one in your line.'],
-    ['Match their pace', 'Talk at their speed and volume, not yours.', 'One conversation matched.', 'Match a quiet person without going silent.'],
-    ['Catch the short answer', 'One-word replies mean wrap it up. So wrap it up.', 'Notice it once and end warmly.', 'End it within one sentence.'],
-    ['Watch the feet', 'Feet toward you means stay. Feet toward the door means go.', 'Call it once in your head, then act on it.', 'Check again two minutes in.'],
-    ['Ask if you are keeping them', 'Mid-chat: “Am I keeping you?” Believe the answer.', 'Ask once.', 'Ask before they have to hint.'],
-    ['Leave on a high', 'End the conversation while it is still good.', 'You end it first, smiling.', 'Leave them a reason to talk again.'],
-    ['Name what you see', '“You look busy, I’ll be quick.” Then be quick.', 'Name it once, accurately.', 'Name a good one: “You look like you’re having a great night.”'],
-    ['Take a no well', 'Ask for something small. If it is a no: “No worries.” Mean it.', 'One no, taken clean. No second ask.', 'Stay friendly with them for the rest of the night.'],
-    ['Wait for the yes', 'Two clear green lights before you ask for anything.', 'Count them: they ask you a question, they stay when they could leave.', 'Write both signals in your line before you say what you asked.'],
   ],
   q: [
     ['Eyebrow flash hello', 'When you greet someone, lift your eyebrows for a beat as you say hi.', 'Five greetings with the flash.', 'Add their name to the hello.'],
