@@ -24,7 +24,8 @@ export type Line = {
 export type Comment = { id: string; line_id: string; author: string; body: string; created_at: string };
 export type Kudos = { line_id: string; author: string; kind: ReactionKey };
 export type Challenge = { id: string; author: string; target: string; move: string; until: string; created_at: string };
-export type Recording = { kind: MediaKind; uri: string; seconds: number };
+// wav marks a hands-free take: the speech recognizer saves raw WAV audio.
+export type Recording = { kind: MediaKind; uri: string; seconds: number; wav?: boolean };
 
 type Store = {
   profiles: Record<string, Profile>;
@@ -86,10 +87,10 @@ const ms = (iso: string) => new Date(iso).getTime();
 
 async function uploadRecording(uid: string, rec: Recording): Promise<string> {
   const bytes = await new File(rec.uri).arrayBuffer();
-  const ext = rec.kind === 'voice' ? 'm4a' : 'mp4';
+  const ext = rec.wav ? 'wav' : rec.kind === 'voice' ? 'm4a' : 'mp4';
   const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
-    contentType: rec.kind === 'voice' ? 'audio/mp4' : 'video/mp4',
+    contentType: rec.wav ? 'audio/wav' : rec.kind === 'voice' ? 'audio/mp4' : 'video/mp4',
     upsert: false,
   });
   if (error) throw error;

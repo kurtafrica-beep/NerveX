@@ -45,6 +45,18 @@
           "microphonePermission": "Nerve uses the microphone when you record audio or video.",
           "recordAudioAndroid": true
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Nerve uses the microphone when you record a voice note.",
+          "speechRecognitionPermission": "Nerve listens for \u201cstart\u201d and \u201cstop\u201d in hands-free mode.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox",
+            "com.google.android.as",
+            "com.google.android.tts"
+          ]
+        }
       ]
     ],
     "scheme": "nerve"

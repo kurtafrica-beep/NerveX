@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RemoteMedia } from '../components/Media';
+import { HandsFreePanel, useHandsFree } from '../components/HandsFree';
 import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Recorders';
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
@@ -33,12 +34,12 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
 
   // Every finished recording is saved straight to your log as a private take.
   const saveTake = useCallback(
-    async (take: Recording) => {
+    async (take: Recording): Promise<boolean> => {
       setError('');
       setSaved('');
       if (locked) {
         setError('This move is locked for now, so the take was not saved.');
-        return;
+        return false;
       }
       setSaving(true);
       const problem = await dropLine({ move: move.id, line: '', upgrade: version === 'up', recording: take, posted: false });
@@ -46,14 +47,16 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       if (problem) {
         setFailed(take);
         setError(problem);
-        return;
+        return false;
       }
       setFailed(null);
       setSaved(`${take.kind === 'voice' ? 'Voice note' : 'Video'} saved to your log. Only you can see it until you post it.`);
+      return true;
     },
     [dropLine, locked, move.id, version],
   );
   const voice = useVoiceRecorder(saveTake);
+  const handsFree = useHandsFree(saveTake);
 
   // Android back: close the camera first, then the sheet.
   useEffect(() => {
@@ -182,7 +185,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               style={s.area}
             />
 
-            {voice.active ? (
+            {handsFree.on ? (
+              <HandsFreePanel hf={handsFree} />
+            ) : voice.active ? (
               <RecordingBar seconds={voice.seconds} limit={MAX_AUDIO_SECONDS} onStop={voice.stop} />
             ) : saving ? (
               <View style={s.status}>
@@ -217,6 +222,20 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                 />
               </View>
             )}
+            {!handsFree.on && !voice.active && !saving ? (
+              <Btn
+                label="Hands-free: say start and stop"
+                icon="mic"
+                kind="quiet"
+                disabled={locked}
+                onPress={() => {
+                  setError('');
+                  setSaved('');
+                  handsFree.turnOn();
+                }}
+              />
+            ) : null}
+            {handsFree.error ? <T v="error">{handsFree.error}</T> : null}
             {saved ? (
               <View style={s.saved}>
                 <T v="semi" style={{ fontSize: 15, lineHeight: 21, color: C.accent }}>
@@ -224,7 +243,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                 </T>
               </View>
             ) : null}
-            {!voice.active && !saving && !saved ? (
+            {!voice.active && !saving && !saved && !handsFree.on ? (
               <T v="small">Recording starts on the tap and saves to your log when you stop. Audio up to 30 minutes, video up to 1 minute. Film yourself, not them.</T>
             ) : null}
             {failed && !saving ? (
