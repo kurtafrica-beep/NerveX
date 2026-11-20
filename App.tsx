@@ -129,18 +129,19 @@ function Shell() {
       </View>
 
       <View style={[s.nav, { paddingBottom: insets.bottom + 8 }]}>
-        <NavItem icon="feed" label="Feed" on={tab === 'feed'} onPress={() => setTab('feed')} />
         <NavItem icon="tonight" label="Tonight" on={tab === 'tonight'} onPress={() => setTab('tonight')} />
         <View style={s.navSlot}>
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Drop a line for tonight’s move"
-            onPress={() => setMoveId(n.tonight.move.id)}
-            style={({ pressed }) => [s.plus, pressed && { opacity: 0.85 }]}>
-            <Icon name="plus" size={32} color={C.accentInk} width={2.5} />
+            accessibilityRole="tab"
+            accessibilityLabel="You"
+            accessibilityState={{ selected: tab === 'you' }}
+            onPress={() => setTab('you')}
+            style={({ pressed }) => [s.you, tab === 'you' && s.youOn, pressed && { opacity: 0.85 }]}>
+            <Icon name="you" size={26} color={C.accentInk} width={2.2} />
+            <T style={s.youLv}>{`LV ${n.progress.level}`}</T>
           </Pressable>
         </View>
-        <NavItem icon="you" label="You" on={tab === 'you'} onPress={() => setTab('you')} />
+        <NavItem icon="feed" label="Feed" on={tab === 'feed'} onPress={() => setTab('feed')} />
       </View>
 
       {xpText ? <XpToast text={xpText} /> : null}
@@ -207,18 +208,22 @@ const s = StyleSheet.create({
     backgroundColor: C.surface,
   },
   navSlot: { flex: 1, minHeight: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  plus: {
-    width: 66,
-    height: 66,
-    borderRadius: 33,
-    marginTop: -30,
+  // The You button sits fully inside the bar: Android ignores taps on anything drawn outside its parent.
+  you: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: C.accent,
+    borderWidth: 3,
+    borderColor: C.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
+    elevation: 5,
     shadowColor: C.accent,
-    shadowOpacity: 0.4,
-    shadowRadius: 9,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
+  youOn: { borderColor: C.ink },
+  youLv: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.accentInk, letterSpacing: 0.5 },
 });
