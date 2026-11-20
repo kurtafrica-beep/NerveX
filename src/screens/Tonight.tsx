@@ -53,8 +53,8 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
 
       <Card>
         <View>
-          <T v="h">Fifty moves</T>
-          <T v="sub">Five branches. Pick one and drop a line.</T>
+          <T v="h">Sixty moves</T>
+          <T v="sub">Six branches. Pick one and drop a line.</T>
         </View>
         <Seg
           tall

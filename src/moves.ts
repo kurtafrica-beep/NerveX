@@ -1,4 +1,4 @@
-export type BranchKey = 'c' | 't' | 'r' | 'q' | 'v';
+export type BranchKey = 'c' | 't' | 'r' | 'q' | 'v' | 's';
 
 export type Move = {
   id: string;
@@ -16,8 +16,9 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string }> = {
   r: { name: 'Read', tag: 'Tells you when.' },
   q: { name: 'Cues', tag: 'How it lands. Built on Vanessa Van Edwards’ work on warmth and competence.' },
   v: { name: 'Voice', tag: 'How it sounds. Built on Vinh Giang’s teaching on vocal foundations and connection.' },
+  s: { name: 'Sell', tag: 'How to get a yes. Built on Alex Hormozi’s sales frameworks. Only sell what you believe helps them.' },
 };
-export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r', 'q', 'v'];
+export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r', 'q', 'v', 's'];
 
 // [title, the move, the rep, the upgrade]
 const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
@@ -80,6 +81,18 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ['Play Hi-Lo Buffalo', 'Ask someone for their high of the week, their low, and their buffalo: something random that happened.', 'All three answers, and one follow-up.', 'Play it with a group of three or more.'],
     ['Relive the story, don’t report it', 'Tell something that happened as if it is happening now: where you were, what you saw, what you felt.', 'One story told from inside the moment.', 'Keep it under a minute and end on the feeling.'],
     ['Listen on four channels', 'While they talk, track their words, their tone, their body and their energy. Name what you notice: “You sound excited about that.”', 'Name one thing they did not say out loud.', 'Do it when they are upset, and say what you hear before you offer anything.'],
+  ],
+  s: [
+    ['Ask why now', 'Someone brings you a problem or a plan. Before you offer anything, ask: “What made you want to sort this out now?”', 'One why-now question, then listen to the whole answer.', 'Ask one more question about their answer.'],
+    ['Say their problem back', 'Sum up what they want in one sentence, then ask: “Is that right?”', 'One summary that gets a yes.', 'Name the problem more sharply than they did, and still get the yes.'],
+    ['Ask what they already tried', '“What have you tried so far? How did that go?” Let them walk you through it.', 'Two attempts heard, no advice given.', 'Find the missing piece that made those attempts fail, and say it.'],
+    ['Run it on questions', 'Five minutes where almost everything you say is a question. Whoever asks the questions steers the talk.', 'Five minutes, mostly questions.', 'Steer the conversation to a topic you chose, using only questions.'],
+    ['Sell the vacation', 'Pitch a plan, a place or an idea by describing how it will feel when it is done, not the steps to get there. Thirty seconds.', 'One pitch about the outcome, under thirty seconds.', 'Use a short story about someone else who got that outcome.'],
+    ['Make the ask, then stop', 'Ask for something clearly, then say nothing until they answer.', 'One clear ask and a silence you did not fill.', 'Make the ask twice in one day, to two different people.'],
+    ['Acknowledge, associate, ask', 'When someone pushes back, say their concern back neutrally, link it to something good about them, then ask a question.', 'One objection met with all three, no arguing.', 'Do it when the objection is about money or time.'],
+    ['Find the real no', 'When you hear a maybe, ask: “If that weren’t an issue, would you do it?”', 'One hypothetical asked, and the real reason heard.', 'Ask it twice to reach the second reason under the first.'],
+    ['Make them right', 'In a disagreement, find what they are right about and say it before you make your point.', 'One “You’re right that…” before your side.', 'Get them to agree with your point without ever saying they were wrong.'],
+    ['Run the whole CLOSER', 'Pitch something you believe will help them: why now, their problem back, what they tried, the outcome, their concerns. Then ask.', 'All five steps in one conversation, ending with a clear ask. Only sell what you believe in.', 'If they say yes, message them the same day saying why it was a good call.'],
   ],
 };
 
