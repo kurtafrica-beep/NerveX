@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useNerve } from '../data';
-import { BRANCH, BRANCH_KEYS, BY, MOVES, label, level, type BranchKey } from '../moves';
+import { BRANCH, BRANCH_KEYS, BY, LEVEL_NAMES, LEVELS, currentLevel, inLevel, label, levelDone, levelMoves, type BranchKey } from '../moves';
 import { C, F } from '../theme';
 import { Btn, Card, Seg, T } from '../ui';
 
-export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
+export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: string) => void; initialBranch?: BranchKey }) {
   const n = useNerve();
-  const [branch, setBranch] = useState<BranchKey>('c');
+  const [branch, setBranch] = useState<BranchKey>(initialBranch);
   const [refreshing, setRefreshing] = useState(false);
   const move = n.tonight.move;
   const mates = n.partnersFor(move.id);
@@ -53,45 +53,62 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
 
       <Card>
         <View>
-          <T v="h">Fifty moves</T>
-          <T v="sub">Five branches. Pick one and drop a line.</T>
+          <T v="h">Five branches</T>
+          <T v="sub">Five levels each. Finish every move in a level to open the next.</T>
         </View>
         <Seg
           tall
           value={branch}
           onChange={setBranch}
-          options={BRANCH_KEYS.map((b) => ({
-            key: b,
-            label: BRANCH[b].name,
-            sub: `${MOVES.filter((m) => m.b === b && n.count[m.id]).length}/10`,
-          }))}
+          options={BRANCH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: `Lv ${currentLevel(b, n.count)}` }))}
         />
         <T v="sub">{BRANCH[branch].tag}</T>
-        <View style={{ gap: 8 }}>
-          {MOVES.filter((m) => m.b === branch).map((m) => {
-            const lines = n.count[m.id] ?? 0;
-            return (
-              <Pressable
-                key={m.id}
-                accessibilityRole="button"
-                onPress={() => onOpenMove(m.id)}
-                style={({ pressed }) => [s.moveRow, pressed && { opacity: 0.8 }]}>
-                <View style={[s.tile, lines > 0 && { backgroundColor: C.accent }]}>
-                  <T style={[s.tileText, lines > 0 && { color: C.accentInk }]}>{m.n}</T>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <T v="semi" style={{ lineHeight: 21 }}>
-                    {m.title}
-                  </T>
-                  <T v="eyebrow" style={{ fontSize: 12 }}>
-                    {level(m.n)}
-                  </T>
-                </View>
-                {lines > 0 ? <T style={s.count}>{lines === 1 ? '1 line' : `${lines} lines`}</T> : null}
-              </Pressable>
-            );
-          })}
-        </View>
+        {LEVELS.map((k) => {
+          const moves = levelMoves(branch, k);
+          const open = k === 1 || levelDone(branch, k - 1, n.count);
+          const done = moves.filter((m) => n.count[m.id]).length;
+          return (
+            <View key={k} style={{ gap: 8 }}>
+              <View style={s.levelHead}>
+                <T style={[s.levelName, !open && { color: C.muted }]}>
+                  Level {k} · {LEVEL_NAMES[branch][k - 1]}
+                </T>
+                <T style={[s.count, !open && { color: C.muted }]}>{open ? `${done}/${moves.length}` : 'Locked'}</T>
+              </View>
+              {!open ? (
+                <T v="small">
+                  Drop a line on every Level {k - 1} move to open these {moves.length}.
+                </T>
+              ) : null}
+              {moves.map((m) => {
+                const lines = n.count[m.id] ?? 0;
+                return (
+                  <Pressable
+                    key={m.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={open ? undefined : `${m.title}, locked`}
+                    onPress={() => onOpenMove(m.id)}
+                    style={({ pressed }) => [s.moveRow, !open && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
+                    <View style={[s.tile, lines > 0 && { backgroundColor: C.accent }]}>
+                      <T style={[s.tileText, lines > 0 && { color: C.accentInk }, !open && { fontSize: 18 }]}>{open ? inLevel(m.n) : '🔒'}</T>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <T v="semi" style={{ lineHeight: 21 }}>
+                        {m.title}
+                      </T>
+                      {!open ? (
+                        <T v="eyebrow" style={{ fontSize: 12 }}>
+                          Locked
+                        </T>
+                      ) : null}
+                    </View>
+                    {lines > 0 ? <T style={s.count}>{lines === 1 ? '1 line' : `${lines} lines`}</T> : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          );
+        })}
       </Card>
     </ScrollView>
   );
@@ -115,4 +132,6 @@ const s = StyleSheet.create({
   tile: { width: 48, height: 48, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
   tileText: { fontFamily: F.display, fontSize: 30, lineHeight: 34, color: C.accent },
   count: { fontFamily: F.semi, fontSize: 13, color: C.accent },
+  levelHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8 },
+  levelName: { fontFamily: F.display, fontSize: 22, lineHeight: 26, color: C.ink, flexShrink: 1 },
 });

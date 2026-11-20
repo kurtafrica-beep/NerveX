@@ -6,7 +6,7 @@ import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Rec
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Recording } from '../data';
 import { GUIDE } from '../guides';
-import { BRANCH, BY, label } from '../moves';
+import { BRANCH, BY, inLevel, label, levelSize, lvl, unlocked } from '../moves';
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Icon, Pill, Seg, T } from '../ui';
 
@@ -50,9 +50,15 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
     n.lines.some((x) => x.author === id && x.move === move.id && new Date(x.created_at).toDateString() === today),
   );
 
+  const locked = !unlocked(move, n.count);
+
   const drop = async () => {
     const line = text.trim();
     setError('');
+    if (locked) {
+      setError('This move is locked for now.');
+      return;
+    }
     if (voice.active) {
       setError('Stop the recording first.');
       return;
@@ -79,7 +85,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           <Icon name="back" />
         </Pressable>
         <T v="semi" style={{ fontSize: 16 }}>
-          {BRANCH[move.b].name} · {move.n} of 10
+          {BRANCH[move.b].name} · Level {lvl(move.n)} · {inLevel(move.n)} of {levelSize(lvl(move.n))}
         </T>
         <View style={{ width: 48 }} />
       </View>
@@ -89,6 +95,13 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           <View style={s.section}>
             <T v="accent">{label(move)}</T>
             <T v="big">{move.title}</T>
+            {locked ? (
+              <View style={s.lock}>
+                <T v="semi" style={{ fontSize: 16, lineHeight: 22 }}>
+                  Locked. Drop a line on every {BRANCH[move.b].name} Level {lvl(move.n) - 1} move to open Level {lvl(move.n)}.
+                </T>
+              </View>
+            ) : null}
             <Seg
               value={version}
               onChange={setVersion}
@@ -208,7 +221,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             ) : null}
 
             {error ? <T v="error">{error}</T> : null}
-            <Btn label={busy ? (rec ? 'Uploading…' : 'Dropping…') : 'Drop the line'} kind="primary" wide disabled={busy} onPress={drop} />
+            <Btn label={busy ? (rec ? 'Uploading…' : 'Dropping…') : 'Drop the line'} kind="primary" wide disabled={busy || locked} onPress={drop} />
           </View>
 
           <View style={s.section}>
@@ -299,6 +312,7 @@ const s = StyleSheet.create({
   back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 16, paddingTop: 20, gap: 24 },
   section: { gap: 10 },
+  lock: { padding: 12, borderRadius: 14, backgroundColor: C.accentSoft },
   guide: { gap: 14, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
   part: { gap: 4 },
   step: { flexDirection: 'row', gap: 8 },

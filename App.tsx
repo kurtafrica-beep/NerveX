@@ -7,6 +7,7 @@ import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/auth';
 import { DataProvider, useNerve } from './src/data';
+import type { BranchKey } from './src/moves';
 import { Feed } from './src/screens/Feed';
 import { MoveScreen } from './src/screens/MoveScreen';
 import { SignIn } from './src/screens/SignIn';
@@ -48,6 +49,7 @@ function Shell() {
   const n = useNerve();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('tonight');
+  const [branch, setBranch] = useState<BranchKey>('c');
   const [moveId, setMoveId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -88,8 +90,17 @@ function Shell() {
 
       <View style={{ flex: 1 }}>
         {tab === 'feed' ? <Feed onOpenMove={setMoveId} onError={showError} /> : null}
-        {tab === 'tonight' ? <Tonight onOpenMove={setMoveId} /> : null}
-        {tab === 'you' ? <You onOpenMove={setMoveId} onError={showError} /> : null}
+        {tab === 'tonight' ? <Tonight key={branch} initialBranch={branch} onOpenMove={setMoveId} /> : null}
+        {tab === 'you' ? (
+          <You
+            onOpenMove={setMoveId}
+            onOpenBranch={(b) => {
+              setBranch(b);
+              setTab('tonight');
+            }}
+            onError={showError}
+          />
+        ) : null}
       </View>
 
       <View style={[s.nav, { paddingBottom: insets.bottom + 8 }]}>

@@ -2,7 +2,7 @@
 
 Do the move. Drop the line.
 
-Fifty small moves for talking to people, in five branches (Confidence, Talk, Cues, Voice, Sell). Cues is built on Vanessa Van Edwards’ work on warmth and competence; Voice on Vinh Giang’s teaching on vocal foundations and connection; Sell on Alex Hormozi’s sales frameworks. Pick one tonight, do it, and tell your circle what happened in a line, a voice note or a short video.
+150 moves for talking to people, in five branches (Confidence, Talk, Cues, Voice, Sell), each with five levels. A level opens when every move in the one before it has a line. Cues is built on Vanessa Van Edwards’ work on warmth and competence; Voice on Vinh Giang’s teaching on vocal foundations and connection; Sell on Alex Hormozi’s sales frameworks. Pick one tonight, do it, and tell your circle what happened in a line, a voice note or a short video.
 
 Android app built with Expo (React Native). The backend is a Supabase project: Google sign-in, Postgres tables behind row-level security, and a private bucket for recordings.
 
@@ -11,7 +11,7 @@ Android app built with Expo (React Native). The backend is a Supabase project: G
 | Path | What it is |
 | --- | --- |
 | `App.tsx` | Shell: top bar, three tabs, the plus button, the move sheet |
-| `src/moves.ts` | The fifty moves, their reps and upgrades. Edit the wording here |
+| `src/moves.ts` | The 150 moves, their reps and upgrades. Edit the wording here |
 | `src/data.tsx` | Loads the feed, live updates, and every write (lines, kudos, comments, challenges, uploads) |
 | `src/auth.tsx` | Google sign-in through the system browser |
 | `src/screens/` | Sign-in, Feed, Tonight, You, and the move sheet |

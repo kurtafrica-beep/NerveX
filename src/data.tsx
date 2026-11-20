@@ -2,7 +2,7 @@ import { File } from 'expo-file-system';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { BUCKET } from './config';
-import { BY, MOVES, ORDER, type Move } from './moves';
+import { BY, MOVES, ORDER, unlocked, type Move } from './moves';
 import { supabase } from './supabase';
 
 export type Profile = { id: string; name: string; avatar_url: string | null };
@@ -177,14 +177,14 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     const incoming = active.filter((x) => x.target === uid);
     const outgoing = active.filter((x) => x.author === uid);
 
-    const pendingIn = incoming.find((x) => !loggedSince(x.move, x.created_at));
+    const pendingIn = incoming.find((x) => !loggedSince(x.move, x.created_at) && unlocked(BY[x.move], count));
     const pendingOut = outgoing.find((x) => !loggedSince(x.move, x.created_at));
     let tonight: Tonight;
     if (pendingIn) tonight = { move: BY[pendingIn.move], together: true };
     else if (pendingOut) tonight = { move: BY[pendingOut.move], together: true };
     else {
-      let open = ORDER.filter((id) => !count[id]);
-      if (!open.length) open = ORDER;
+      let open = ORDER.filter((id) => !count[id] && unlocked(BY[id], count));
+      if (!open.length) open = ORDER.filter((id) => unlocked(BY[id], count));
       tonight = { move: BY[open[skip % open.length]], together: false };
     }
 

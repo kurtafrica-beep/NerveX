@@ -4,11 +4,19 @@ import { useAuth } from '../auth';
 import { LineCard } from '../components/LineCard';
 import { Tree } from '../components/Tree';
 import { stamp, useNerve } from '../data';
-import { BY } from '../moves';
+import { BY, type BranchKey } from '../moves';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, T } from '../ui';
 
-export function You({ onOpenMove, onError }: { onOpenMove: (id: string) => void; onError: (message: string) => void }) {
+export function You({
+  onOpenMove,
+  onOpenBranch,
+  onError,
+}: {
+  onOpenMove: (id: string) => void;
+  onOpenBranch: (b: BranchKey) => void;
+  onError: (message: string) => void;
+}) {
   const n = useNerve();
   const { signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
@@ -41,9 +49,9 @@ export function You({ onOpenMove, onError }: { onOpenMove: (id: string) => void;
             <T style={s.logWord}>LOG</T>
           </View>
         </View>
-        <Tree count={n.count} onOpenMove={onOpenMove} />
+        <Tree count={n.count} onOpenBranch={onOpenBranch} />
         <View style={s.stats}>
-          <Stat value={`${n.doneCount}/50`} label="Moves" />
+          <Stat value={`${n.doneCount}/150`} label="Moves" />
           <Stat value={String(n.streak)} label="Streak" />
           <Stat value={String(n.kudosReceived)} label="Kudos" />
         </View>
