@@ -1,3 +1,5 @@
+import { PATH_GUIDE } from './pathMoves';
+
 export type Guide = { steps: string[]; say: string; why: string; watch: string; record: string };
 
 // How to do each move: three steps, a line to say, why it works, the usual mistake, how to record it.
@@ -1763,3 +1765,4 @@ export const GUIDE: Record<string, Guide> = {
     "record": "Record your thirty-second recommendation to camera before you say it."
   }
 };
+Object.assign(GUIDE, PATH_GUIDE);

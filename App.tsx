@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/auth';
+import { RewardSheet, XpToast, diff, isBig, snap, type Reward, type Snap } from './src/components/Reward';
 import { DataProvider, useNerve } from './src/data';
 import type { BranchKey } from './src/moves';
 import { Feed } from './src/screens/Feed';
@@ -61,6 +62,29 @@ function Shell() {
   }, []);
   const closeMove = useCallback(() => setMoveId(null), []);
 
+  // Celebrate what is new: compare progress with how it was a moment ago.
+  const [reward, setReward] = useState<Reward | null>(null);
+  const [xpText, setXpText] = useState('');
+  const prev = useRef<Snap | null>(null);
+  const xpTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { progress, test, loaded } = n;
+  useEffect(() => {
+    if (!loaded) return;
+    const now = snap(progress, test);
+    const before = prev.current;
+    prev.current = now;
+    if (!before) return;
+    const r = diff(before, now);
+    if (!r) return;
+    if (isBig(r)) {
+      setReward(r);
+      return;
+    }
+    setXpText(`+${r.gained} XP`);
+    if (xpTimer.current) clearTimeout(xpTimer.current);
+    xpTimer.current = setTimeout(() => setXpText(''), 1800);
+  }, [progress, test, loaded]);
+
   // Android back from Feed or You returns to Tonight; from Tonight it leaves the app.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -78,7 +102,7 @@ function Shell() {
       <View style={[s.bar, { paddingTop: insets.top + 8 }]}>
         <T style={s.wordmark}>NERVE</T>
         <View style={s.chip}>
-          <T style={s.chipText}>{n.streak > 1 ? `${n.streak}-day streak` : `${n.mine.length} log`}</T>
+          <T style={s.chipText}>{`Lv ${n.progress.level} · ${n.progress.xp} XP`}</T>
         </View>
       </View>
 
@@ -94,6 +118,7 @@ function Shell() {
         {tab === 'you' ? (
           <You
             onOpenMove={setMoveId}
+            onPreview={setReward}
             onOpenBranch={(b) => {
               setBranch(b);
               setTab('tonight');
@@ -117,6 +142,19 @@ function Shell() {
         </View>
         <NavItem icon="you" label="You" on={tab === 'you'} onPress={() => setTab('you')} />
       </View>
+
+      {xpText ? <XpToast text={xpText} /> : null}
+      {reward ? (
+        <RewardSheet
+          r={reward}
+          onClose={() => setReward(null)}
+          onWear={async (key) => {
+            setReward(null);
+            const problem = await n.wearTitle(key);
+            if (problem) showError(problem);
+          }}
+        />
+      ) : null}
 
       {moveId ? (
         <MoveScreen

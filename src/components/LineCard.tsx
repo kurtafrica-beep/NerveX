@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { stamp, useNerve, type Line } from '../data';
 import { BY } from '../moves';
+import { HUE, titleInfo } from '../progress';
 import { REACT, REACTIONS } from '../reactions';
 import { C, F } from '../theme';
 import { Avatar, Card, ConfirmLink, Pill, T } from '../ui';
@@ -37,7 +38,10 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
       <View style={s.who}>
         <Avatar name={n.nameOf(line.author)} url={author?.avatar_url} />
         <View style={{ flex: 1 }}>
-          <T v="semi">{n.nameOf(line.author)}</T>
+          <View style={s.nameRow}>
+            <T v="semi">{n.nameOf(line.author)}</T>
+            <TitleChip uid={line.author} />
+          </View>
           <T v="small">{stamp(line.created_at)}</T>
         </View>
         {line.upgrade ? <T v="accent">Upgrade</T> : null}
@@ -152,7 +156,23 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
   );
 }
 
+// The title someone chose to wear. Your own only shows while you have earned it.
+export function TitleChip({ uid }: { uid: string }) {
+  const n = useNerve();
+  const key = n.profiles[uid]?.title;
+  const t = titleInfo(key);
+  if (!t || (uid === n.uid && !n.progress.earned.includes(t.key))) return null;
+  return (
+    <View style={[s.title, { backgroundColor: HUE[t.b][1] }]}>
+      <T style={[s.titleText, { color: HUE[t.b][0] }]}>{t.text}</T>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  title: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  titleText: { fontFamily: F.semi, fontSize: 12, lineHeight: 16 },
   who: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   move: { fontFamily: F.display, fontSize: 30, lineHeight: 31, color: C.accent },
   acts: { flexDirection: 'row', alignItems: 'center', gap: 8 },

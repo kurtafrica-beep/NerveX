@@ -7,7 +7,8 @@ import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Rec
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
 import { GUIDE } from '../guides';
-import { BRANCH, BY, inLevel, label, levelSize, lvl, unlocked } from '../moves';
+import { BRANCH, BY, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
+import { HUE, moveXp } from '../progress';
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Icon, Pill, Seg, T } from '../ui';
 
@@ -29,7 +30,22 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
 
-  const locked = !unlocked(move, n.count);
+  const locked = !unlocked(move, n.count, n.progress.open);
+  const pathShut = isPath(move.b) && !n.progress.open[move.b];
+  const pend = n.progress.pending[move.id];
+  const note = pathShut
+    ? `Locked. This move is on the ${BRANCH[move.b].name} path. The You tab shows what opens it.`
+    : locked
+      ? `Locked. Drop a line on every ${BRANCH[move.b].name} ${lvWord(move.b)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(move.b)} ${move.lv}`}.`
+      : !move.cap
+        ? ''
+        : n.count[move.id]
+          ? `Capstone done. You summited the ${BRANCH[move.b].name} path.`
+          : pend?.posted
+            ? `Posted. ${pend.reacts} of ${CAP_REACTS} reactions so far. It counts at ${CAP_REACTS}.`
+            : pend
+              ? `Saved. Now post it to the feed. It counts once ${CAP_REACTS} people react.`
+              : `This is the capstone. It counts once your line is posted to the feed and ${CAP_REACTS} people react.`;
   const { dropLine } = n;
 
   // Every finished recording is saved straight to your log as a private take.
@@ -104,7 +120,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           <Icon name="back" />
         </Pressable>
         <T v="semi" style={{ fontSize: 16 }}>
-          {BRANCH[move.b].name} · Level {lvl(move.n)} · {inLevel(move.n)} of {levelSize(lvl(move.n))}
+          {BRANCH[move.b].name} · {move.cap ? 'Capstone' : `${lvWord(move.b)} ${move.lv} · ${move.i} of ${move.of}`}
         </T>
         <View style={{ width: 48 }} />
       </View>
@@ -112,12 +128,14 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
           <View style={s.section}>
-            <T v="accent">{label(move)}</T>
+            <T v="accent" style={{ color: HUE[move.b][0] }}>
+              {label(move)} · +{moveXp(move)} XP
+            </T>
             <T v="big">{move.title}</T>
-            {locked ? (
+            {note ? (
               <View style={s.lock}>
                 <T v="semi" style={{ fontSize: 16, lineHeight: 22 }}>
-                  Locked. Drop a line on every {BRANCH[move.b].name} Level {lvl(move.n) - 1} move to open Level {lvl(move.n)}.
+                  {note}
                 </T>
               </View>
             ) : null}

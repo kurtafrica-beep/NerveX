@@ -1,26 +1,51 @@
-export type BranchKey = 'c' | 't' | 'q' | 'v' | 's';
+import { PATH_LAYOUT, PATH_SOURCE } from './pathMoves';
+
+export type BaseKey = 'c' | 't' | 'q' | 'v' | 's';
+export type PathKey = 'n' | 'f';
+export type BranchKey = BaseKey | PathKey;
 
 export type Move = {
   id: string;
   b: BranchKey;
   n: number;
+  // level (stage on a path), position in it, how many moves it has
+  lv: number;
+  i: number;
+  of: number;
+  // the last move of a path: it only counts with proof
+  cap: boolean;
   title: string;
   doIt: string;
   rep: string;
   up: string;
 };
 
-export const BRANCH: Record<BranchKey, { name: string; tag: string }> = {
+export const BRANCH: Record<BranchKey, { name: string; tag: string; path?: boolean }> = {
   c: { name: 'Confidence', tag: 'Gets you in.' },
   t: { name: 'Talk', tag: 'Keeps it going.' },
   q: { name: 'Cues', tag: 'How it lands. Built on Vanessa Van Edwards’ work on warmth and competence.' },
   v: { name: 'Voice', tag: 'How it sounds. Built on Vinh Giang’s teaching on vocal foundations and connection.' },
   s: { name: 'Sell', tag: 'How to get a yes. Built on Alex Hormozi’s sales frameworks. Only sell what you believe helps them.' },
+  n: { name: 'Negotiator', path: true, tag: 'Getting to a deal both sides keep. Built on Chris Voss’s negotiation methods.' },
+  f: { name: 'Founder', path: true, tag: 'Selling when you are the whole team. Built on ideas from Josh Braun, Keenan, April Dunford and Oren Klaff.' },
 };
-export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'q', 'v', 's'];
+export const BRANCH_KEYS: BaseKey[] = ['c', 't', 'q', 'v', 's'];
+export const PATH_KEYS: PathKey[] = ['n', 'f'];
+export const ALL_KEYS: BranchKey[] = [...BRANCH_KEYS, ...PATH_KEYS];
+// What each path needs: the level reached in each base branch, and recordings across those branches.
+export const PATH: Record<PathKey, { need: Partial<Record<BaseKey, number>>; recs: number; by: string[] }> = {
+  n: { need: { t: 3, q: 3 }, recs: 8, by: [] },
+  f: { need: { s: 3, c: 3, t: 2 }, recs: 8, by: ['Josh Braun', 'Keenan', 'April Dunford', 'Oren Klaff'] },
+};
+// Reactions from other people a posted capstone needs before it counts.
+export const CAP_REACTS = 3;
+export function isPath(b: BranchKey): b is PathKey {
+  return !!BRANCH[b].path;
+}
 
 // [title, the move, the rep, the upgrade]
 const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
+  ...PATH_SOURCE,
   c: [
     ['Say hi to ten strangers', 'Walk a busy block. Eye contact, a real hi, then keep walking.', 'Count them. Ten is the rep. A nod back is enough.', 'Add two words: “Hi, nice day.” Ten times.'],
     ['Hold a short chat', 'Cashier, barista, someone in line. One comment, one question.', 'Thirty seconds counts. You end it.', 'Two minutes, with someone who is not paid to talk to you.'],
@@ -197,6 +222,7 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
 // so lines already posted stay attached to the same move when it moves level.
 // n is the move's position in its branch: 1-10 is the base level, 11-30 are levels 2-5.
 const LAYOUT: Record<BranchKey, string[][]> = {
+  ...PATH_LAYOUT,
   "c": [
     [
       "c1",
@@ -412,26 +438,29 @@ const LAYOUT: Record<BranchKey, string[][]> = {
 export const MOVES: Move[] = [];
 export const BY: Record<string, Move> = {};
 const BYPOS: Record<string, string> = {};
-for (const b of BRANCH_KEYS) {
+for (const b of ALL_KEYS) {
   let n = 0;
-  for (const ids of LAYOUT[b]) {
-    for (const id of ids) {
+  LAYOUT[b].forEach((ids, li) => {
+    ids.forEach((id, ii) => {
       const m = SOURCE[b][Number(id.slice(1)) - 1];
       n++;
-      const move: Move = { id, b, n, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
+      const move: Move = { id, b, n, lv: li + 1, i: ii + 1, of: ids.length, cap: isPath(b) && li === 4, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
       MOVES.push(move);
       BY[id] = move;
       BYPOS[b + n] = id;
-    }
-  }
+    });
+  });
 }
 
 // Tonight's pick walks the branches side by side, easiest first.
 export const ORDER: string[] = [];
 for (let n = 1; n <= 30; n++) for (const b of BRANCH_KEYS) ORDER.push(BYPOS[b + n]);
+for (let n = 1; n <= 17; n++) for (const b of PATH_KEYS) ORDER.push(BYPOS[b + n]);
 
 // Level 1 is the ten base moves; levels 2-5 have five moves each (numbers 11-30).
 export const LEVEL_NAMES: Record<BranchKey, string[]> = {
+  n: ['Listen', 'Empathy', 'Calibrate', 'Bargain', 'Capstone'],
+  f: ['Outreach', 'Discovery', 'Positioning', 'Pitch', 'Capstone'],
   "c": [
     "Base",
     "Bold",
@@ -470,25 +499,23 @@ export const LEVEL_NAMES: Record<BranchKey, string[]> = {
 };
 export const LEVELS = [1, 2, 3, 4, 5];
 
-export function lvl(n: number): number {
-  return n <= 10 ? 1 : 2 + Math.floor((n - 11) / 5);
+// Base branches have levels; paths have stages and end in a capstone.
+export function lvWord(b: BranchKey): string {
+  return isPath(b) ? 'Stage' : 'Level';
 }
-export function inLevel(n: number): number {
-  return n <= 10 ? n : ((n - 11) % 5) + 1;
-}
-export function levelSize(k: number): number {
-  return k === 1 ? 10 : 5;
+export function lvTitle(b: BranchKey, k: number): string {
+  return isPath(b) && k === 5 ? 'Capstone' : `${lvWord(b)} ${k} · ${LEVEL_NAMES[b][k - 1]}`;
 }
 export function levelMoves(b: BranchKey, k: number): Move[] {
-  return MOVES.filter((m) => m.b === b && lvl(m.n) === k);
+  return MOVES.filter((m) => m.b === b && m.lv === k);
 }
 export function levelDone(b: BranchKey, k: number, count: Record<string, number>): boolean {
   return levelMoves(b, k).every((m) => count[m.id]);
 }
-// A level opens once every move in the level before it has a line.
-export function unlocked(m: Move, count: Record<string, number>): boolean {
-  const k = lvl(m.n);
-  return k === 1 || levelDone(m.b, k - 1, count);
+// A level opens once every move in the level before it has a line. A path move also needs its path open.
+export function unlocked(m: Move, count: Record<string, number>, open: Partial<Record<BranchKey, boolean>> = {}): boolean {
+  if (isPath(m.b) && !open[m.b]) return false;
+  return m.lv === 1 || levelDone(m.b, m.lv - 1, count);
 }
 export function currentLevel(b: BranchKey, count: Record<string, number>): number {
   let k = 1;
@@ -496,6 +523,5 @@ export function currentLevel(b: BranchKey, count: Record<string, number>): numbe
   return k;
 }
 export function label(m: Move): string {
-  const k = lvl(m.n);
-  return `${BRANCH[m.b].name} · Level ${k} · ${LEVEL_NAMES[m.b][k - 1]}`;
+  return `${BRANCH[m.b].name} · ${lvTitle(m.b, m.lv)}`;
 }

@@ -140,11 +140,13 @@ export function Seg<K extends string>({
   value,
   onChange,
   tall,
+  color = C.ink,
 }: {
   options: { key: K; label: string; sub?: string }[];
   value: K;
   onChange: (key: K) => void;
   tall?: boolean;
+  color?: string;
 }) {
   return (
     <View style={[seg.wrap, tall && { borderRadius: 30 }]}>
@@ -157,7 +159,7 @@ export function Seg<K extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.key)}
-            style={[seg.item, { flex: o.label.length > 6 ? 1.7 : 1 }, tall && { minHeight: 50, borderRadius: 26 }, on && seg.on]}>
+            style={[seg.item, { flex: o.label.length > 6 ? 1.7 : 1 }, tall && { minHeight: 50, borderRadius: 26 }, on && { backgroundColor: color }]}>
             <Text style={labelStyle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {o.label}
             </Text>
@@ -171,7 +173,6 @@ export function Seg<K extends string>({
 const seg = StyleSheet.create({
   wrap: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 999, backgroundColor: C.bgDeep },
   item: { flex: 1, minHeight: 42, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
-  on: { backgroundColor: C.ink },
   label: { fontFamily: F.semi, fontSize: 14, color: C.muted },
   sub: { fontFamily: F.medium, fontSize: 12, color: C.muted },
 });

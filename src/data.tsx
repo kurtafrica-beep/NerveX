@@ -1,12 +1,14 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { File } from 'expo-file-system';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { BUCKET } from './config';
-import { BY, MOVES, ORDER, unlocked, type Move } from './moves';
+import { BY, ORDER, unlocked, type Move } from './moves';
+import { computeProgress, type Progress } from './progress';
 import type { ReactionKey } from './reactions';
 import { supabase } from './supabase';
 
-export type Profile = { id: string; name: string; avatar_url: string | null };
+export type Profile = { id: string; name: string; avatar_url: string | null; title: string | null };
 export type MediaKind = 'voice' | 'video';
 export type Line = {
   id: string;
@@ -46,7 +48,13 @@ type Api = Store & {
   reload: () => Promise<void>;
   // derived
   mine: Line[];
+  // moves with a line that counts; a capstone only counts once it has its proof
   count: Record<string, number>;
+  progress: Progress;
+  // tester switch: opens the paths without meeting the requirements
+  test: boolean;
+  setTest: (on: boolean) => void;
+  wearTitle: (key: string) => Promise<string>;
   doneCount: number;
   streak: number;
   kudosReceived: number;
@@ -101,12 +109,20 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
   const [store, setStore] = useState<Store>(EMPTY);
   const [skip, setSkip] = useState(0);
   const [clock, setClock] = useState(() => Date.now());
+  const [test, setTestState] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem('nerve.test').then((v) => setTestState(v === '1')).catch(() => {});
+  }, []);
+  const setTest = useCallback((on: boolean) => {
+    setTestState(on);
+    AsyncStorage.setItem('nerve.test', on ? '1' : '0').catch(() => {});
+  }, []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async () => {
     const since = new Date(Date.now() - 7 * 86400000).toISOString();
     const [p, l, c, k, ch] = await Promise.all([
-      supabase.from('profiles').select('id,name,avatar_url'),
+      supabase.from('profiles').select('id,name,avatar_url,title'),
       supabase.from('lines').select('*').order('created_at', { ascending: false }).limit(300),
       supabase.from('comments').select('*').order('created_at', { ascending: true }).limit(3000),
       supabase.from('kudos').select('line_id,author,kind').limit(10000),
@@ -162,12 +178,13 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     // Your log includes private takes; the feed only shows posted lines.
     const mine = lines.filter((x) => x.author === uid);
     const feed = lines.filter((x) => x.posted !== false);
-    const count: Record<string, number> = {};
     const days: Record<string, true> = {};
-    for (const x of mine) {
-      count[x.move] = (count[x.move] ?? 0) + 1;
-      days[dayKey(ms(x.created_at))] = true;
-    }
+    for (const x of mine) days[dayKey(ms(x.created_at))] = true;
+    const reactors: Record<string, string[]> = {};
+    for (const k of kudos) (reactors[k.line_id] ??= []).push(k.author);
+    const progress = computeProgress(mine, (id) => reactors[id] ?? [], uid, test);
+    const count = progress.count;
+    const open = progress.open;
     const mineIds = new Set(mine.map((x) => x.id));
     const kudosReceived = kudos.filter((x) => mineIds.has(x.line_id)).length;
 
@@ -184,15 +201,15 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     const incoming = active.filter((x) => x.target === uid);
     const outgoing = active.filter((x) => x.author === uid);
 
-    const pendingIn = incoming.find((x) => !loggedSince(x.move, x.created_at) && unlocked(BY[x.move], count));
+    const pendingIn = incoming.find((x) => !loggedSince(x.move, x.created_at) && unlocked(BY[x.move], count, open));
     const pendingOut = outgoing.find((x) => !loggedSince(x.move, x.created_at));
     let tonight: Tonight;
     if (pendingIn) tonight = { move: BY[pendingIn.move], together: true };
     else if (pendingOut) tonight = { move: BY[pendingOut.move], together: true };
     else {
-      let open = ORDER.filter((id) => !count[id] && unlocked(BY[id], count));
-      if (!open.length) open = ORDER.filter((id) => unlocked(BY[id], count));
-      tonight = { move: BY[open[skip % open.length]], together: false };
+      let ready = ORDER.filter((id) => !count[id] && unlocked(BY[id], count, open));
+      if (!ready.length) ready = ORDER.filter((id) => unlocked(BY[id], count, open));
+      tonight = { move: BY[ready[skip % ready.length]], together: false };
     }
 
     const nameOf = (id: string) => (id === uid ? profiles[id]?.name || 'You' : profiles[id]?.name || 'Someone');
@@ -306,6 +323,13 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       return '';
     };
 
+    const wearTitle: Api['wearTitle'] = async (key) => {
+      const { error } = await supabase.from('profiles').update({ title: key || null }).eq('id', uid);
+      if (error) return SAVE_FAILED;
+      await reload();
+      return '';
+    };
+
     return {
       ...store,
       lines: feed,
@@ -313,7 +337,11 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       reload,
       mine,
       count,
-      doneCount: MOVES.filter((m) => count[m.id]).length,
+      progress,
+      test,
+      setTest,
+      wearTitle,
+      doneCount: progress.done,
       streak,
       kudosReceived,
       circle,
@@ -335,7 +363,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       deleteComment,
       toggleChallenge,
     };
-  }, [store, uid, skip, clock, reload]);
+  }, [store, uid, skip, clock, reload, test, setTest]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
