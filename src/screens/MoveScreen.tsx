@@ -5,6 +5,7 @@ import { VideoPlayer, VoicePlayer } from '../components/Media';
 import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Recorders';
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Recording } from '../data';
+import { GUIDE } from '../guides';
 import { BRANCH, BY, label } from '../moves';
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Icon, Pill, Seg, T } from '../ui';
@@ -99,6 +100,44 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             <T style={{ fontSize: 20, lineHeight: 27 }}>{version === 'up' ? move.up : move.doIt}</T>
             <T v="sub">{version === 'up' ? 'Same move, one notch harder. Your line gets tagged as an upgrade.' : move.rep}</T>
           </View>
+
+          {GUIDE[move.id] ? (
+            <View style={s.guide}>
+              <View style={s.part}>
+                <T v="eyebrow">How to do it</T>
+                {GUIDE[move.id].steps.map((step, i) => (
+                  <View key={i} style={s.step}>
+                    <T style={s.stepNum}>{i + 1}.</T>
+                    <T style={{ flex: 1 }}>{step}</T>
+                  </View>
+                ))}
+              </View>
+              {GUIDE[move.id].say ? (
+                <View style={s.part}>
+                  <T v="eyebrow">Try saying</T>
+                  <View style={s.say}>
+                    <T v="semi" style={{ fontSize: 16, lineHeight: 22 }}>
+                      {GUIDE[move.id].say}
+                    </T>
+                  </View>
+                </View>
+              ) : null}
+              <View style={s.part}>
+                <T v="eyebrow">Why it works</T>
+                <T>{GUIDE[move.id].why}</T>
+              </View>
+              <View style={s.part}>
+                <T v="eyebrow">Watch out for</T>
+                <T>{GUIDE[move.id].watch}</T>
+              </View>
+              <View style={s.part}>
+                <T v="eyebrow">Record it</T>
+                <View style={s.rec}>
+                  <T>{GUIDE[move.id].record}</T>
+                </View>
+              </View>
+            </View>
+          ) : null}
 
           <View style={s.section}>
             <T v="eyebrow">The line</T>
@@ -260,6 +299,12 @@ const s = StyleSheet.create({
   back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 16, paddingTop: 20, gap: 24 },
   section: { gap: 10 },
+  guide: { gap: 14, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
+  part: { gap: 4 },
+  step: { flexDirection: 'row', gap: 8 },
+  stepNum: { fontFamily: F.semi, color: C.accent, minWidth: 18 },
+  say: { paddingVertical: 10, paddingHorizontal: 14, borderLeftWidth: 3, borderLeftColor: C.accent, backgroundColor: C.accentSoft, borderTopRightRadius: 10, borderBottomRightRadius: 10 },
+  rec: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: C.bg },
   area: {
     minHeight: 108,
     padding: 14,
