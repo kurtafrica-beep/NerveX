@@ -1651,5 +1651,115 @@ export const GUIDE: Record<string, Guide> = {
     "why": "Teaching it proves you have mastered it. Master salesmen build other salesmen.",
     "watch": "Taking over when they struggle. Let them work through it.",
     "record": "Record the role-play, if your friend agrees."
+  },
+  "c31": {
+    "steps": [
+      "Notice the name tag before you reach the counter.",
+      "At the end, look up and say thanks with their name.",
+      "Smile and move on."
+    ],
+    "say": "Thanks, Maria. Have a good one.",
+    "why": "Using a name turns a transaction into a tiny human moment, and people light up when they hear it.",
+    "watch": "Mumbling the name at the till screen. Look at them.",
+    "record": "Right after, record a voice note: what you did, how they reacted, what you would change."
+  },
+  "c32": {
+    "steps": [
+      "Pick a favour that takes them five seconds.",
+      "Ask clearly, with a please.",
+      "Thank them properly."
+    ],
+    "say": "Would you mind keeping an eye on my seat for a minute?",
+    "why": "Small favours are almost always a yes, so you practise asking strangers for things without much risk.",
+    "watch": "Apologising before you even ask. Just ask.",
+    "record": "Right after, record a voice note: what you did, how they reacted, what you would change."
+  },
+  "t31": {
+    "steps": [
+      "Listen to the end of what they say.",
+      "Repeat the last two or three words, with a curious tone.",
+      "Stop and let them expand."
+    ],
+    "say": "They: “…so I ended up moving to Montreal.” You: “Moved to Montreal?”",
+    "why": "Echoing shows you are listening and invites them to say more, with almost no effort from you.",
+    "watch": "Echoing every sentence. Once or twice is enough.",
+    "record": "Right after, record a voice note: what you did, how they reacted, what you would change."
+  },
+  "t32": {
+    "steps": [
+      "Notice something you both can see or hear.",
+      "Say one short thing about it.",
+      "Follow it straight away with a question."
+    ],
+    "say": "This place is packed for a Tuesday. Is it always like this?",
+    "why": "A comment followed by a question is the easiest way to start any conversation. It feels natural, not like a line.",
+    "watch": "Stopping after the comment and waiting for them to carry it.",
+    "record": "Right after, record a voice note: what you did, how they reacted, what you would change."
+  },
+  "q31": {
+    "steps": [
+      "Walk somewhere with people coming toward you.",
+      "Catch their eye a few steps away.",
+      "Smile first, then keep walking."
+    ],
+    "say": "",
+    "why": "Smiling first sets a warm tone, and most people smile back without thinking.",
+    "watch": "A tight polite smile. Let it reach your eyes.",
+    "record": "Practise your smile in a selfie video, then record a debrief on how many smiled back."
+  },
+  "q32": {
+    "steps": [
+      "Pick a busy hallway, mall or street.",
+      "Lift your chin to level, roll your shoulders back, slow your pace slightly.",
+      "Keep your phone in your pocket the whole way."
+    ],
+    "say": "",
+    "why": "How you move is the first cue people read, before you say a word. A calm walk reads as confident.",
+    "watch": "Marching stiffly. Calm and loose, not rigid.",
+    "record": "Ask a friend to film you walking, before and after."
+  },
+  "v31": {
+    "steps": [
+      "Pick a paragraph from any article or book.",
+      "Read it out loud into your phone at normal speed.",
+      "Listen back once and notice your speed and volume."
+    ],
+    "say": "",
+    "why": "Most people have never heard their own voice properly. This is the easiest first look.",
+    "watch": "Cringing and stopping. Everyone hates their recorded voice at first.",
+    "record": "This one is the recording. Post it."
+  },
+  "v32": {
+    "steps": [
+      "Pick a short greeting, like a voicemail message.",
+      "Record it with a straight face.",
+      "Record it again while smiling, and listen to both."
+    ],
+    "say": "Hey, it’s Kurt. Just calling to say hi.",
+    "why": "A smile changes the sound of your voice. People can hear warmth even when they cannot see you.",
+    "watch": "A forced grin. Think of something that makes you smile.",
+    "record": "Post both recordings back to back."
+  },
+  "s31": {
+    "steps": [
+      "Pick a friend, coworker or someone you are chatting with.",
+      "Ask what they want out of it, not what they are doing.",
+      "Listen and ask one follow-up."
+    ],
+    "say": "What are you hoping to get out of this week?",
+    "why": "Every sale begins with what the other person wants. Asking it plainly is the first sales skill.",
+    "watch": "Telling them what you think they should want.",
+    "record": "Right after, record a voice note: what you did, how they reacted, what you would change."
+  },
+  "s32": {
+    "steps": [
+      "Pick something you genuinely love: a show, a place, a tool.",
+      "Think about why it fits this person in particular.",
+      "Tell them in thirty seconds, then stop."
+    ],
+    "say": "You’d love this place. You’re always after somewhere quiet to work, and the coffee’s great.",
+    "why": "Selling starts with recommending what you believe in, tailored to the person.",
+    "watch": "Listing every feature. Pick the one reason that fits them.",
+    "record": "Record your thirty-second recommendation to camera before you say it."
   }
 };

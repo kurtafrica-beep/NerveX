@@ -52,6 +52,8 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ["Hold a boundary calmly", "When someone pushes past a reasonable no or request of yours, repeat it once, calmly, without extra excuses.", "One calm repeat.", "Do it with someone you usually give in to."],
     ["Ten approaches in one night", "In one outing, start ten real conversations with strangers.", "Ten conversations, any length.", "Do it in a place you have never been."],
     ["Teach a move", "Take a friend through a Base move and do it with them.", "They complete the move once.", "Coach them to their first Level 2 move."],
+    ["Thank someone by name", "Read the name tag of a cashier or server and thank them using it.", "Three people thanked by name.", "Add one line about their day."],
+    ["Ask a quick favour", "Ask a stranger for something small: to watch your seat, pass the sugar, or tell you the wifi password.", "One small favour asked.", "Ask two different strangers in one outing."],
   ],
   t: [
     ['Ask one follow-up', 'They say a thing. Ask one question about that thing.', 'One follow-up, then let them talk.', 'Three follow-ups in a row without changing the subject.'],
@@ -84,6 +86,8 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ["Repair a misstep live", "When something you say lands wrong, notice it and fix it on the spot.", "One repair in the moment.", "Repair it with humour."],
     ["Host a table conversation", "At a dinner or gathering, guide the whole table into one shared conversation.", "One shared conversation at the table.", "Keep it going for twenty minutes."],
     ["Record a real conversation", "Sit down with a friend and record a twenty-minute podcast-style conversation.", "Twenty minutes recorded.", "Do it with someone you do not know well."],
+    ["Echo their last words", "When they finish a sentence, repeat their last few words back as a question.", "One echo, and let them keep going.", "Use it three times in one conversation."],
+    ["Comment, then ask", "Make one observation about something around you, then ask a question about it.", "One comment and one question.", "Turn the answer into a two-minute chat."],
   ],
   q: [
     ['Eyebrow flash hello', 'When you greet someone, lift your eyebrows for a beat as you say hi.', 'Five greetings with the flash.', 'Add their name to the hello.'],
@@ -116,6 +120,8 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ["Adjust live", "In a conversation, notice the other person’s cues (crossed arms, leaning away, short answers) and adjust yours.", "One adjustment in the moment.", "Turn a cold conversation warm."],
     ["Both in a high-stakes moment", "In an interview, date or pitch, use planned warmth and competence cues together.", "One high-stakes conversation with planned cues.", "Ask afterwards how you came across."],
     ["Coach someone’s cues", "Watch a friend’s video and give them three notes on their cues.", "Three useful notes given.", "Watch them improve on a second recording."],
+    ["Smile first", "Smile at five people before they smile at you.", "Five first smiles.", "Add an eyebrow flash to each one."],
+    ["Walk tall", "Walk through a busy place at a calm pace, head up, shoulders back, eyes forward.", "One full walk, no phone.", "Hold it through a crowd without speeding up."],
   ],
   v: [
     ['Record and review', 'Film yourself talking for five minutes, unplanned. Watch it once with the sound off, then listen once without the picture.', 'One recording, two passes. Write the one habit you noticed.', 'Do it again a week later and compare.'],
@@ -148,6 +154,8 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ["Speak on a random topic", "Have a friend give you a random topic and speak on it for sixty seconds with no preparation.", "Sixty seconds, no pause longer than three seconds.", "Do three topics in a row."],
     ["Lead the room", "Host or MC a moment: welcome people, introduce a speaker, or run a short event.", "One hosting moment.", "Host a whole event."],
     ["Coach someone’s voice", "Listen to a friend’s recording and give notes on melody, volume, pace, tone and pause.", "Three useful notes given.", "Hear them improve on a second recording."],
+    ["Read a paragraph aloud", "Record yourself reading one paragraph out loud, then listen back once.", "One paragraph, one listen.", "Read it again and change one thing you noticed."],
+    ["Smile while you talk", "Record the same sentence twice: once with a straight face, once smiling.", "Two recordings, compared.", "Leave a real voicemail while smiling."],
   ],
   s: [
     ['Ask why now', 'Someone brings you a problem or a plan. Before you offer anything, ask: “What made you want to sort this out now?”', 'One why-now question, then listen to the whole answer.', 'Ask one more question about their answer.'],
@@ -180,22 +188,247 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ["Hold your price", "When asked for a discount, keep your price and add value instead.", "One discount request held.", "Close the sale at full price."],
     ["Pitch to a group", "Pitch something to three or more people at once.", "One group pitch.", "Get a yes from someone in the room."],
     ["Teach someone the CLOSER", "Train a friend on the CLOSER steps and watch them run a full conversation.", "They run the full structure once.", "They make a real sale with it."],
+    ["Ask what they want", "Ask someone what they are hoping to get out of their week, a plan or a project.", "One answer heard in full.", "Ask what would make it a great result."],
+    ["Recommend one thing", "Recommend something you love to a friend in thirty seconds, focused on why it suits them.", "One recommendation, under thirty seconds.", "Get them to try it."],
   ],
+};
+
+// Where each move sits: five levels per branch, easiest first. A move's ID never changes,
+// so lines already posted stay attached to the same move when it moves level.
+// n is the move's position in its branch: 1-10 is the base level, 11-30 are levels 2-5.
+const LAYOUT: Record<BranchKey, string[][]> = {
+  "c": [
+    [
+      "c1",
+      "c31",
+      "c32",
+      "c2",
+      "c3",
+      "c4",
+      "c5",
+      "c7",
+      "c6",
+      "c9"
+    ],
+    [
+      "c11",
+      "c12",
+      "c13",
+      "c14",
+      "c15"
+    ],
+    [
+      "c16",
+      "c17",
+      "c18",
+      "c19",
+      "c8"
+    ],
+    [
+      "c21",
+      "c22",
+      "c23",
+      "c25",
+      "c10"
+    ],
+    [
+      "c26",
+      "c27",
+      "c28",
+      "c29",
+      "c30"
+    ]
+  ],
+  "t": [
+    [
+      "t2",
+      "t1",
+      "t31",
+      "t32",
+      "t3",
+      "t4",
+      "t5",
+      "t6",
+      "t7",
+      "t9"
+    ],
+    [
+      "t11",
+      "t12",
+      "t13",
+      "t15",
+      "t10"
+    ],
+    [
+      "t16",
+      "t17",
+      "t18",
+      "t19",
+      "t20"
+    ],
+    [
+      "t21",
+      "t23",
+      "t24",
+      "t8",
+      "t25"
+    ],
+    [
+      "t26",
+      "t27",
+      "t28",
+      "t29",
+      "t30"
+    ]
+  ],
+  "q": [
+    [
+      "q1",
+      "q31",
+      "q2",
+      "q3",
+      "q32",
+      "q4",
+      "q6",
+      "q7",
+      "q8",
+      "q9"
+    ],
+    [
+      "q11",
+      "q13",
+      "q14",
+      "q15",
+      "q5"
+    ],
+    [
+      "q16",
+      "q17",
+      "q18",
+      "q19",
+      "q20"
+    ],
+    [
+      "q21",
+      "q22",
+      "q23",
+      "q10",
+      "q25"
+    ],
+    [
+      "q26",
+      "q27",
+      "q28",
+      "q29",
+      "q30"
+    ]
+  ],
+  "v": [
+    [
+      "v31",
+      "v1",
+      "v2",
+      "v32",
+      "v3",
+      "v4",
+      "v5",
+      "v6",
+      "v7",
+      "v8"
+    ],
+    [
+      "v11",
+      "v12",
+      "v13",
+      "v14",
+      "v15"
+    ],
+    [
+      "v16",
+      "v17",
+      "v18",
+      "v9",
+      "v20"
+    ],
+    [
+      "v21",
+      "v22",
+      "v24",
+      "v25",
+      "v10"
+    ],
+    [
+      "v26",
+      "v27",
+      "v28",
+      "v29",
+      "v30"
+    ]
+  ],
+  "s": [
+    [
+      "s31",
+      "s1",
+      "s2",
+      "s3",
+      "s32",
+      "s4",
+      "s5",
+      "s6",
+      "s8",
+      "s9"
+    ],
+    [
+      "s11",
+      "s12",
+      "s13",
+      "s14",
+      "s15"
+    ],
+    [
+      "s16",
+      "s17",
+      "s7",
+      "s19",
+      "s20"
+    ],
+    [
+      "s21",
+      "s22",
+      "s10",
+      "s24",
+      "s25"
+    ],
+    [
+      "s26",
+      "s27",
+      "s28",
+      "s29",
+      "s30"
+    ]
+  ]
 };
 
 export const MOVES: Move[] = [];
 export const BY: Record<string, Move> = {};
+const BYPOS: Record<string, string> = {};
 for (const b of BRANCH_KEYS) {
-  SOURCE[b].forEach((m, i) => {
-    const move: Move = { id: b + (i + 1), b, n: i + 1, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
-    MOVES.push(move);
-    BY[move.id] = move;
-  });
+  let n = 0;
+  for (const ids of LAYOUT[b]) {
+    for (const id of ids) {
+      const m = SOURCE[b][Number(id.slice(1)) - 1];
+      n++;
+      const move: Move = { id, b, n, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
+      MOVES.push(move);
+      BY[id] = move;
+      BYPOS[b + n] = id;
+    }
+  }
 }
 
-// Tonight's pick walks the branches side by side: c1, t1, r1, c2, ...
+// Tonight's pick walks the branches side by side, easiest first.
 export const ORDER: string[] = [];
-for (let n = 1; n <= 30; n++) for (const b of BRANCH_KEYS) ORDER.push(b + n);
+for (let n = 1; n <= 30; n++) for (const b of BRANCH_KEYS) ORDER.push(BYPOS[b + n]);
 
 // Level 1 is the ten base moves; levels 2-5 have five moves each (numbers 11-30).
 export const LEVEL_NAMES: Record<BranchKey, string[]> = {
