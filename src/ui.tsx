@@ -157,8 +157,8 @@ export function Seg<K extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.key)}
-            style={[seg.item, tall && { minHeight: 50, borderRadius: 26 }, on && seg.on]}>
-            <Text style={labelStyle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+            style={[seg.item, { flex: o.label.length > 6 ? 1.6 : 1 }, tall && { minHeight: 50, borderRadius: 26 }, on && seg.on]}>
+            <Text style={labelStyle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
               {o.label}
             </Text>
             {o.sub ? <Text style={[seg.sub, on && { color: C.surface }]}>{o.sub}</Text> : null}

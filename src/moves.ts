@@ -1,4 +1,4 @@
-export type BranchKey = 'c' | 't' | 'r' | 'q';
+export type BranchKey = 'c' | 't' | 'r' | 'q' | 'v';
 
 export type Move = {
   id: string;
@@ -15,8 +15,9 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string }> = {
   t: { name: 'Talk', tag: 'Keeps it going.' },
   r: { name: 'Read', tag: 'Tells you when.' },
   q: { name: 'Cues', tag: 'How it lands. Built on Vanessa Van Edwards’ work on warmth and competence.' },
+  v: { name: 'Voice', tag: 'How it sounds. Built on Vinh Giang’s teaching on vocal foundations and connection.' },
 };
-export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r', 'q'];
+export const BRANCH_KEYS: BranchKey[] = ['c', 't', 'r', 'q', 'v'];
 
 // [title, the move, the rep, the upgrade]
 const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
@@ -67,6 +68,18 @@ const SOURCE: Record<BranchKey, [string, string, string, string][]> = {
     ['Talk with your hands', 'Tell a story and show sizes, steps or directions with your hands as you go.', 'One story, hands working.', 'Use your hands to count off three points.'],
     ['Lean in at the good part', 'When they say something that interests you, lean in a little and let a slow smile come.', 'Catch it once and do it on purpose.', 'Let them see you react before you say anything.'],
     ['Warm and capable in one ask', 'Ask for something you want. Stand tall and keep your voice low and steady, then smile when they answer.', 'One ask with both: steady, then warm.', 'Make the ask to someone who intimidates you.'],
+  ],
+  v: [
+    ['Record and review', 'Film yourself talking for five minutes, unplanned. Watch it once with the sound off, then listen once without the picture.', 'One recording, two passes. Write the one habit you noticed.', 'Do it again a week later and compare.'],
+    ['Turn the volume up', 'One conversation one notch louder than feels normal. Most quiet people are quieter than they think.', 'One conversation where nobody asks you to repeat yourself.', 'Do it in a loud room.'],
+    ['Pause before the point', 'Right before the part that matters, stop for one full second. Then say it.', 'One deliberate pause.', 'Pause after the point too, and let it land.'],
+    ['Slow down for what matters', 'Talk at your normal speed, then drop to half speed for the one line you want remembered.', 'One line slowed down on purpose.', 'Speed up for the exciting part of a story, then slow for the ending.'],
+    ['Find the melody', 'Tell someone about your day and let your pitch move: up for questions and surprises, down for endings.', 'One story with no flat stretch.', 'Read a paragraph out loud as if to a child, then tell a story with the same range.'],
+    ['Explain with open palms', 'When you explain something, show your palms as you talk. Hands visible and open.', 'One explanation with open hands.', 'Use palms down on the one point you are certain about.'],
+    ['Let your tone carry it', 'Say what you feel in a voice that sounds like it. Excited sounds excited. Sorry sounds sorry.', 'One sentence where tone and words match.', 'Say the same sentence three ways for a friend and ask which one they believed.'],
+    ['Play Hi-Lo Buffalo', 'Ask someone for their high of the week, their low, and their buffalo: something random that happened.', 'All three answers, and one follow-up.', 'Play it with a group of three or more.'],
+    ['Relive the story, don’t report it', 'Tell something that happened as if it is happening now: where you were, what you saw, what you felt.', 'One story told from inside the moment.', 'Keep it under a minute and end on the feeling.'],
+    ['Listen on four channels', 'While they talk, track their words, their tone, their body and their energy. Name what you notice: “You sound excited about that.”', 'Name one thing they did not say out loud.', 'Do it when they are upset, and say what you hear before you offer anything.'],
   ],
 };
 
