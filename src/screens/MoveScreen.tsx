@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { VideoPlayer, VoicePlayer } from '../components/Media';
+import { RemoteMedia } from '../components/Media';
 import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Recorders';
 import { MAX_AUDIO_SECONDS } from '../config';
-import { clockText, stamp, useNerve, type Recording } from '../data';
+import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
 import { GUIDE } from '../guides';
 import { BRANCH, BY, inLevel, label, levelSize, lvl, unlocked } from '../moves';
 import { C, F } from '../theme';
@@ -19,19 +19,41 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
 
   const [version, setVersion] = useState<'base' | 'up'>('base');
   const [text, setText] = useState('');
-  const [rec, setRec] = useState<Recording | null>(null);
-  const [consent, setConsent] = useState(false);
+  // A take that failed to save, kept so it can be retried.
+  const [failed, setFailed] = useState<Recording | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState('');
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
 
-  const attach = useCallback((next: Recording) => {
-    setRec(next);
-    setConsent(false);
-    setError('');
-  }, []);
-  const voice = useVoiceRecorder(attach);
+  const locked = !unlocked(move, n.count);
+  const { dropLine } = n;
+
+  // Every finished recording is saved straight to your log as a private take.
+  const saveTake = useCallback(
+    async (take: Recording) => {
+      setError('');
+      setSaved('');
+      if (locked) {
+        setError('This move is locked for now, so the take was not saved.');
+        return;
+      }
+      setSaving(true);
+      const problem = await dropLine({ move: move.id, line: '', upgrade: version === 'up', recording: take, posted: false });
+      setSaving(false);
+      if (problem) {
+        setFailed(take);
+        setError(problem);
+        return;
+      }
+      setFailed(null);
+      setSaved(`${take.kind === 'voice' ? 'Voice note' : 'Video'} saved to your log. Only you can see it until you post it.`);
+    },
+    [dropLine, locked, move.id, version],
+  );
+  const voice = useVoiceRecorder(saveTake);
 
   // Android back: close the camera first, then the sheet.
   useEffect(() => {
@@ -50,8 +72,6 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
     n.lines.some((x) => x.author === id && x.move === move.id && new Date(x.created_at).toDateString() === today),
   );
 
-  const locked = !unlocked(move, n.count);
-
   const drop = async () => {
     const line = text.trim();
     setError('');
@@ -63,16 +83,12 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       setError('Stop the recording first.');
       return;
     }
-    if (!line && !rec) {
-      setError('Write one line about what happened, or record it.');
-      return;
-    }
-    if (rec && !consent) {
-      setError(`Tick the box to confirm who is in the ${rec.kind === 'voice' ? 'recording' : 'video'}.`);
+    if (!line) {
+      setError('Write one line about what happened. Recordings save to your log by themselves.');
       return;
     }
     setBusy(true);
-    const problem = await n.dropLine({ move: move.id, line, upgrade: version === 'up', recording: rec });
+    const problem = await n.dropLine({ move: move.id, line, upgrade: version === 'up', recording: null });
     setBusy(false);
     if (problem) setError(problem);
     else onPosted();
@@ -168,60 +184,58 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
 
             {voice.active ? (
               <RecordingBar seconds={voice.seconds} limit={MAX_AUDIO_SECONDS} onStop={voice.stop} />
-            ) : rec ? (
-              <View style={s.preview}>
-                {rec.kind === 'voice' ? <VoicePlayer uri={rec.uri} /> : <VideoPlayer uri={rec.uri} />}
-                <View style={s.previewMeta}>
-                  <T v="small">
-                    {rec.kind === 'voice' ? 'Voice note' : 'Video'} · {clockText(rec.seconds)}
-                  </T>
-                  <ConfirmLink label="Remove" onConfirm={() => setRec(null)} />
-                </View>
+            ) : saving ? (
+              <View style={s.status}>
+                <T v="semi" style={{ fontSize: 16 }}>
+                  Saving your take…
+                </T>
               </View>
             ) : (
               <View style={s.recRow}>
                 <Btn
-                  label="Record audio"
+                  label={n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another audio' : 'Record audio'}
                   icon="mic"
+                  disabled={locked}
                   style={{ flex: 1, paddingHorizontal: 10 }}
                   onPress={async () => {
                     setError('');
+                    setSaved('');
                     const problem = await voice.start();
                     if (problem) setError(problem);
                   }}
                 />
                 <Btn
-                  label="Record video"
+                  label={n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another video' : 'Record video'}
                   icon="cam"
+                  disabled={locked}
                   style={{ flex: 1, paddingHorizontal: 10 }}
                   onPress={() => {
                     setError('');
+                    setSaved('');
                     setCamera(true);
                   }}
                 />
               </View>
             )}
-            {!voice.active && !rec ? <T v="small">Recording starts on the tap. Audio up to 30 minutes, video up to 1 minute. Film yourself, not them.</T> : null}
-
-            {rec ? (
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: consent }}
-                onPress={() => setConsent((v) => !v)}
-                style={s.check}>
-                <View style={[s.box, consent && { backgroundColor: C.accent, borderColor: C.accent }]}>
-                  {consent ? <T style={s.tick}>✓</T> : null}
-                </View>
-                <T style={{ flex: 1, fontSize: 15, lineHeight: 21 }}>
-                  {rec.kind === 'voice'
-                    ? 'Mine is the only voice in this recording, or everyone in it said yes to being posted.'
-                    : 'I am the only person you can recognise in this video, or everyone in it said yes to being posted.'}
+            {saved ? (
+              <View style={s.saved}>
+                <T v="semi" style={{ fontSize: 15, lineHeight: 21, color: C.accent }}>
+                  {saved}
                 </T>
-              </Pressable>
+              </View>
+            ) : null}
+            {!voice.active && !saving && !saved ? (
+              <T v="small">Recording starts on the tap and saves to your log when you stop. Audio up to 30 minutes, video up to 1 minute. Film yourself, not them.</T>
+            ) : null}
+            {failed && !saving ? (
+              <View style={s.recRow}>
+                <Btn label="Try saving again" kind="primary" small onPress={() => saveTake(failed)} />
+                <Btn label="Discard" kind="quiet" small onPress={() => { setFailed(null); setError(''); }} />
+              </View>
             ) : null}
 
             {error ? <T v="error">{error}</T> : null}
-            <Btn label={busy ? (rec ? 'Uploading…' : 'Dropping…') : 'Drop the line'} kind="primary" wide disabled={busy || locked} onPress={drop} />
+            <Btn label={busy ? 'Dropping…' : 'Drop the line'} kind="primary" wide disabled={busy || locked} onPress={drop} />
           </View>
 
           <View style={s.section}>
@@ -267,18 +281,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               <T style={s.count}>{mineHere.length}</T>
             </View>
             {mineHere.length === 0 ? (
-              <T v="sub">Nothing here yet. First line starts the log.</T>
+              <T v="sub">Nothing here yet. Your first take or line starts the log.</T>
             ) : (
-              mineHere.map((x) => (
-                <View key={x.id} style={s.logItem}>
-                  <T v="small">
-                    {stamp(x.created_at)}
-                    {x.upgrade ? ' · Upgrade' : ''}
-                    {x.media_kind ? ` · ${x.media_kind === 'voice' ? 'Voice note' : 'Video'}` : ''}
-                  </T>
-                  <T>{x.line || (x.media_kind === 'voice' ? 'Voice note' : 'Video')}</T>
-                </View>
-              ))
+              mineHere.map((x) => <LogItem key={x.id} line={x} onError={setError} />)
             )}
           </View>
         </ScrollView>
@@ -289,9 +294,67 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           onCancel={() => setCamera(false)}
           onDone={(next) => {
             setCamera(false);
-            attach(next);
+            saveTake(next);
           }}
         />
+      ) : null}
+    </View>
+  );
+}
+
+// One entry in your log. Private takes can be played back and posted with an optional caption.
+function LogItem({ line, onError }: { line: Line; onError: (message: string) => void }) {
+  const n = useNerve();
+  const [caption, setCaption] = useState('');
+  const [busy, setBusy] = useState(false);
+  const isPrivate = line.posted === false;
+  const kind = line.media_kind === 'voice' ? 'Voice note' : line.media_kind === 'video' ? 'Video' : '';
+  return (
+    <View style={s.logItem}>
+      <View style={s.logMeta}>
+        <T v="small" style={{ flex: 1 }}>
+          {stamp(line.created_at)}
+          {line.upgrade ? ' · Upgrade' : ''}
+          {kind ? ` · ${kind}` : ''}
+          {line.media_seconds ? ` · ${clockText(line.media_seconds)}` : ''}
+        </T>
+        <T style={[s.badge, isPrivate ? s.badgePrivate : s.badgePosted]}>{isPrivate ? 'Private' : 'Posted'}</T>
+      </View>
+      {line.line ? <T>{line.line}</T> : null}
+      {line.media_path && line.media_kind ? <RemoteMedia path={line.media_path} kind={line.media_kind} seconds={line.media_seconds} /> : null}
+      {isPrivate ? (
+        <View style={{ gap: 8 }}>
+          <TextInput
+            accessibilityLabel="Caption for this take"
+            value={caption}
+            onChangeText={setCaption}
+            placeholder="Add a line (optional)"
+            placeholderTextColor={C.muted}
+            maxLength={400}
+            style={s.caption}
+          />
+          <View style={s.logActions}>
+            <Btn
+              label={busy ? 'Posting…' : 'Post to feed'}
+              kind="primary"
+              small
+              disabled={busy}
+              onPress={async () => {
+                setBusy(true);
+                const problem = await n.postLine(line, caption);
+                setBusy(false);
+                if (problem) onError(problem);
+              }}
+            />
+            <ConfirmLink
+              label="Delete"
+              onConfirm={async () => {
+                const problem = await n.deleteLine(line);
+                if (problem) onError(problem);
+              }}
+            />
+          </View>
+        </View>
       ) : null}
     </View>
   );
@@ -332,13 +395,16 @@ const s = StyleSheet.create({
     color: C.ink,
   },
   recRow: { flexDirection: 'row', gap: 8 },
-  preview: { gap: 8, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
-  previewMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 },
-  check: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  box: { width: 24, height: 24, borderRadius: 6, borderWidth: 1.5, borderColor: C.ink, alignItems: 'center', justifyContent: 'center', marginTop: 1 },
-  tick: { color: C.accentInk, fontFamily: F.semi, fontSize: 15, lineHeight: 18 },
+  status: { padding: 14, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, alignItems: 'center' },
+  saved: { padding: 12, borderRadius: 14, backgroundColor: C.accentSoft },
+  logMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  badge: { fontFamily: F.semi, fontSize: 12, lineHeight: 16, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
+  badgePrivate: { backgroundColor: C.bg, color: C.muted },
+  badgePosted: { backgroundColor: C.accentSoft, color: C.accent },
+  caption: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, fontFamily: F.body, fontSize: 16, color: C.ink },
+  logActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   logHead: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   count: { fontFamily: F.display, fontSize: 34, lineHeight: 34, color: C.accent },
-  logItem: { padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 2 },
+  logItem: { padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });

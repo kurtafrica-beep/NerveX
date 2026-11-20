@@ -17,6 +17,8 @@ export type Line = {
   media_path: string | null;
   media_kind: MediaKind | null;
   media_seconds: number | null;
+  // false while it is a private take in the author's log
+  posted: boolean;
   created_at: string;
 };
 export type Comment = { id: string; line_id: string; author: string; body: string; created_at: string };
@@ -59,7 +61,8 @@ type Api = Store & {
   challengeWith: (other: string) => Challenge | null;
   myChallengeTo: (other: string, moveId?: string) => Challenge | null;
   // actions: resolve '' on success or a message to show
-  dropLine: (input: { move: string; line: string; upgrade: boolean; recording: Recording | null }) => Promise<string>;
+  dropLine: (input: { move: string; line: string; upgrade: boolean; recording: Recording | null; posted?: boolean }) => Promise<string>;
+  postLine: (line: Line, caption: string) => Promise<string>;
   deleteLine: (line: Line) => Promise<string>;
   react: (lineId: string, kind: ReactionKey) => Promise<string>;
   addComment: (lineId: string, body: string) => Promise<string>;
@@ -155,7 +158,9 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
 
   const api = useMemo<Api>(() => {
     const { profiles, lines, comments, kudos, challenges } = store;
+    // Your log includes private takes; the feed only shows posted lines.
     const mine = lines.filter((x) => x.author === uid);
+    const feed = lines.filter((x) => x.posted !== false);
     const count: Record<string, number> = {};
     const days: Record<string, true> = {};
     for (const x of mine) {
@@ -215,7 +220,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     const myChallengeTo = (other: string, moveId?: string) =>
       outgoing.find((x) => x.target === other && (!moveId || x.move === moveId)) ?? null;
 
-    const dropLine: Api['dropLine'] = async ({ move, line, upgrade, recording }) => {
+    const dropLine: Api['dropLine'] = async ({ move, line, upgrade, recording, posted = true }) => {
       let path: string | null = null;
       try {
         if (recording) path = await uploadRecording(uid, recording);
@@ -229,12 +234,24 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
         media_path: path,
         media_kind: recording ? recording.kind : null,
         media_seconds: recording ? Math.min(1830, Math.round(recording.seconds)) : null,
+        posted,
       });
       if (error) {
         if (path) supabase.storage.from(BUCKET).remove([path]);
         return SAVE_FAILED;
       }
       setSkip(0);
+      await reload();
+      return '';
+    };
+
+    // Turns a private take into a post in the feed, with an optional caption.
+    const postLine: Api['postLine'] = async (line, caption) => {
+      const { error } = await supabase
+        .from('lines')
+        .update({ posted: true, line: caption.trim().slice(0, 400) || line.line })
+        .eq('id', line.id);
+      if (error) return SAVE_FAILED;
       await reload();
       return '';
     };
@@ -290,6 +307,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
 
     return {
       ...store,
+      lines: feed,
       uid,
       reload,
       mine,
@@ -309,6 +327,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       challengeWith,
       myChallengeTo,
       dropLine,
+      postLine,
       deleteLine,
       react,
       addComment,

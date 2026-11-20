@@ -98,12 +98,12 @@ export function You({
         {n.circle.length > 0 ? <T v="small">Challenge sends them tonight’s move ({tonight.title}) until midnight.</T> : null}
       </Card>
 
-      {n.mine.length > 0 ? (
+      {n.mine.some((x) => x.posted !== false) ? (
         <T v="eyebrow" style={{ paddingTop: 6, paddingHorizontal: 2 }}>
           Your lines
         </T>
       ) : null}
-      {n.mine.map((line) => (
+      {n.mine.filter((x) => x.posted !== false).map((line) => (
         <LineCard key={line.id} line={line} onOpenMove={onOpenMove} onError={onError} />
       ))}
 
