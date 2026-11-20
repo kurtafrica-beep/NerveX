@@ -1,5 +1,10 @@
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent, type ExpoSpeechRecognitionOptions } from 'expo-speech-recognition';
+import {
+  ExpoSpeechRecognitionModule,
+  RecognizerIntentExtraLanguageModel,
+  useSpeechRecognitionEvent,
+  type ExpoSpeechRecognitionOptions,
+} from 'expo-speech-recognition';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Vibration, View } from 'react-native';
 import { clockText, type Recording } from '../data';
@@ -18,19 +23,42 @@ const BASE: ExpoSpeechRecognitionOptions = {
   interimResults: true,
   continuous: true,
   requiresOnDeviceRecognition: true,
-  maxAlternatives: 1,
+  // Several guesses per phrase: a command counts if any guess has it.
+  maxAlternatives: 5,
+  // Tell Android to expect these words (Android 13+).
+  contextualStrings: ['start', 'stop', 'start recording', 'stop recording'],
+};
+// While waiting for "start", use the short-phrase model, which is better at single words.
+const LISTEN: ExpoSpeechRecognitionOptions = {
+  ...BASE,
+  androidIntentOptions: { EXTRA_LANGUAGE_MODEL: RecognizerIntentExtraLanguageModel.LANGUAGE_MODEL_WEB_SEARCH },
 };
 
 function clean(text: string): string {
   return text
     .toLowerCase()
+    .replace(/[’']/g, '')
     .replace(/[^a-z\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
-// A command counts only when it is said on its own, so "I didn't stop walking" does not end a take.
-const START = ['start', 'start recording', 'record'];
-const STOP = ['stop', 'stop recording'];
+// Words the recognizer often hears in place of the commands.
+const START_WORDS = new Set(['start', 'starts', 'started', 'starting', 'stark', 'star', 'stat', 'sturt', 'begin']);
+const STOP_WORDS = new Set(['stop', 'stops', 'stopped', 'stopping', 'stopp', 'stoppe']);
+// "Stop" after one of these is part of a sentence ("I couldn't stop"), not a command.
+const NOT_A_COMMAND = new Set(['not', 'cant', 'can', 'couldnt', 'didnt', 'dont', 'wont', 'never', 'to', 'bus', 'full', 'pit', 'truck', 'one', 'no', 'would', 'should', 'just']);
+
+// The command is the last word of what was just said, after a pause or "okay".
+// Checks every alternative guess. "Start recording" and "stop recording" also count.
+function heardCommand(texts: string[], words: Set<string>, guard: boolean): boolean {
+  return texts.some((text) => {
+    let w = clean(text).split(' ').filter(Boolean);
+    if (w[w.length - 1] === 'recording') w = w.slice(0, -1);
+    const last = w[w.length - 1];
+    if (!last || !words.has(last)) return false;
+    return !guard || !NOT_A_COMMAND.has(w[w.length - 2] ?? '');
+  });
+}
 
 // Say "start" to begin a voice take and "stop" to save it to your log, then it listens again.
 // The phone's speech recognizer does the listening and records the take itself, because
@@ -42,7 +70,6 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
   const [error, setError] = useState('');
   const phase$ = useRef<Phase>('off');
   const on$ = useRef(false);
-  const lastFinal = useRef('');
   const started = useRef(0);
   const take = useRef<{ uri: string | null; seconds: number }>({ uri: null, seconds: 0 });
   const onTake$ = useRef(onTake);
@@ -59,9 +86,8 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
 
   const listen = useCallback(() => {
     if (!on$.current) return;
-    lastFinal.current = '';
     setPhase('listening');
-    ExpoSpeechRecognitionModule.start(BASE);
+    ExpoSpeechRecognitionModule.start(LISTEN);
   }, []);
 
   const finishTake = useCallback(async () => {
@@ -95,22 +121,15 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
     }
   }, []);
 
+  // Acts on interim results too, so a command is caught as soon as it is heard.
   useSpeechRecognitionEvent('result', (ev) => {
-    const text = ev.results[0]?.transcript ?? '';
-    if (!text) return;
-    if (!ev.isFinal) {
-      setHeard(text);
-      return;
-    }
-    // On Android a continuous session can repeat earlier text; only look at what is new.
-    const fresh = text.startsWith(lastFinal.current) ? text.slice(lastFinal.current.length) : text;
-    lastFinal.current = text;
-    const said = clean(fresh);
-    setHeard(said);
-    if (phase$.current === 'listening' && START.includes(said)) {
+    const texts = ev.results.map((r) => r.transcript).filter(Boolean);
+    if (!texts.length) return;
+    setHeard(clean(texts[0]).split(' ').slice(-6).join(' '));
+    if (phase$.current === 'listening' && heardCommand(texts, START_WORDS, false)) {
       setPhase('arming');
       ExpoSpeechRecognitionModule.abort();
-    } else if (phase$.current === 'recording' && STOP.includes(said)) {
+    } else if (phase$.current === 'recording' && heardCommand(texts, STOP_WORDS, true)) {
       stopTake();
     }
   });
@@ -150,8 +169,7 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
     }
     if (p === 'arming') {
       // "start" heard: begin a recording session.
-      lastFinal.current = '';
-      started.current = 0;
+        started.current = 0;
       take.current = { uri: null, seconds: 0 };
       setPhase('recording');
       setSeconds(0);
@@ -162,7 +180,7 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
       finishTake();
     } else {
       // The recognizer times out on silence; keep listening.
-      restart.current = setTimeout(listen, 250);
+      restart.current = setTimeout(listen, 0);
     }
   });
 
@@ -209,7 +227,13 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
     [],
   );
 
-  return { phase, on: phase !== 'off', seconds, heard, error, turnOn, turnOff, stopTake };
+  const startNow = useCallback(() => {
+    if (phase$.current !== 'listening') return;
+    setPhase('arming');
+    ExpoSpeechRecognitionModule.abort();
+  }, []);
+
+  return { phase, on: phase !== 'off', seconds, heard, error, turnOn, turnOff, stopTake, startNow };
 }
 
 export function HandsFreePanel({ hf }: { hf: ReturnType<typeof useHandsFree> }) {
@@ -235,10 +259,11 @@ export function HandsFreePanel({ hf }: { hf: ReturnType<typeof useHandsFree> }) 
         </T>
       ) : null}
       <T v="small">
-        Each take saves to your log as private. Keep Nerve open; the screen stays on. Takes stop by themselves at {clockText(HANDS_FREE_MAX_SECONDS)}.
+        Pause for a beat, then say the word clearly. “Okay, start” and “stop recording” work too. Each take saves to your log as private. Keep Nerve open; the screen stays on. Takes stop by themselves at {clockText(HANDS_FREE_MAX_SECONDS)}.
       </T>
       <View style={s.row}>
         {hf.phase === 'recording' ? <Btn label="Stop and save" icon="stop" kind="dark" small onPress={hf.stopTake} /> : null}
+        {hf.phase === 'listening' ? <Btn label="Start now" icon="mic" kind="primary" small onPress={hf.startNow} /> : null}
         <Btn label="Turn off hands-free" kind="quiet" small onPress={hf.turnOff} />
       </View>
     </View>
