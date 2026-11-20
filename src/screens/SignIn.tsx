@@ -50,7 +50,7 @@ export function SignIn() {
         <View style={{ gap: 10 }}>
           <T style={s.wordmark}>NERVE</T>
           <T style={s.tagline}>Do the move. Drop the line.</T>
-          <T v="sub">150 moves for talking to people, in five branches and five levels. Pick one tonight, do it, and tell your circle what happened.</T>
+          <T v="sub">125 moves for talking to people, in five branches of five levels, plus harder paths once you are ready. Pick one tonight, do it, and tell your circle what happened.</T>
         </View>
 
         <View style={{ gap: 12 }}>

@@ -33,7 +33,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
   const locked = !unlocked(move, n.count, n.progress.open);
   const pathShut = isPath(move.b) && !n.progress.open[move.b];
   const pend = n.progress.pending[move.id];
-  const note = pathShut
+  const note = move.retired
+    ? 'This move was taken out of the levels. Lines already posted on it stay, but new ones go on the current moves.'
+    : pathShut
     ? `Locked. This move is on the ${BRANCH[move.b].name} path. The You tab shows what opens it.`
     : locked
       ? `Locked. Drop a line on every ${BRANCH[move.b].name} ${lvWord(move.b)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(move.b)} ${move.lv}`}.`
@@ -120,7 +122,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           <Icon name="back" />
         </Pressable>
         <T v="semi" style={{ fontSize: 16 }}>
-          {BRANCH[move.b].name} · {move.cap ? 'Capstone' : `${lvWord(move.b)} ${move.lv} · ${move.i} of ${move.of}`}
+          {BRANCH[move.b].name} · {move.retired ? 'Retired' : move.cap ? 'Capstone' : `${lvWord(move.b)} ${move.lv} · ${move.i} of ${move.of}`}
         </T>
         <View style={{ width: 48 }} />
       </View>
@@ -129,7 +131,8 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
         <ScrollView contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
           <View style={s.section}>
             <T v="accent" style={{ color: HUE[move.b][0] }}>
-              {label(move)} · +{moveXp(move)} XP
+              {label(move)}
+              {move.retired ? '' : ` · +${moveXp(move)} XP`}
             </T>
             <T v="big">{move.title}</T>
             {note ? (

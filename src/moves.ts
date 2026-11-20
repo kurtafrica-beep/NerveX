@@ -14,6 +14,8 @@ export type Move = {
   of: number;
   // the last move of a path: it only counts with proof
   cap: boolean;
+  // taken out of the levels; kept so lines already posted on it still show
+  retired?: boolean;
   title: string;
   doIt: string;
   rep: string;
@@ -226,15 +228,10 @@ const LAYOUT: Record<BranchKey, string[][]> = {
   "c": [
     [
       "c1",
-      "c31",
-      "c32",
-      "c2",
       "c3",
-      "c4",
+      "c2",
       "c5",
-      "c7",
-      "c6",
-      "c9"
+      "c7"
     ],
     [
       "c11",
@@ -267,16 +264,11 @@ const LAYOUT: Record<BranchKey, string[][]> = {
   ],
   "t": [
     [
-      "t2",
       "t1",
-      "t31",
-      "t32",
-      "t3",
+      "t2",
       "t4",
-      "t5",
-      "t6",
-      "t7",
-      "t9"
+      "t3",
+      "t7"
     ],
     [
       "t11",
@@ -310,15 +302,10 @@ const LAYOUT: Record<BranchKey, string[][]> = {
   "q": [
     [
       "q1",
-      "q31",
       "q2",
       "q3",
       "q32",
-      "q4",
-      "q6",
-      "q7",
-      "q8",
-      "q9"
+      "q4"
     ],
     [
       "q11",
@@ -351,16 +338,11 @@ const LAYOUT: Record<BranchKey, string[][]> = {
   ],
   "v": [
     [
-      "v31",
       "v1",
       "v2",
-      "v32",
       "v3",
       "v4",
-      "v5",
-      "v6",
-      "v7",
-      "v8"
+      "v5"
     ],
     [
       "v11",
@@ -393,16 +375,11 @@ const LAYOUT: Record<BranchKey, string[][]> = {
   ],
   "s": [
     [
-      "s31",
       "s1",
       "s2",
       "s3",
-      "s32",
-      "s4",
       "s5",
-      "s6",
-      "s8",
-      "s9"
+      "s6"
     ],
     [
       "s11",
@@ -452,12 +429,21 @@ for (const b of ALL_KEYS) {
   });
 }
 
+// Moves taken out of the levels keep their ID so lines already posted on them still show.
+for (const b of ALL_KEYS) {
+  SOURCE[b].forEach((m, idx) => {
+    const id = b + (idx + 1);
+    if (BY[id]) return;
+    BY[id] = { id, b, n: 0, lv: 0, i: 0, of: 0, cap: false, retired: true, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
+  });
+}
+
 // Tonight's pick walks the branches side by side, easiest first.
 export const ORDER: string[] = [];
-for (let n = 1; n <= 30; n++) for (const b of BRANCH_KEYS) ORDER.push(BYPOS[b + n]);
-for (let n = 1; n <= 17; n++) for (const b of PATH_KEYS) ORDER.push(BYPOS[b + n]);
+for (let n = 1; n <= 25; n++) for (const b of BRANCH_KEYS) if (BYPOS[b + n]) ORDER.push(BYPOS[b + n]);
+for (let n = 1; n <= 17; n++) for (const b of PATH_KEYS) if (BYPOS[b + n]) ORDER.push(BYPOS[b + n]);
 
-// Level 1 is the ten base moves; levels 2-5 have five moves each (numbers 11-30).
+// Five levels of five moves per branch.
 export const LEVEL_NAMES: Record<BranchKey, string[]> = {
   n: ['Listen', 'Empathy', 'Calibrate', 'Bargain', 'Capstone'],
   f: ['Outreach', 'Discovery', 'Positioning', 'Pitch', 'Capstone'],
@@ -514,6 +500,7 @@ export function levelDone(b: BranchKey, k: number, count: Record<string, number>
 }
 // A level opens once every move in the level before it has a line. A path move also needs its path open.
 export function unlocked(m: Move, count: Record<string, number>, open: Partial<Record<BranchKey, boolean>> = {}): boolean {
+  if (m.retired) return false;
   if (isPath(m.b) && !open[m.b]) return false;
   return m.lv === 1 || levelDone(m.b, m.lv - 1, count);
 }
@@ -523,5 +510,5 @@ export function currentLevel(b: BranchKey, count: Record<string, number>): numbe
   return k;
 }
 export function label(m: Move): string {
-  return `${BRANCH[m.b].name} · ${lvTitle(m.b, m.lv)}`;
+  return m.retired ? `${BRANCH[m.b].name} · Retired move` : `${BRANCH[m.b].name} · ${lvTitle(m.b, m.lv)}`;
 }
