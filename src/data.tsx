@@ -25,6 +25,8 @@ export type Line = {
 };
 export type Comment = { id: string; line_id: string; author: string; body: string; created_at: string };
 export type Kudos = { line_id: string; author: string; kind: ReactionKey };
+export type Follow = { follower: string; followee: string };
+export type BoardRow = { uid: string; pts: number; lines: number; reacts: number };
 export type Challenge = { id: string; author: string; target: string; move: string; until: string; created_at: string };
 // wav marks a hands-free take: the speech recognizer saves raw WAV audio.
 export type Recording = { kind: MediaKind; uri: string; seconds: number; wav?: boolean };
@@ -35,11 +37,14 @@ type Store = {
   comments: Comment[];
   kudos: Kudos[];
   challenges: Challenge[];
+  follows: Follow[];
+  // when you used each playbook patch (private to you)
+  cardUses: { card: string; created_at: string }[];
   loaded: boolean;
   error: string;
 };
 
-const EMPTY: Store = { profiles: {}, lines: [], comments: [], kudos: [], challenges: [], loaded: false, error: '' };
+const EMPTY: Store = { profiles: {}, lines: [], comments: [], kudos: [], challenges: [], follows: [], cardUses: [], loaded: false, error: '' };
 
 export type Tonight = { move: Move; together: boolean };
 
@@ -77,6 +82,13 @@ type Api = Store & {
   addComment: (lineId: string, body: string) => Promise<string>;
   deleteComment: (id: string) => Promise<string>;
   toggleChallenge: (target: string, moveId: string) => Promise<string>;
+  // following: people you follow make up your circle
+  following: string[];
+  isFollowing: (other: string) => boolean;
+  followersOf: (id: string) => number;
+  toggleFollow: (other: string) => Promise<string>;
+  board: (period: 'week' | 'all', circleOnly: boolean) => BoardRow[];
+  useCard: (id: string) => Promise<string>;
 };
 
 const Ctx = createContext<Api | null>(null);
@@ -121,12 +133,14 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
 
   const reload = useCallback(async () => {
     const since = new Date(Date.now() - 7 * 86400000).toISOString();
-    const [p, l, c, k, ch] = await Promise.all([
+    const [p, l, c, k, ch, fo, cu] = await Promise.all([
       supabase.from('profiles').select('id,name,avatar_url,title'),
       supabase.from('lines').select('*').order('created_at', { ascending: false }).limit(300),
       supabase.from('comments').select('*').order('created_at', { ascending: true }).limit(3000),
       supabase.from('kudos').select('line_id,author,kind').limit(10000),
       supabase.from('challenges').select('*').gt('until', since),
+      supabase.from('follows').select('follower,followee').limit(10000),
+      supabase.from('card_uses').select('card,created_at').limit(2000),
     ]);
     if (p.error || l.error || c.error || k.error || ch.error) {
       setStore((prev) => ({ ...prev, loaded: true, error: 'Could not load the feed. Pull down to try again.' }));
@@ -140,6 +154,9 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       comments: (c.data ?? []) as Comment[],
       kudos: (k.data ?? []) as Kudos[],
       challenges: ((ch.data ?? []) as Challenge[]).filter((row) => BY[row.move]),
+      // follows and patch uses are newer: if they fail to load, the rest still works
+      follows: fo.error ? [] : ((fo.data ?? []) as Follow[]),
+      cardUses: cu.error ? [] : ((cu.data ?? []) as { card: string; created_at: string }[]),
       loaded: true,
       error: '',
     });
@@ -157,6 +174,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => soon())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'kudos' }, () => soon())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'challenges' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, () => soon())
       .subscribe();
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
@@ -174,7 +192,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
   }, [reload]);
 
   const api = useMemo<Api>(() => {
-    const { profiles, lines, comments, kudos, challenges } = store;
+    const { profiles, lines, comments, kudos, challenges, follows, cardUses } = store;
     // Your log includes private takes; the feed only shows posted lines.
     const mine = lines.filter((x) => x.author === uid);
     const feed = lines.filter((x) => x.posted !== false);
@@ -182,7 +200,9 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     for (const x of mine) days[dayKey(ms(x.created_at))] = true;
     const reactors: Record<string, string[]> = {};
     for (const k of kudos) (reactors[k.line_id] ??= []).push(k.author);
-    const progress = computeProgress(mine, (id) => reactors[id] ?? [], uid, test);
+    const useCount: Record<string, number> = {};
+    for (const u of cardUses) useCount[u.card] = (useCount[u.card] ?? 0) + 1;
+    const progress = computeProgress(mine, (id) => reactors[id] ?? [], uid, test, useCount);
     const count = progress.count;
     const open = progress.open;
     const mineIds = new Set(mine.map((x) => x.id));
@@ -213,8 +233,10 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     }
 
     const nameOf = (id: string) => (id === uid ? profiles[id]?.name || 'You' : profiles[id]?.name || 'Someone');
+    // Your circle is the people you follow.
+    const followed = new Set(follows.filter((f) => f.follower === uid).map((f) => f.followee));
     const circle = Object.values(profiles)
-      .filter((x) => x.id !== uid)
+      .filter((x) => x.id !== uid && followed.has(x.id))
       .sort((a, b) => a.name.localeCompare(b.name));
 
     const partnersFor = (moveId: string) => {
@@ -323,6 +345,60 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       return '';
     };
 
+    const following = follows.filter((f) => f.follower === uid).map((f) => f.followee);
+    const followSet = new Set(following);
+    const toggleFollow: Api['toggleFollow'] = async (other) => {
+      const on = followSet.has(other);
+      setStore((prev) => ({
+        ...prev,
+        follows: on ? prev.follows.filter((f) => !(f.follower === uid && f.followee === other)) : [...prev.follows, { follower: uid, followee: other }],
+      }));
+      const { error } = on
+        ? await supabase.from('follows').delete().eq('follower', uid).eq('followee', other)
+        : await supabase.from('follows').insert({ followee: other });
+      await reload();
+      return error ? SAVE_FAILED : '';
+    };
+    // Leaderboard: 10 points a posted line, 20 with a recording, 2 per reaction from someone else.
+    // Up to five lines a day count. Private takes stay private, so they don't count.
+    const board: Api['board'] = (period, circleOnly) => {
+      const since = (() => {
+        if (period === 'all') return 0;
+        const x = new Date(clock);
+        x.setHours(0, 0, 0, 0);
+        x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+        return x.getTime();
+      })();
+      const by: Record<string, BoardRow & { days: Record<string, number> }> = {};
+      const row = (u: string) => (by[u] ??= { uid: u, pts: 0, lines: 0, reacts: 0, days: {} });
+      row(uid);
+      [...feed]
+        .sort((a, b) => ms(a.created_at) - ms(b.created_at))
+        .forEach((x) => {
+          if (ms(x.created_at) < since) return;
+          if (circleOnly && x.author !== uid && !followSet.has(x.author)) return;
+          const r = row(x.author);
+          const day = dayKey(ms(x.created_at));
+          r.days[day] = (r.days[day] ?? 0) + 1;
+          if (r.days[day] <= 5) {
+            r.pts += x.media_kind ? 20 : 10;
+            r.lines++;
+          }
+          const n = (reactors[x.id] ?? []).filter((u) => u !== x.author).length;
+          r.reacts += n;
+          r.pts += 2 * n;
+        });
+      return Object.values(by)
+        .map(({ days: _days, ...r }) => r)
+        .sort((a, b) => b.pts - a.pts || b.lines - a.lines || (a.uid === uid ? -1 : 1));
+    };
+    const useCard: Api['useCard'] = async (id) => {
+      setStore((prev) => ({ ...prev, cardUses: [...prev.cardUses, { card: id, created_at: new Date().toISOString() }] }));
+      const { error } = await supabase.from('card_uses').insert({ card: id });
+      await reload();
+      return error ? SAVE_FAILED : '';
+    };
+
     const wearTitle: Api['wearTitle'] = async (key) => {
       const { error } = await supabase.from('profiles').update({ title: key || null }).eq('id', uid);
       if (error) return SAVE_FAILED;
@@ -362,6 +438,12 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       addComment,
       deleteComment,
       toggleChallenge,
+      following,
+      isFollowing: (other) => followSet.has(other),
+      followersOf: (id) => follows.filter((f) => f.followee === id).length,
+      toggleFollow,
+      board,
+      useCard,
     };
   }, [store, uid, skip, clock, reload, test, setTest]);
 

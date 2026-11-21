@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { LevelVideoRow } from '../components/Example';
+import { BranchBanner, Patch, PlaceBanner, PlacePoster } from '../components/Patches';
+import { PLACES } from '../rpgData';
+import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, dayNum, placeCard, todaysQuest } from '../progress';
 import { useNerve } from '../data';
 import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey } from '../moves';
 import { levelVideo } from '../videos';
@@ -47,16 +50,9 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
         </View>
       ))}
 
-      <Card strong>
-        <T v="accent">Tonight · {label(move)}</T>
-        <T v="big">{move.title}</T>
-        <T>{move.doIt}</T>
-        {mates.length ? <T v="sub">With {mates.map(n.nameOf).join(', ')}. Until midnight.</T> : null}
-        <View style={s.row}>
-          <Btn label="Drop the line" kind="primary" onPress={() => onOpenMove(move.id)} />
-          {!n.tonight.together ? <Btn label="Another one" kind="quiet" onPress={n.skipTonight} /> : null}
-        </View>
-      </Card>
+      <TonightPoster onOpenMove={onOpenMove} mates={mates.map(n.nameOf)} />
+      <QuestCard onOpenMove={onOpenMove} />
+      <Places onOpenMove={onOpenMove} />
 
       <Card>
         <View>
@@ -168,18 +164,193 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
   );
 }
 
+// Tonight's move as a poster: the branch's colour and picture, the title over it.
+function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void; mates: string[] }) {
+  const n = useNerve();
+  const move = n.tonight.move;
+  const tb: BranchKey | null = move.b === 'x' ? null : move.b === 'z' ? 'c' : move.b;
+  const [deep] = tb ? HUE[tb] : PLACE_HUE[PLACES[move.place ?? 0].id];
+  return (
+    <View style={[s.poster, { backgroundColor: deep }]}>
+      <View style={s.posterArt}>
+        {tb ? <BranchBanner b={tb} height={150} glyphX={230} scale={1.15} /> : <PlaceBanner place={move.place ?? 0} height={150} />}
+        <View style={[s.fade, { backgroundColor: deep }]} />
+      </View>
+      <View style={s.pill}>
+        <T style={s.pillText} numberOfLines={2}>
+          Tonight · {label(move)}
+        </T>
+      </View>
+      <View style={{ padding: 18, paddingTop: 0, gap: 12, marginTop: -40 }}>
+        <T v="big" style={{ color: '#FFFFFF' }}>
+          {move.title}
+        </T>
+        <T style={{ color: 'rgba(255,255,255,0.88)' }}>{move.doIt}</T>
+        {mates.length ? <T style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15 }}>With {mates.join(', ')}. Until midnight.</T> : null}
+        <View style={s.row}>
+          <Btn label="Drop the line" kind="primary" onPress={() => onOpenMove(move.id)} />
+          {!n.tonight.together ? <Btn label="Another one" kind="light" onPress={n.skipTonight} /> : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function QuestCard({ onOpenMove }: { onOpenMove: (id: string) => void }) {
+  const n = useNerve();
+  const [today] = useState(() => dayNum(Date.now()));
+  const q = todaysQuest();
+  const done = !!n.progress.questDays[today];
+  return (
+    <View style={s.quest}>
+      <View style={s.questTag}>
+        <T style={s.questTagText}>{done ? 'Side quest done ✓' : `Today’s side quest · +${QUEST_BONUS + moveXp(q)} XP`}</T>
+      </View>
+      <T style={s.questTitle}>{q.title}</T>
+      <T style={{ color: 'rgba(255,255,255,0.85)' }}>{q.doIt}</T>
+      <View style={[s.row, { alignItems: 'center' }]}>
+        <Btn label={done ? 'Log it again' : 'Do it'} kind={done ? 'light' : 'primary'} small onPress={() => onOpenMove(q.id)} />
+        <T style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, flex: 1 }}>The bonus only counts today.</T>
+      </View>
+    </View>
+  );
+}
+
+// Places: poster cards in a swipeable cover-flow. The centred card is where you are tonight.
+const CARD_W = 150;
+const CARD_H = 198;
+const STEP = 126;
+function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
+  const n = useNerve();
+  const p = n.progress;
+  const [at, setAt] = useState(0);
+  const [x] = useState(() => new Animated.Value(0));
+  const scroller = useRef<{ scrollTo: (o: { x: number; animated: boolean }) => void } | null>(null);
+  const avail = Dimensions.get('window').width - 32;
+  const pad = avail / 2 - STEP / 2;
+  const onScroll = useMemo(() => Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true }), [x]);
+  const open = (k: number) => n.test || p.level >= PLACES[k].lv;
+  const pl = PLACES[at];
+  const moves = levelMoves('x', at + 1);
+  const reg = p.regulars.includes(at);
+  const left = moves.filter((m) => !n.count[m.id]).length;
+  const card = placeCard(at);
+  return (
+    <Card>
+      <View style={{ gap: 4 }}>
+        <T v="h">Places</T>
+        <T v="sub">Where are you tonight? Swipe to pick a place. Do all five actions there to become a regular and earn its patch.</T>
+      </View>
+      <Animated.ScrollView
+        ref={scroller as never}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={STEP}
+        decelerationRate="fast"
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={(e) => setAt(Math.max(0, Math.min(PLACES.length - 1, Math.round(e.nativeEvent.contentOffset.x / STEP))))}
+        style={{ marginHorizontal: -18 }}
+        contentContainerStyle={{ paddingHorizontal: pad + 18 - 18, paddingTop: 6, paddingBottom: 26 }}>
+        {PLACES.map((place, k) => {
+          const isOpen = open(k);
+          const done = levelMoves('x', k + 1).filter((m) => n.count[m.id]).length;
+          const regular = p.regulars.includes(k);
+          const range = [(k - 2) * STEP, (k - 1) * STEP, k * STEP, (k + 1) * STEP, (k + 2) * STEP];
+          const t = {
+            transform: [
+              { perspective: 700 },
+              { translateY: x.interpolate({ inputRange: range, outputRange: [28, 14, 0, 14, 28], extrapolate: 'clamp' }) },
+              { rotateY: x.interpolate({ inputRange: range, outputRange: ['52deg', '26deg', '0deg', '-26deg', '-52deg'], extrapolate: 'clamp' }) },
+              { scale: x.interpolate({ inputRange: range, outputRange: [0.74, 0.87, 1, 0.87, 0.74], extrapolate: 'clamp' }) },
+            ],
+          };
+          return (
+            <View key={place.id} style={{ width: STEP, height: CARD_H, zIndex: 10 - Math.abs(k - at), elevation: 10 - Math.abs(k - at) }}>
+              <Animated.View style={[s.pcard, t, k === at && s.pcardOn, regular && s.pcardRegular]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: k === at }}
+                  accessibilityLabel={`${place.name}${isOpen ? `, ${done} of 5 done${regular ? ', regular' : ''}` : `, opens at level ${place.lv}`}`}
+                  onPress={() => {
+                    setAt(k);
+                    scroller.current?.scrollTo({ x: k * STEP, animated: true });
+                  }}
+                  style={StyleSheet.absoluteFill}>
+                  <View style={[StyleSheet.absoluteFill, !isOpen && { opacity: 0.45 }]}>
+                    <PlacePoster place={k} width={CARD_W} height={CARD_H} />
+                  </View>
+                  <T style={s.pcName} numberOfLines={2}>
+                    {place.name}
+                  </T>
+                  <View style={s.pcFoot}>
+                    {isOpen ? (
+                      <View style={{ flexDirection: 'row', gap: 3 }}>
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <View key={i} style={[s.pcPip, i < done && s.pcPipOn]} />
+                        ))}
+                      </View>
+                    ) : (
+                      <T style={s.pcLock}>🔒 Level {place.lv}</T>
+                    )}
+                    {regular ? <T style={s.pcReg}>★ Regular</T> : isOpen ? <T style={s.pcN}>{done}/5</T> : null}
+                  </View>
+                </Pressable>
+              </Animated.View>
+            </View>
+          );
+        })}
+      </Animated.ScrollView>
+      {!open(at) ? <T v="small">{`${pl.name} opens at Level ${pl.lv}. You are Level ${p.level}.`}</T> : null}
+      {moves.map((m) => {
+        const lines = n.count[m.id] ?? 0;
+        const isOpen = open(at);
+        return (
+          <Pressable
+            key={m.id}
+            accessibilityRole="button"
+            onPress={() => onOpenMove(m.id)}
+            style={({ pressed }) => [s.moveRow, !isOpen && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
+            <View style={[s.tile, { backgroundColor: lines > 0 ? PLACE_HUE[pl.id][0] : PLACE_HUE[pl.id][1] }]}>
+              <T style={[s.tileText, { color: lines > 0 ? '#FFFFFF' : PLACE_HUE[pl.id][0] }, !isOpen && { fontSize: 18 }]}>{isOpen ? m.i : '🔒'}</T>
+            </View>
+            <T v="semi" style={{ flex: 1, lineHeight: 21 }}>
+              {m.title}
+            </T>
+            {lines > 0 ? <T style={s.count}>{lines === 1 ? '1 line' : `${lines} lines`}</T> : isOpen ? <T style={[s.count, { color: C.muted }]}>+{moveXp(m)} XP</T> : null}
+          </Pressable>
+        );
+      })}
+      <View style={[s.reward, { borderColor: reg ? C.gold : C.line, borderStyle: reg ? 'solid' : 'dashed' }]}>
+        <Patch card={card} mode={reg ? 'earned' : 'locked'} size={38} />
+        <View style={{ flex: 1 }}>
+          <T v="semi" style={{ fontSize: 16 }}>
+            {reg ? 'You’re a regular here' : 'Become a regular'}
+          </T>
+          <T v="small" style={{ fontSize: 13 }}>
+            Patch: {card.t}, +{REGULAR_XP} XP
+          </T>
+        </View>
+        <T style={[s.count, { color: reg ? C.goldText : C.muted }]}>{reg ? '✓ Earned' : open(at) ? `${left} to go` : ''}</T>
+      </View>
+    </Card>
+  );
+}
+
 // What a path needs, ticked off as you get there.
-export function Gate({ reqs }: { reqs: Req[] }) {
+export function Gate({ reqs, light }: { reqs: Req[]; light?: boolean }) {
+  const ink = light ? '#FFFFFF' : C.ink;
+  const dim = light ? 'rgba(255,255,255,0.7)' : C.muted;
   return (
     <View style={{ gap: 6 }}>
       {reqs.map((r) => (
         <View key={r.text} style={{ flexDirection: 'row', gap: 8, alignItems: 'baseline' }}>
-          <T style={{ width: 16, color: r.ok ? C.muted : C.ink }}>{r.ok ? '✓' : '○'}</T>
-          <T style={{ flex: 1, fontSize: 15, lineHeight: 20, color: r.ok ? C.muted : C.ink }}>
+          <T style={{ width: 16, color: r.ok ? dim : ink }}>{r.ok ? '✓' : '○'}</T>
+          <T style={{ flex: 1, fontSize: 15, lineHeight: 20, color: r.ok ? dim : ink }}>
             {r.text}
             {r.ok ? ' (done)' : ''}
           </T>
-          <T style={{ fontFamily: F.semi, fontSize: 13, color: C.muted }}>{r.now}</T>
+          <T style={{ fontFamily: F.semi, fontSize: 13, color: dim }}>{r.now}</T>
         </View>
       ))}
     </View>
@@ -187,12 +358,31 @@ export function Gate({ reqs }: { reqs: Req[] }) {
 }
 
 const s = StyleSheet.create({
-  gate: { padding: 14, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line, gap: 8 },
+  poster: { borderRadius: 8, overflow: 'hidden' },
+  posterArt: { height: 150 },
+  fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 40, opacity: 0.55 },
+  pill: { position: 'absolute', top: 14, left: 16, maxWidth: '58%', backgroundColor: 'rgba(0,0,0,0.32)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  pillText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: '#FFFFFF' },
+  quest: { borderRadius: 8, padding: 18, gap: 10, backgroundColor: C.ink },
+  questTag: { alignSelf: 'flex-start', backgroundColor: C.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  questTagText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: C.ink },
+  questTitle: { fontFamily: F.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.4, color: '#FFFFFF' },
+  pcard: { position: 'absolute', left: -12, top: 0, width: CARD_W, height: CARD_H, borderRadius: 14, overflow: 'hidden', backgroundColor: C.ink },
+  pcardOn: { borderWidth: 2.5, borderColor: C.ink },
+  pcardRegular: { borderWidth: 2.5, borderColor: '#D9A521' },
+  pcName: { position: 'absolute', left: 12, right: 10, top: 10, fontFamily: F.display, fontSize: 20, lineHeight: 21, letterSpacing: -0.4, color: '#FFFFFF' },
+  pcFoot: { position: 'absolute', left: 12, right: 10, bottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  pcPip: { width: 9, height: 9, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.3)' },
+  pcPipOn: { backgroundColor: C.accent, borderWidth: 1.5, borderColor: '#FFFFFF' },
+  pcLock: { fontFamily: F.semi, fontSize: 12, color: '#FFFFFF', backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
+  pcReg: { fontFamily: F.semi, fontSize: 12, color: '#FCE9A8' },
+  pcN: { fontFamily: F.semi, fontSize: 12, color: '#FFFFFF' },
+  gate: { padding: 14, borderRadius: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line, gap: 8 },
   bar: { height: 6, borderRadius: 3, backgroundColor: C.bgDeep, overflow: 'hidden' },
-  reward: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, paddingRight: 14, borderRadius: 14, borderWidth: 1.5 },
+  reward: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, paddingRight: 14, borderRadius: 8, borderWidth: 1.5 },
   view: { padding: 16, gap: 12, paddingBottom: 32 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  invite: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingLeft: 16, borderRadius: 14, backgroundColor: C.accentSoft },
+  invite: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingLeft: 16, borderRadius: 8, backgroundColor: C.accentSoft },
   moveRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -201,12 +391,12 @@ const s = StyleSheet.create({
     paddingRight: 14,
     borderWidth: 1,
     borderColor: C.line,
-    borderRadius: 14,
+    borderRadius: 8,
     backgroundColor: C.surface,
   },
   tile: { width: 48, height: 48, borderRadius: 10, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
-  tileText: { fontFamily: F.display, fontSize: 30, lineHeight: 34, color: C.accent },
-  count: { fontFamily: F.semi, fontSize: 13, color: C.accent },
+  tileText: { fontFamily: F.display, fontSize: 28, lineHeight: 34, color: C.accentText },
+  count: { fontFamily: F.semi, fontSize: 13, color: C.accentText },
   levelHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, paddingTop: 8 },
   levelName: { fontFamily: F.display, fontSize: 22, lineHeight: 26, color: C.ink, flexShrink: 1 },
 });

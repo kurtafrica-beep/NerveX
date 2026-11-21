@@ -3,10 +3,13 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 
 import { useAuth } from '../auth';
 import { LineCard, TitleChip } from '../components/LineCard';
 import { BaseMountains, PathMountains } from '../components/Mountains';
+import { BranchBanner, CardSheet, PatchWall } from '../components/Patches';
+import { SvgXml } from 'react-native-svg';
+import type { Card as PlayCard } from '../rpgData';
 import type { Reward } from '../components/Reward';
 import { stamp, useNerve } from '../data';
 import { ALL_KEYS, BRANCH, BY, MOVES, PATH_KEYS, lvTitle, type BranchKey } from '../moves';
-import { ACH, ACH_XP, HUE, TIERS, TIER_EMOJI, TITLES, branchState, xpAt } from '../progress';
+import { ACH, ACH_XP, HUE, STATS, TIERS, TIER_EMOJI, TITLES, branchState, statLevel, statProgress, xpAt, type Progress } from '../progress';
 import { Gate } from './Tonight';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, T } from '../ui';
@@ -26,6 +29,7 @@ export function You({
   const { signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState('');
+  const [card, setCard] = useState<PlayCard | null>(null);
   const tonight = n.tonight.move;
   const p = n.progress;
   const into = p.xp - xpAt(p.level);
@@ -63,13 +67,13 @@ export function You({
             )}
           </View>
           <View style={s.lvBadge}>
-            <T style={s.lvWord}>LEVEL</T>
+            <T style={s.lvWord}>Level</T>
             <T style={s.lvNum}>{p.level}</T>
           </View>
         </View>
         <View style={{ gap: 4 }}>
           <View style={s.xpBar} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: need, now: into }}>
-            <View style={{ width: `${Math.round((100 * into) / need)}%`, height: '100%', borderRadius: 5, backgroundColor: C.accent }} />
+            <View style={{ width: `${Math.round((100 * into) / need)}%`, height: '100%', borderRadius: 5, backgroundColor: C.accent, borderRightWidth: 1.5, borderColor: C.ink }} />
           </View>
           <T v="small" style={{ fontFamily: F.semi }}>
             {p.xp} XP · {need - into} to Level {p.level + 1}
@@ -84,8 +88,25 @@ export function You({
       </Card>
 
       <Card>
+        <T v="h">Stats</T>
+        <StatsBlock p={p} />
+        <T v="small">Every move trains one or two of these. Confidence builds Courage, Talk builds Warmth, Cues and Voice build Presence, Sell builds Persuasion.</T>
+      </Card>
+
+      <Card>
         <View style={{ gap: 4 }}>
-          <T v="eyebrow">Paths</T>
+          <T v="h">Patches</T>
+          <T v="sub">
+            Each patch is a playbook for a real situation: how to open, what to do if it goes flat or goes well, and how to leave. Finish a branch level or
+            become a regular to earn one. Use it in three real conversations and it turns gold.
+          </T>
+        </View>
+        <PatchWall onOpen={setCard} />
+      </Card>
+
+      <Card>
+        <View style={{ gap: 4 }}>
+          <T v="h">Paths</T>
           <T v="small">
             Harder routes above base camp. A path opens when the branches it builds on are high enough and you have recordings to show for it. Each
             ends in a capstone that only counts with proof.
@@ -96,16 +117,21 @@ export function You({
           const info = p.paths[b];
           const met = info.reqs.filter((r) => r.ok).length;
           return (
-            <View key={b} style={[s.pathCard, info.open ? { backgroundColor: HUE[b][1] } : s.pathShut]}>
-              <View style={s.pathHead}>
-                <T style={[s.pathName, { color: info.open ? HUE[b][0] : C.ink }]}>{BRANCH[b].name}</T>
-                <T v="small" style={{ fontFamily: F.semi }}>
+            <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
+              <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
+                <BranchBanner b={b} height={96} />
+              </View>
+              <View style={[s.pathHead, { marginTop: -34 }]}>
+                <T style={s.pathName}>{BRANCH[b].name}</T>
+                <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
                   {info.open ? `${branchState(b, p)}${info.met ? '' : ' · tester'}` : `${met} of ${info.reqs.length} met`}
                 </T>
               </View>
-              <T v="small">{BRANCH[b].tag}</T>
-              {info.open ? null : <Gate reqs={info.reqs} />}
-              <Btn label={info.open ? 'Open the path' : 'See the moves'} small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
+              <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                {BRANCH[b].tag}
+              </T>
+              {info.open ? null : <Gate reqs={info.reqs} light />}
+              <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
             </View>
           );
         })}
@@ -120,7 +146,7 @@ export function You({
             }}
           />
           <T v="small" style={{ flex: 1 }}>
-            Tester switch: open the paths without meeting the requirements. For trying things out. It comes off before launch.
+            Tester mode opens every path, place and patch so you can try them. It comes off before launch.
           </T>
         </View>
       </Card>
@@ -194,9 +220,14 @@ export function You({
       </Card>
 
       <Card>
-        <T v="eyebrow">Circle</T>
+        <View style={s.pathHead}>
+          <T v="h">Your circle</T>
+          <T v="small" style={{ fontFamily: F.semi }}>
+            {n.followersOf(n.uid)} {n.followersOf(n.uid) === 1 ? 'follower' : 'followers'}
+          </T>
+        </View>
         {n.circle.length === 0 ? (
-          <T v="sub">Nobody here yet. Anyone who installs Nerve and signs in shows up in your circle.</T>
+          <T v="sub">Nobody yet. Tap Follow on someone’s line in the feed to add them to your circle.</T>
         ) : (
           n.circle.map((person, i) => {
             const shared = n.challengeWith(person.id);
@@ -208,13 +239,25 @@ export function You({
                 <View style={{ flex: 1 }}>
                   <T v="semi">{person.name || 'Someone'}</T>
                   {shared ? (
-                    <T v="small" style={{ color: C.accent, fontFamily: F.semi }}>
+                    <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>
                       Together · {BY[shared.move].title}
                     </T>
                   ) : (
                     <T v="small">{last ? `Last line ${stamp(last.created_at).toLowerCase()}` : 'No lines yet'}</T>
                   )}
                 </View>
+                <Btn
+                  label="Unfollow"
+                  kind="quiet"
+                  small
+                  disabled={busy === person.id}
+                  onPress={async () => {
+                    setBusy(person.id);
+                    const problem = await n.toggleFollow(person.id);
+                    setBusy('');
+                    if (problem) onError(problem);
+                  }}
+                />
                 <Btn
                   label={mine ? 'Undo' : 'Challenge'}
                   kind={mine ? 'quiet' : 'outline'}
@@ -244,7 +287,47 @@ export function You({
       ))}
 
       <Btn label="Sign out" kind="quiet" onPress={signOut} style={{ alignSelf: 'center', marginTop: 8 }} />
+      {card ? <CardSheet card={card} onClose={() => setCard(null)} onPractise={onOpenMove} onError={onError} /> : null}
     </ScrollView>
+  );
+}
+
+// Four traits on a radar, each with its own level.
+function StatsBlock({ p }: { p: Progress }) {
+  const max = Math.max(100, ...STATS.map((st) => p.stats[st.k]));
+  const cx = 90;
+  const cy = 80;
+  const R = 56;
+  const ang = (i: number) => -Math.PI / 2 + (i * Math.PI) / 2;
+  const pt = (i: number, f: number) => `${(cx + R * f * Math.cos(ang(i))).toFixed(1)},${(cy + R * f * Math.sin(ang(i))).toFixed(1)}`;
+  const ring = (f: number) => `<polygon points="${STATS.map((_, i) => pt(i, f)).join(' ')}" fill="none" stroke="${C.line}" stroke-width="1"/>`;
+  const shape = STATS.map((st, i) => pt(i, Math.max(0.06, Math.sqrt(p.stats[st.k] / max)))).join(' ');
+  const labels = STATS.map((st, i) => {
+    const [x, y] = pt(i, 1.22).split(',').map(Number);
+    const anchor = i === 1 ? 'start' : i === 3 ? 'end' : 'middle';
+    return `<text x="${x}" y="${y + (i === 0 ? -2 : i === 2 ? 10 : 4)}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="${st.c}">${st.name}</text>`;
+  }).join('');
+  const xml = `<svg viewBox="0 0 180 165">${ring(1)}${ring(0.66)}${ring(0.33)}<path d="M${pt(0, 1)} L${pt(2, 1)} M${pt(1, 1)} L${pt(3, 1)}" stroke="${C.line}"/><polygon points="${shape}" fill="rgba(255,106,26,0.22)" stroke="${C.accentText}" stroke-width="2" stroke-linejoin="round"/>${labels}</svg>`;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <SvgXml xml={xml} width={150} height={138} />
+      <View style={{ flex: 1, gap: 8 }}>
+        {STATS.map((st) => {
+          const v = p.stats[st.k];
+          return (
+            <View key={st.k} style={{ gap: 3 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <T style={{ fontFamily: F.displayBold, fontSize: 16, color: st.c }}>{st.name}</T>
+                <T style={{ fontFamily: F.semi, fontSize: 14 }}>Lv {statLevel(v)}</T>
+              </View>
+              <View style={{ height: 5, borderRadius: 3, backgroundColor: C.bgDeep, overflow: 'hidden' }}>
+                <View style={{ width: `${Math.round(100 * statProgress(v))}%`, height: '100%', backgroundColor: st.c }} />
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -263,23 +346,23 @@ const s = StyleSheet.create({
   view: { padding: 16, gap: 12, paddingBottom: 32 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   name: { fontFamily: F.display, fontSize: 28, lineHeight: 30, color: C.ink },
-  lvBadge: { width: 68, paddingVertical: 6, borderRadius: 14, backgroundColor: C.ink, alignItems: 'center' },
-  lvWord: { fontFamily: F.semi, fontSize: 11, letterSpacing: 1, color: '#B8BAC2' },
+  lvBadge: { width: 68, paddingVertical: 6, borderRadius: 8, backgroundColor: C.ink, alignItems: 'center' },
+  lvWord: { fontFamily: F.semi, fontSize: 11, color: '#B8C2BC' },
   lvNum: { fontFamily: F.display, fontSize: 40, lineHeight: 42, color: C.surface },
   xpBar: { height: 10, borderRadius: 5, backgroundColor: C.bgDeep, overflow: 'hidden' },
-  pathCard: { padding: 14, borderRadius: 14, gap: 8 },
-  pathShut: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line },
+  pathCard: { padding: 14, paddingTop: 0, borderRadius: 8, gap: 8, overflow: 'hidden' },
+  pathArt: { marginHorizontal: -14, height: 96 },
   pathHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
-  pathName: { fontFamily: F.display, fontSize: 24, lineHeight: 26 },
+  pathName: { fontFamily: F.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.4, color: '#FFFFFF' },
   testRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rwName: { fontFamily: F.display, fontSize: 20, lineHeight: 22 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, borderWidth: 1.5, borderColor: C.line },
   chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18 },
   achGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  ach: { width: '48.5%', padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, gap: 2 },
+  ach: { width: '48.5%', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, gap: 2 },
   stats: { flexDirection: 'row', gap: 8 },
-  stat: { flex: 1, padding: 12, borderRadius: 14, backgroundColor: C.bg, gap: 2 },
+  stat: { flex: 1, padding: 12, borderRadius: 8, backgroundColor: C.bg, gap: 2 },
   statNum: { fontFamily: F.display, fontSize: 30, lineHeight: 32, color: C.ink },
   person: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 });

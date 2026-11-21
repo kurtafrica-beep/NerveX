@@ -47,17 +47,17 @@ const text = StyleSheet.create({
   sub: { fontFamily: F.body, fontSize: 16, lineHeight: 22, color: C.muted },
   small: { fontFamily: F.body, fontSize: 14, lineHeight: 19, color: C.muted },
   semi: { fontFamily: F.semi, fontSize: 17, lineHeight: 22, color: C.ink },
-  eyebrow: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, letterSpacing: 1, textTransform: 'uppercase', color: C.muted },
-  accent: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, letterSpacing: 1, textTransform: 'uppercase', color: C.accent },
-  h: { fontFamily: F.display, fontSize: 32, lineHeight: 34, color: C.ink },
-  big: { fontFamily: F.display, fontSize: 44, lineHeight: 44, color: C.ink },
+  eyebrow: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.muted },
+  accent: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.accentText },
+  h: { fontFamily: F.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.5, color: C.ink },
+  big: { fontFamily: F.display, fontSize: 42, lineHeight: 44, letterSpacing: -0.8, color: C.ink },
   error: { fontFamily: F.semi, fontSize: 15, lineHeight: 20, color: C.danger },
 });
 
 type BtnProps = {
   label: string;
   onPress: () => void;
-  kind?: 'primary' | 'outline' | 'quiet' | 'dark';
+  kind?: 'primary' | 'outline' | 'quiet' | 'dark' | 'light';
   small?: boolean;
   wide?: boolean;
   disabled?: boolean;
@@ -66,7 +66,7 @@ type BtnProps = {
 };
 
 export function Btn({ label, onPress, kind = 'outline', small, wide, disabled, icon, style }: BtnProps) {
-  const fg = kind === 'primary' ? C.accentInk : kind === 'dark' ? C.surface : kind === 'quiet' ? C.muted : C.ink;
+  const fg = kind === 'primary' ? C.accentInk : kind === 'dark' ? C.surface : kind === 'light' ? '#FFFFFF' : kind === 'quiet' ? C.muted : C.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -80,6 +80,7 @@ export function Btn({ label, onPress, kind = 'outline', small, wide, disabled, i
         kind === 'primary' && btn.primary,
         kind === 'dark' && btn.dark,
         kind === 'quiet' && btn.quiet,
+        kind === 'light' && btn.onDark,
         (disabled || pressed) && { opacity: disabled ? 0.5 : 0.8 },
         style,
       ]}>
@@ -94,7 +95,7 @@ const btn = StyleSheet.create({
     minHeight: 50,
     paddingHorizontal: 22,
     paddingVertical: 10,
-    borderRadius: 999,
+    borderRadius: 6,
     borderWidth: 1.5,
     borderColor: C.ink,
     flexDirection: 'row',
@@ -104,17 +105,18 @@ const btn = StyleSheet.create({
   },
   small: { minHeight: 40, paddingHorizontal: 16, paddingVertical: 6 },
   wide: { alignSelf: 'stretch' },
-  primary: { backgroundColor: C.accent, borderColor: C.accent },
+  primary: { backgroundColor: C.accent, borderColor: C.ink, borderBottomWidth: 3.5 },
   dark: { backgroundColor: C.ink, borderColor: C.ink },
   quiet: { borderColor: C.line },
   label: { fontFamily: F.semi, fontSize: 17 },
+  onDark: { borderColor: 'rgba(255,255,255,0.7)' },
 });
 
 export function Card({ children, strong, style }: { children: React.ReactNode; strong?: boolean; style?: StyleProp<ViewStyle> }) {
   return <View style={[card.base, strong && card.strong, style]}>{children}</View>;
 }
 const card = StyleSheet.create({
-  base: { backgroundColor: C.surface, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 18, gap: 12 },
+  base: { backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.line, borderRadius: 8, padding: 18, gap: 12 },
   strong: { borderColor: C.ink, borderWidth: 1.5 },
 });
 
@@ -219,7 +221,7 @@ const pill = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  on: { backgroundColor: C.accent, borderColor: C.accent },
+  on: { backgroundColor: C.accent, borderColor: C.ink },
   label: { fontFamily: F.semi, fontSize: 15 },
 });
 

@@ -271,7 +271,7 @@ export function HandsFreePanel({ hf }: { hf: ReturnType<typeof useHandsFree> }) 
 }
 
 const s = StyleSheet.create({
-  panel: { gap: 8, padding: 14, borderRadius: 16, borderWidth: 1.5, borderColor: C.accent, backgroundColor: C.surface },
+  panel: { gap: 8, padding: 14, borderRadius: 8, borderWidth: 1.5, borderColor: C.accent, backgroundColor: C.surface },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
   dot: { width: 12, height: 12, borderRadius: 6 },
 });

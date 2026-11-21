@@ -45,6 +45,18 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
           <T v="small">{stamp(line.created_at)}</T>
         </View>
         {line.upgrade ? <T v="accent">Upgrade</T> : null}
+        {line.author !== n.uid ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: n.isFollowing(line.author) }}
+            onPress={async () => {
+              const problem = await n.toggleFollow(line.author);
+              if (problem) onError(problem);
+            }}
+            style={[s.follow, n.isFollowing(line.author) && s.following]}>
+            <T style={[s.followText, n.isFollowing(line.author) && { color: C.muted }]}>{n.isFollowing(line.author) ? 'Following' : 'Follow'}</T>
+          </Pressable>
+        ) : null}
       </View>
 
       <Pressable accessibilityRole="button" onPress={() => onOpenMove(move.id)}>
@@ -104,7 +116,7 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
                 }}
                 style={({ pressed }) => [s.react, on && s.reactOn, pressed && { opacity: 0.8 }]}>
                 <T style={s.emoji}>{r.e}</T>
-                <T style={[s.reactText, on && { color: C.accent }]}>{r.t}</T>
+                <T style={[s.reactText, on && { color: C.accentText }]}>{r.t}</T>
               </Pressable>
             );
           })}
@@ -170,21 +182,24 @@ export function TitleChip({ uid }: { uid: string }) {
 }
 
 const s = StyleSheet.create({
+  follow: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6, borderWidth: 1.5, borderColor: C.ink },
+  following: { borderColor: C.line },
+  followText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.ink },
   nameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   title: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
   titleText: { fontFamily: F.semi, fontSize: 12, lineHeight: 16 },
   who: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  move: { fontFamily: F.display, fontSize: 30, lineHeight: 31, color: C.accent },
+  move: { fontFamily: F.display, fontSize: 30, lineHeight: 31, color: C.accentText },
   acts: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999, backgroundColor: C.bg },
   chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 20 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  react: { width: '31.5%', minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
+  react: { width: '31.5%', minHeight: 76, alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
   reactOn: { borderColor: C.accent, backgroundColor: C.accentSoft },
   emoji: { fontSize: 26, lineHeight: 32 },
   reactText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, textAlign: 'center' },
-  comment: { backgroundColor: C.bg, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
+  comment: { backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   meta: { flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
   cname: { fontFamily: F.semi, fontSize: 15, color: C.ink },
   form: { flexDirection: 'row', gap: 8 },

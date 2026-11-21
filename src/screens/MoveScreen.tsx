@@ -9,7 +9,8 @@ import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
 import { GUIDE } from '../guides';
 import { BRANCH, BY, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
-import { HUE, moveXp } from '../progress';
+import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
+import { PLACES } from '../rpgData';
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Icon, Pill, Seg, T } from '../ui';
 
@@ -31,19 +32,32 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
 
-  const locked = !unlocked(move, n.count, n.progress.open);
+  const locked = !unlocked(move, n.count, n.progress.open, n.progress.level, n.test);
   const pathShut = isPath(move.b) && !n.progress.open[move.b];
   const pend = n.progress.pending[move.id];
-  const note = move.retired
+  const bk = move.b === 'x' || move.b === 'z' ? 'c' : move.b;
+  const [questDay] = useState(() => dayNum(Date.now()));
+  const isToday = move.b === 'z' && move.id === todaysQuest().id;
+  const note = move.b === 'x'
+    ? locked
+      ? `Locked. ${PLACES[move.place ?? 0].name} opens at Level ${PLACES[move.place ?? 0].lv}. You are Level ${n.progress.level}.`
+      : ''
+    : move.b === 'z'
+      ? isToday
+        ? n.progress.questDays[questDay]
+          ? 'Today’s side quest is done. Bonus earned.'
+          : `Today’s side quest. Log it before midnight for +${QUEST_BONUS} bonus XP.`
+        : 'Not today’s side quest. You can still do it, but the bonus only counts on its own day.'
+    : move.retired
     ? 'This move was taken out of the levels. Lines already posted on it stay, but new ones go on the current moves.'
     : pathShut
-    ? `Locked. This move is on the ${BRANCH[move.b].name} path. The You tab shows what opens it.`
+    ? `Locked. This move is on the ${BRANCH[bk].name} path. The You tab shows what opens it.`
     : locked
-      ? `Locked. Drop a line on every ${BRANCH[move.b].name} ${lvWord(move.b)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(move.b)} ${move.lv}`}.`
+      ? `Locked. Drop a line on every ${BRANCH[bk].name} ${lvWord(bk)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(bk)} ${move.lv}`}.`
       : !move.cap
         ? ''
         : n.count[move.id]
-          ? `Capstone done. You summited the ${BRANCH[move.b].name} path.`
+          ? `Capstone done. You summited the ${BRANCH[bk].name} path.`
           : pend?.posted
             ? `Posted. ${pend.reacts} of ${CAP_REACTS} reactions so far. It counts at ${CAP_REACTS}.`
             : pend
@@ -123,7 +137,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           <Icon name="back" />
         </Pressable>
         <T v="semi" style={{ fontSize: 16 }}>
-          {BRANCH[move.b].name} · {move.retired ? 'Retired' : move.cap ? 'Capstone' : `${lvWord(move.b)} ${move.lv} · ${move.i} of ${move.of}`}
+          {move.b === 'x' || move.b === 'z'
+            ? label(move)
+            : `${BRANCH[bk].name} · ${move.retired ? 'Retired' : move.cap ? 'Capstone' : `${lvWord(bk)} ${move.lv} · ${move.i} of ${move.of}`}`}
         </T>
         <View style={{ width: 48 }} />
       </View>
@@ -131,7 +147,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
           <View style={s.section}>
-            <T v="accent" style={{ color: HUE[move.b][0] }}>
+            <T v="accent" style={{ color: move.b === 'x' ? PLACE_HUE[PLACES[move.place ?? 0].id][0] : move.b === 'z' ? C.accentText : HUE[bk][0] }}>
               {label(move)}
               {move.retired ? '' : ` · +${moveXp(move)} XP`}
             </T>
@@ -262,7 +278,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             {handsFree.error ? <T v="error">{handsFree.error}</T> : null}
             {saved ? (
               <View style={s.saved}>
-                <T v="semi" style={{ fontSize: 15, lineHeight: 21, color: C.accent }}>
+                <T v="semi" style={{ fontSize: 15, lineHeight: 21, color: C.accentText }}>
                   {saved}
                 </T>
               </View>
@@ -418,17 +434,17 @@ const s = StyleSheet.create({
   back: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   body: { padding: 16, paddingTop: 20, gap: 24 },
   section: { gap: 10 },
-  lock: { padding: 12, borderRadius: 14, backgroundColor: C.accentSoft },
-  guide: { gap: 14, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
+  lock: { padding: 12, borderRadius: 8, backgroundColor: C.accentSoft },
+  guide: { gap: 14, padding: 16, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
   part: { gap: 4 },
   step: { flexDirection: 'row', gap: 8 },
-  stepNum: { fontFamily: F.semi, color: C.accent, minWidth: 18 },
+  stepNum: { fontFamily: F.semi, color: C.accentText, minWidth: 18 },
   say: { paddingVertical: 10, paddingHorizontal: 14, borderLeftWidth: 3, borderLeftColor: C.accent, backgroundColor: C.accentSoft, borderTopRightRadius: 10, borderBottomRightRadius: 10 },
   rec: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: C.bg },
   area: {
     minHeight: 108,
     padding: 14,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: C.ink,
     backgroundColor: C.surface,
@@ -438,16 +454,16 @@ const s = StyleSheet.create({
     color: C.ink,
   },
   recRow: { flexDirection: 'row', gap: 8 },
-  status: { padding: 14, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, alignItems: 'center' },
-  saved: { padding: 12, borderRadius: 14, backgroundColor: C.accentSoft },
+  status: { padding: 14, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, alignItems: 'center' },
+  saved: { padding: 12, borderRadius: 8, backgroundColor: C.accentSoft },
   logMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge: { fontFamily: F.semi, fontSize: 12, lineHeight: 16, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
   badgePrivate: { backgroundColor: C.bg, color: C.muted },
-  badgePosted: { backgroundColor: C.accentSoft, color: C.accent },
-  caption: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, fontFamily: F.body, fontSize: 16, color: C.ink },
+  badgePosted: { backgroundColor: C.accentSoft, color: C.accentText },
+  caption: { minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, fontFamily: F.body, fontSize: 16, color: C.ink },
   logActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   logHead: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  count: { fontFamily: F.display, fontSize: 34, lineHeight: 34, color: C.accent },
-  logItem: { padding: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
+  count: { fontFamily: F.display, fontSize: 34, lineHeight: 34, color: C.accentText },
+  logItem: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });

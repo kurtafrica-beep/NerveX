@@ -1,4 +1,5 @@
 import { PATH_GUIDE } from './pathMoves';
+import { RPG_GUIDE } from './rpgData';
 
 export type Guide = { steps: string[]; say: string; why: string; watch: string; record: string };
 
@@ -1766,3 +1767,6 @@ export const GUIDE: Record<string, Guide> = {
   }
 };
 Object.assign(GUIDE, PATH_GUIDE);
+for (const [id, g] of Object.entries(RPG_GUIDE)) {
+  GUIDE[id] = { steps: g.steps, say: g.say ?? '', why: g.why ?? '', watch: g.watch ?? '', record: g.rec ?? '' };
+}

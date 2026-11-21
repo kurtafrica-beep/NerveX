@@ -1,5 +1,4 @@
-import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold } from '@expo-google-fonts/barlow';
-import { BarlowCondensed_700Bold, BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed';
+import { Overpass_400Regular, Overpass_600SemiBold, Overpass_700Bold, Overpass_800ExtraBold, Overpass_900Black } from '@expo-google-fonts/overpass';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -22,11 +21,11 @@ type Tab = 'feed' | 'tonight' | 'you';
 
 export default function App() {
   const [fontsReady] = useFonts({
-    Barlow_400Regular,
-    Barlow_500Medium,
-    Barlow_600SemiBold,
-    BarlowCondensed_700Bold,
-    BarlowCondensed_800ExtraBold,
+    Overpass_400Regular,
+    Overpass_600SemiBold,
+    Overpass_700Bold,
+    Overpass_800ExtraBold,
+    Overpass_900Black,
   });
   return (
     <SafeAreaProvider>
@@ -101,7 +100,10 @@ function Shell() {
   return (
     <View style={s.app}>
       <View style={[s.bar, { paddingTop: insets.top + 8 }]}>
-        <T style={s.wordmark}>NERVE</T>
+        <View style={s.brand}>
+          <View style={s.blaze} />
+          <T style={s.wordmark}>nerve</T>
+        </View>
         <View style={s.chip}>
           <T style={s.chipText}>{`Lv ${n.progress.level} · ${n.progress.xp} XP`}</T>
         </View>
@@ -139,7 +141,7 @@ function Shell() {
             onPress={() => setTab('you')}
             style={({ pressed }) => [s.you, tab === 'you' && s.youOn, pressed && { opacity: 0.85 }]}>
             <Icon name="you" size={26} color={C.accentInk} width={2.2} />
-            <T style={s.youLv}>{`LV ${n.progress.level}`}</T>
+            <T style={s.youLv}>{`Lv ${n.progress.level}`}</T>
           </Pressable>
         </View>
         <NavItem icon="feed" label="Feed" on={tab === 'feed'} onPress={() => setTab('feed')} />
@@ -196,10 +198,12 @@ const s = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: C.line,
   },
-  wordmark: { fontFamily: F.display, fontSize: 34, lineHeight: 36, color: C.ink },
-  chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  blaze: { width: 9, height: 26, borderRadius: 2, backgroundColor: C.accent, borderWidth: 2, borderColor: C.ink },
+  wordmark: { fontFamily: F.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.6, color: C.ink },
+  chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
   chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.ink },
-  toast: { marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 12, backgroundColor: C.danger },
+  toast: { marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: C.danger },
   nav: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -212,20 +216,16 @@ const s = StyleSheet.create({
   navSlot: { flex: 1, minHeight: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
   // The You button sits fully inside the bar: Android ignores taps on anything drawn outside its parent.
   you: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 62,
+    height: 60,
+    borderRadius: 14,
     backgroundColor: C.accent,
-    borderWidth: 3,
-    borderColor: C.surface,
+    borderWidth: 2,
+    borderColor: C.ink,
+    borderBottomWidth: 5,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 5,
-    shadowColor: C.accent,
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
   },
-  youOn: { borderColor: C.ink },
+  youOn: { backgroundColor: '#FF8A45' },
   youLv: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.accentInk, letterSpacing: 0.5 },
 });

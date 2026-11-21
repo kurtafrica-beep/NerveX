@@ -15,8 +15,9 @@ function open(url: string) {
 // The level's example video with what to take from it, plus a search for more on this move.
 export function ExampleCard({ move }: { move: Move }) {
   if (move.retired) return null;
-  const v = levelVideo(move.b, move.lv);
-  const q = `${move.title} ${BRANCH[move.b].name.toLowerCase()}${isPath(move.b) ? '' : ' communication'} example`;
+  const b = move.b === 'x' || move.b === 'z' ? null : move.b;
+  const v = b ? levelVideo(b, move.lv) : null;
+  const q = `${move.title} ${b ? BRANCH[b].name.toLowerCase() : 'social confidence'}${b && isPath(b) ? '' : ' communication'} example`;
   return (
     <View style={{ gap: 8 }}>
       {v ? (
@@ -62,9 +63,9 @@ export function LevelVideoRow({ v }: { v: Video }) {
 }
 
 const s = StyleSheet.create({
-  card: { gap: 8, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
+  card: { gap: 8, padding: 16, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface },
   yt: { alignSelf: 'flex-start', minHeight: 40, paddingHorizontal: 16, borderRadius: 999, backgroundColor: RED, justifyContent: 'center' },
   ytText: { fontFamily: F.semi, fontSize: 15, color: '#fff' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, paddingRight: 12, borderRadius: 12, backgroundColor: C.bg },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 8, paddingRight: 12, borderRadius: 6, backgroundColor: C.bg },
   play: { width: 34, height: 34, borderRadius: 17, backgroundColor: RED, alignItems: 'center', justifyContent: 'center' },
 });

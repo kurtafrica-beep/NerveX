@@ -144,12 +144,12 @@ export function SignIn() {
 const s = StyleSheet.create({
   wrap: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between', gap: 32 },
   wordmark: { fontFamily: F.display, fontSize: 84, lineHeight: 80, color: C.ink },
-  tagline: { fontFamily: F.semi, fontSize: 22, lineHeight: 28, color: C.accent },
+  tagline: { fontFamily: F.semi, fontSize: 22, lineHeight: 28, color: C.accentText },
   field: {
     minHeight: 52,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: C.ink,
     backgroundColor: C.surface,
@@ -157,7 +157,7 @@ const s = StyleSheet.create({
     fontSize: 17,
     color: C.ink,
   },
-  note: { fontFamily: F.semi, fontSize: 15, lineHeight: 20, color: C.accent },
+  note: { fontFamily: F.semi, fontSize: 15, lineHeight: 20, color: C.accentText },
   or: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rule: { flex: 1, height: 1, backgroundColor: C.line },
 });

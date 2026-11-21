@@ -1,12 +1,18 @@
 import { PATH_LAYOUT, PATH_SOURCE } from './pathMoves';
+import { PLACES, PLACE_SOURCE, QUEST_SOURCE } from './rpgData';
 
 export type BaseKey = 'c' | 't' | 'q' | 'v' | 's';
 export type PathKey = 'n' | 'f' | 'm' | 'p' | 'k';
 export type BranchKey = BaseKey | PathKey;
+// x: an action at a place, z: a side quest
+export type MoveKey = BranchKey | 'x' | 'z';
 
 export type Move = {
   id: string;
-  b: BranchKey;
+  b: MoveKey;
+  // places: which place; side quests: which quest
+  place?: number;
+  quest?: number;
   n: number;
   // level (stage on a path), position in it, how many moves it has
   lv: number;
@@ -47,8 +53,8 @@ export const PATH: Record<PathKey, { need: Partial<Record<BaseKey, number>>; rec
 };
 // Reactions from other people a posted capstone needs before it counts.
 export const CAP_REACTS = 3;
-export function isPath(b: BranchKey): b is PathKey {
-  return !!BRANCH[b].path;
+export function isPath(b: MoveKey): b is PathKey {
+  return b !== 'x' && b !== 'z' && !!BRANCH[b].path;
 }
 
 // [title, the move, the rep, the upgrade]
@@ -444,6 +450,26 @@ for (const b of ALL_KEYS) {
   });
 }
 
+// Places: five actions each, opening with your overall level. Side quests: one a day.
+PLACES.forEach((pl, k) => {
+  for (let i = 1; i <= 5; i++) {
+    const id = 'x' + (5 * k + i);
+    const m = PLACE_SOURCE[5 * k + i - 1];
+    const move: Move = { id, b: 'x', n: 5 * k + i, lv: k + 1, i, of: 5, cap: false, place: k, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
+    MOVES.push(move);
+    BY[id] = move;
+  }
+});
+QUEST_SOURCE.forEach((m, idx) => {
+  const id = 'z' + (idx + 1);
+  const move: Move = { id, b: 'z', n: idx + 1, lv: 1, i: idx + 1, of: QUEST_SOURCE.length, cap: false, quest: idx, title: m[0], doIt: m[1], rep: m[2], up: m[3] };
+  MOVES.push(move);
+  BY[id] = move;
+});
+export function isBranchMove(m: Move): m is Move & { b: BranchKey } {
+  return m.b !== 'x' && m.b !== 'z';
+}
+
 // Tonight's pick walks the branches side by side, easiest first.
 export const ORDER: string[] = [];
 for (let n = 1; n <= 25; n++) for (const b of BRANCH_KEYS) if (BYPOS[b + n]) ORDER.push(BYPOS[b + n]);
@@ -501,14 +527,16 @@ export function lvWord(b: BranchKey): string {
 export function lvTitle(b: BranchKey, k: number): string {
   return isPath(b) && k === 5 ? 'Capstone' : `${lvWord(b)} ${k} · ${LEVEL_NAMES[b][k - 1]}`;
 }
-export function levelMoves(b: BranchKey, k: number): Move[] {
+export function levelMoves(b: MoveKey, k: number): Move[] {
   return MOVES.filter((m) => m.b === b && m.lv === k);
 }
-export function levelDone(b: BranchKey, k: number, count: Record<string, number>): boolean {
+export function levelDone(b: MoveKey, k: number, count: Record<string, number>): boolean {
   return levelMoves(b, k).every((m) => count[m.id]);
 }
 // A level opens once every move in the level before it has a line. A path move also needs its path open.
-export function unlocked(m: Move, count: Record<string, number>, open: Partial<Record<BranchKey, boolean>> = {}): boolean {
+export function unlocked(m: Move, count: Record<string, number>, open: Partial<Record<BranchKey, boolean>> = {}, level = 99, test = false): boolean {
+  if (m.b === 'x') return test || level >= PLACES[m.place ?? 0].lv;
+  if (m.b === 'z') return true;
   if (m.retired) return false;
   if (isPath(m.b) && !open[m.b]) return false;
   return m.lv === 1 || levelDone(m.b, m.lv - 1, count);
@@ -519,5 +547,7 @@ export function currentLevel(b: BranchKey, count: Record<string, number>): numbe
   return k;
 }
 export function label(m: Move): string {
+  if (m.b === 'x') return `${PLACES[m.place ?? 0].name} · ${m.i} of 5`;
+  if (m.b === 'z') return 'Side quest';
   return m.retired ? `${BRANCH[m.b].name} · Retired move` : `${BRANCH[m.b].name} · ${lvTitle(m.b, m.lv)}`;
 }

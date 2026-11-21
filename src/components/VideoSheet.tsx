@@ -106,7 +106,7 @@ const s = StyleSheet.create({
   scrim: { flex: 1, backgroundColor: 'rgba(13,14,18,0.5)' },
   sheet: { backgroundColor: C.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 12, paddingTop: 8 },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.line, marginBottom: 10 },
-  player: { borderRadius: 14, overflow: 'hidden', backgroundColor: '#000' },
+  player: { borderRadius: 8, overflow: 'hidden', backgroundColor: '#000' },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 12, paddingHorizontal: 4 },
   close: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16, borderRadius: 999, borderWidth: 1.5, borderColor: C.line },
 });

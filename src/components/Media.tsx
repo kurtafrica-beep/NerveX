@@ -90,10 +90,10 @@ export function RemoteMedia({ path, kind, seconds }: { path: string; kind: Media
 }
 
 const s = StyleSheet.create({
-  voice: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, backgroundColor: C.bg },
+  voice: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 8, backgroundColor: C.bg },
   round: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' },
   track: { height: 6, borderRadius: 3, backgroundColor: C.line, overflow: 'hidden' },
   fill: { height: 6, backgroundColor: C.accent },
-  video: { width: '100%', aspectRatio: 3 / 4, borderRadius: 12, backgroundColor: '#000' },
-  missing: { padding: 16, borderRadius: 12, backgroundColor: C.bg, alignItems: 'center' },
+  video: { width: '100%', aspectRatio: 3 / 4, borderRadius: 6, backgroundColor: '#000' },
+  missing: { padding: 16, borderRadius: 6, backgroundColor: C.bg, alignItems: 'center' },
 });
