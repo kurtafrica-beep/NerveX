@@ -11,9 +11,9 @@ import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, PATH, PATH_KEYS, isPath, l
 import { levelVideo } from '../videos';
 import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type Req } from '../progress';
 import { C, F } from '../theme';
-import { Btn, Card, Seg, T } from '../ui';
+import { Btn, Card, Icon, Seg, T } from '../ui';
 
-export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: string) => void; initialBranch?: BranchKey }) {
+export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenMove: (id: string) => void; onRecord: () => void; initialBranch?: BranchKey }) {
   const n = useNerve();
   const [branch, setBranch] = useState<BranchKey>(initialBranch);
   const [refreshing, setRefreshing] = useState(false);
@@ -38,7 +38,14 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
           }}
         />
       }>
-      <T v="sub">Do the move. Drop the line.</T>
+      <View style={s.topRow}>
+        <T v="sub" style={{ flex: 1 }}>
+          Do the move. Drop the line.
+        </T>
+        <Pressable accessibilityRole="button" accessibilityLabel="Quick take: record now, add it to a move later" onPress={onRecord} style={({ pressed }) => [s.plus, pressed && { transform: [{ translateY: 2 }], borderBottomWidth: 2 }]}>
+          <Icon name="plus" size={26} color={C.ink} width={2.6} />
+        </Pressable>
+      </View>
 
       {n.incoming.map((c) => (
         <View key={c.id} style={s.invite}>
@@ -368,6 +375,8 @@ export function Gate({ reqs, light }: { reqs: Req[]; light?: boolean }) {
 }
 
 const s = StyleSheet.create({
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  plus: { width: 48, height: 48, borderRadius: 12, backgroundColor: C.accent, borderWidth: 2, borderColor: C.ink, borderBottomWidth: 4, alignItems: 'center', justifyContent: 'center' },
   poster: { borderRadius: 8, overflow: 'hidden' },
   posterArt: { height: 150 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 40, opacity: 0.55 },

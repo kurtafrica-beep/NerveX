@@ -14,6 +14,7 @@ import { MoveScreen } from './src/screens/MoveScreen';
 import { SignIn } from './src/screens/SignIn';
 import { Tonight } from './src/screens/Tonight';
 import { You } from './src/screens/You';
+import { QuickRecorder } from './src/components/QuickRecorder';
 import { C, F } from './src/theme';
 import { Icon, T, type IconName } from './src/ui';
 
@@ -50,6 +51,8 @@ function Shell() {
   const n = useNerve();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('tonight');
+  const [recOpen, setRecOpen] = useState(false);
+  const [recMode, setRecMode] = useState<'idle' | 'manual' | 'auto'>('idle');
   const [branch, setBranch] = useState<BranchKey>('c');
   const [moveId, setMoveId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
@@ -104,8 +107,16 @@ function Shell() {
           <View style={s.blaze} />
           <T style={s.wordmark}>nerve</T>
         </View>
-        <View style={s.chip}>
-          <T style={s.chipText}>{`Lv ${n.progress.level} · ${n.progress.xp} XP`}</T>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          {recMode !== 'idle' ? (
+            <Pressable accessibilityRole="button" accessibilityLabel="Recording. Open quick take." onPress={() => setRecOpen(true)} style={s.recChip}>
+              <View style={s.recDot} />
+              <T style={[s.chipText, { color: '#FFFFFF' }]}>{recMode === 'auto' ? 'Listening' : 'Rec'}</T>
+            </Pressable>
+          ) : null}
+          <View style={s.chip}>
+            <T style={s.chipText}>{`Lv ${n.progress.level} · ${n.progress.xp} XP`}</T>
+          </View>
         </View>
       </View>
 
@@ -117,7 +128,7 @@ function Shell() {
 
       <View style={{ flex: 1 }}>
         {tab === 'feed' ? <Feed onOpenMove={setMoveId} onError={showError} /> : null}
-        {tab === 'tonight' ? <Tonight key={branch} initialBranch={branch} onOpenMove={setMoveId} /> : null}
+        {tab === 'tonight' ? <Tonight key={branch} initialBranch={branch} onOpenMove={setMoveId} onRecord={() => setRecOpen(true)} /> : null}
         {tab === 'you' ? (
           <You
             onOpenMove={setMoveId}
@@ -130,6 +141,8 @@ function Shell() {
           />
         ) : null}
       </View>
+
+      <QuickRecorder visible={recOpen} onClose={() => setRecOpen(false)} onError={showError} onMode={setRecMode} />
 
       <View style={[s.nav, { paddingBottom: insets.bottom + 8 }]}>
         <NavItem icon="tonight" label="Tonight" on={tab === 'tonight'} onPress={() => setTab('tonight')} />
@@ -201,6 +214,8 @@ const s = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   blaze: { width: 9, height: 26, borderRadius: 2, backgroundColor: C.accent, borderWidth: 2, borderColor: C.ink },
   wordmark: { fontFamily: F.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.6, color: C.ink },
+  recChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: C.rec },
+  recDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
   chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.ink },
   toast: { marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: C.danger },
