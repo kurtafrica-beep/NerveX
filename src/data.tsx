@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { File } from 'expo-file-system';
+import { readRecording } from './takeStore';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { BUCKET } from './config';
@@ -107,13 +107,9 @@ function midnight(): string {
 const ms = (iso: string) => new Date(iso).getTime();
 
 async function uploadRecording(uid: string, rec: Recording): Promise<string> {
-  const bytes = await new File(rec.uri).arrayBuffer();
-  const ext = rec.wav ? 'wav' : rec.kind === 'voice' ? 'm4a' : 'mp4';
+  const { body, ext, type } = await readRecording(rec.uri, rec.kind, rec.wav);
   const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, {
-    contentType: rec.wav ? 'audio/wav' : rec.kind === 'voice' ? 'audio/mp4' : 'video/mp4',
-    upsert: false,
-  });
+  const { error } = await supabase.storage.from(BUCKET).upload(path, body, { contentType: type, upsert: false });
   if (error) throw error;
   return path;
 }

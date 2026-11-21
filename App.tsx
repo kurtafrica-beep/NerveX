@@ -2,7 +2,7 @@ import { Overpass_400Regular, Overpass_600SemiBold, Overpass_700Bold, Overpass_8
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/auth';
 import { VideoHost } from './src/components/VideoSheet';
@@ -15,10 +15,13 @@ import { SignIn } from './src/screens/SignIn';
 import { Tonight } from './src/screens/Tonight';
 import { You } from './src/screens/You';
 import { QuickRecorder } from './src/components/QuickRecorder';
+import { takePendingInvite } from './src/invite';
 import { C, F } from './src/theme';
 import { Icon, T, type IconName } from './src/ui';
 
 type Tab = 'feed' | 'tonight' | 'you';
+
+if (Platform.OS === 'web' && typeof document !== 'undefined') document.body.style.backgroundColor = C.bg;
 
 export default function App() {
   const [fontsReady] = useFonts({
@@ -31,7 +34,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <AuthProvider>{fontsReady ? <Root /> : <View style={s.blank} />}</AuthProvider>
+      {/* On a wide browser window, keep the app phone-width in the middle. */}
+      <View style={Platform.OS === 'web' ? s.webFrame : s.fill}>
+        <AuthProvider>{fontsReady ? <Root /> : <View style={s.blank} />}</AuthProvider>
+      </View>
     </SafeAreaProvider>
   );
 }
@@ -64,6 +70,26 @@ function Shell() {
     toastTimer.current = setTimeout(() => setToast(''), 4000);
   }, []);
   const closeMove = useCallback(() => setMoveId(null), []);
+  const [note, setNote] = useState('');
+
+  // Opened from a friend's invite link: put you both in each other's circle.
+  const { redeemInvite } = n;
+  const inviteChecked = useRef(false);
+  useEffect(() => {
+    if (inviteChecked.current) return;
+    inviteChecked.current = true;
+    takePendingInvite().then(async (code) => {
+      if (!code) return;
+      const r = await redeemInvite(code);
+      if (r.who) setNote(`You and ${r.who} are in each other’s circle.`);
+      else if (r.problem) showError(r.problem);
+    });
+  }, [redeemInvite, showError]);
+  useEffect(() => {
+    if (!note) return;
+    const t = setTimeout(() => setNote(''), 5000);
+    return () => clearTimeout(t);
+  }, [note]);
 
   // Celebrate what is new: compare progress with how it was a moment ago.
   const [reward, setReward] = useState<Reward | null>(null);
@@ -120,6 +146,11 @@ function Shell() {
         </View>
       </View>
 
+      {note ? (
+        <Pressable style={s.note} onPress={() => setNote('')} accessibilityRole="alert">
+          <T style={{ color: C.ink, fontSize: 15, lineHeight: 20, fontFamily: F.semi }}>{note}</T>
+        </Pressable>
+      ) : null}
       {toast ? (
         <View style={s.toast}>
           <T style={{ color: C.surface, fontSize: 15, lineHeight: 20 }}>{toast}</T>
@@ -218,6 +249,9 @@ const s = StyleSheet.create({
   recDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
   chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.ink },
+  fill: { flex: 1 },
+  webFrame: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', overflow: 'hidden' },
+  note: { marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: C.accent },
   toast: { marginHorizontal: 16, marginTop: 8, padding: 12, borderRadius: 8, backgroundColor: C.danger },
   nav: {
     flexDirection: 'row',

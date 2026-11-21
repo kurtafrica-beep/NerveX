@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExampleCard } from '../components/Example';
 import { RemoteMedia } from '../components/Media';
 import { HandsFreePanel, useHandsFree } from '../components/HandsFree';
+import { ON_WEB } from '../platform';
 import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Recorders';
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
@@ -249,6 +250,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                     if (problem) setError(problem);
                   }}
                 />
+                {ON_WEB ? null : (
                 <Btn
                   label={n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another video' : 'Record video'}
                   icon="cam"
@@ -260,9 +262,10 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                     setCamera(true);
                   }}
                 />
+                )}
               </View>
             )}
-            {!handsFree.on && !voice.active && !saving ? (
+            {!ON_WEB && !handsFree.on && !voice.active && !saving ? (
               <Btn
                 label="Hands-free: say start and stop"
                 icon="mic"
@@ -284,7 +287,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               </View>
             ) : null}
             {!voice.active && !saving && !saved && !handsFree.on ? (
-              <T v="small">Recording starts on the tap and saves to your log when you stop. Audio up to 30 minutes, video up to 1 minute. Film yourself, not them.</T>
+              <T v="small">Recording starts on the tap and saves to your log when you stop. {ON_WEB ? 'Audio up to 30 minutes. Video and hands-free are in the Android app.' : 'Audio up to 30 minutes, video up to 1 minute. Film yourself, not them.'}</T>
             ) : null}
             {failed && !saving ? (
               <View style={s.recRow}>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Share, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { inviteCode, sendInvite } from '../invite';
 import { useAuth } from '../auth';
 import { LineCard, TitleChip } from '../components/LineCard';
 import { BaseMountains, PathMountains } from '../components/Mountains';
@@ -346,20 +347,19 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-const APK = 'https://github.com/kurtafrica-beep/NerveX/releases/latest/download/nerve.apk';
-
 function Invite({ onError }: { onError: (message: string) => void }) {
   const n = useNerve();
-  const mine = n.uid.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const mine = inviteCode(n.uid);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [joined, setJoined] = useState('');
-  const send = () =>
-    Share.share({
-      message:
-        `Do the scary social stuff with me on Nerve. Get the app (Android): ${APK}\n\n` +
-        `Sign up, open You and enter my code ${mine} so we land in each other's circle.`,
-    }).catch(() => {});
+  const send = async () => {
+    const how = await sendInvite(mine);
+    if (how === 'copied') setJoined('');
+    setCopied(how === 'copied');
+    if (how === 'failed') onError('Sharing didn’t open. Send your code instead: ' + mine);
+  };
+  const [copied, setCopied] = useState(false);
   const redeem = async () => {
     setBusy(true);
     const r = await n.redeemInvite(code);
@@ -393,6 +393,7 @@ function Invite({ onError }: { onError: (message: string) => void }) {
         />
         <Btn label="Join" kind="outline" small disabled={busy || code.length !== 8} onPress={redeem} />
       </View>
+      {copied ? <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>Invite copied. Paste it to a friend.</T> : null}
       {joined ? <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>You and {joined} are in each other’s circle now.</T> : null}
     </View>
   );

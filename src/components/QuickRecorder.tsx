@@ -8,7 +8,8 @@ import {
   useAudioRecorderState,
   type RecordingOptions,
 } from 'expo-audio';
-import { File, Paths } from 'expo-file-system';
+import { keep, playable, remove } from '../takeStore';
+import { ON_WEB } from '../platform';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { MAX_AUDIO_SECONDS } from '../config';
@@ -23,7 +24,7 @@ import { VoicePlayer } from './Media';
 import { AFTER_BEEP_MS, beep, wait } from '../beep';
 
 // Quick takes: record now, decide later which move it belongs to.
-// Takes stay on this phone until they're moved to a move.
+// Takes stay on this device until they're moved to a move.
 export type Take = { id: string; uri: string; seconds: number; at: number; auto?: boolean; wav?: boolean };
 const KEY = 'nerve.takes.inbox';
 
@@ -51,23 +52,17 @@ export function useTakes() {
   return { takes, save };
 }
 
-// Move the recorder's temporary file somewhere the phone won't clear it.
-function keep(uri: string, ext = 'm4a'): string {
-  try {
-    const src = new File(uri);
-    const dest = new File(Paths.document, `take-${Date.now()}.${ext}`);
-    src.move(dest);
-    return dest.uri;
-  } catch {
-    return uri;
-  }
-}
-function remove(uri: string) {
-  try {
-    new File(uri).delete();
-  } catch {
-    // already gone
-  }
+// Takes saved in the browser need a fresh playable URL each visit.
+function TakePlayer({ uri }: { uri: string }) {
+  const [src, setSrc] = useState(uri.startsWith('idb:') ? '' : uri);
+  useEffect(() => {
+    let live = true;
+    playable(uri).then((u) => live && setSrc(u)).catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [uri]);
+  return src ? <VoicePlayer uri={src} /> : <T v="small">Loading take…</T>;
 }
 
 export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: boolean; onClose: () => void; onError: (m: string) => void; onMode?: (m: 'idle' | 'manual' | 'auto') => void }) {
@@ -84,7 +79,8 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   const hf = useHandsFree(
     useCallback(
       async (rec: { uri: string; seconds: number; wav?: boolean }) => {
-        save([{ id: String(Date.now()), uri: keep(rec.uri, rec.wav ? 'wav' : 'm4a'), seconds: rec.seconds, at: Date.now(), auto: true, wav: rec.wav }, ...takesRef.current]);
+        const uri = await keep(rec.uri, rec.wav ? 'wav' : 'm4a');
+        save([{ id: String(Date.now()), uri, seconds: rec.seconds, at: Date.now(), auto: true, wav: rec.wav }, ...takesRef.current]);
         return true;
       },
       [save],
@@ -138,7 +134,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
       const uri = recorder.uri;
       const seconds = (Date.now() - seg.current.start) / 1000;
       if (!uri) return;
-      if (keepIt) add({ id: String(Date.now()), uri: keep(uri), seconds, at: Date.now(), auto });
+      if (keepIt) add({ id: String(Date.now()), uri: await keep(uri), seconds, at: Date.now(), auto });
       else remove(uri);
     },
     [recorder, add],
@@ -235,22 +231,24 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                 </View>
               </View>
 
-              <View style={s.autoRow}>
-                <View style={{ flex: 1 }}>
-                  <T v="semi" style={{ fontSize: 16 }}>
-                    Auto record
-                  </T>
-                  <T v="small">Say “start” to record and “stop” to save it to your takes, then it listens again. Keep Nerve open; the screen stays on.</T>
+              {ON_WEB ? null : (
+                <View style={s.autoRow}>
+                  <View style={{ flex: 1 }}>
+                    <T v="semi" style={{ fontSize: 16 }}>
+                      Auto record
+                    </T>
+                    <T v="small">Say “start” to record and “stop” to save it to your takes, then it listens again. Keep Nerve open; the screen stays on.</T>
+                  </View>
+                  <Switch
+                    value={voiceOn}
+                    disabled={recording}
+                    onValueChange={voiceToggle}
+                    trackColor={{ true: C.accent, false: C.line }}
+                    thumbColor={C.surface}
+                    accessibilityLabel="Auto record with start and stop"
+                  />
                 </View>
-                <Switch
-                  value={voiceOn}
-                  disabled={recording}
-                  onValueChange={voiceToggle}
-                  trackColor={{ true: C.accent, false: C.line }}
-                  thumbColor={C.surface}
-                  accessibilityLabel="Auto record with start and stop"
-                />
-              </View>
+              )}
               {voiceOn ? <HandsFreePanel hf={hf} /> : null}
               {hf.error ? <T v="error">{hf.error}</T> : null}
 
@@ -262,7 +260,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
               </View>
               <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={{ gap: 10 }}>
                 {takes.length === 0 ? (
-                  <T v="sub">Nothing yet. Record a take, then add it to the move it belongs to. Takes stay on this phone until you do.</T>
+                  <T v="sub">Nothing yet. Record a take, then add it to the move it belongs to. Takes stay on this device until you do.</T>
                 ) : (
                   takes.map((t) => (
                     <View key={t.id} style={s.take}>
@@ -273,7 +271,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                         </T>
                         <T v="small">{clockText(t.seconds)}</T>
                       </View>
-                      <VoicePlayer uri={t.uri} />
+                      <TakePlayer uri={t.uri} />
                       <View style={s.row}>
                         <Btn label="Add to a move" kind="primary" small disabled={busyMic} onPress={() => setPicking(t)} />
                         <Btn

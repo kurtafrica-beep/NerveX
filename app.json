@@ -25,7 +25,13 @@
       ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Nerve",
+      "shortName": "Nerve",
+      "backgroundColor": "#E8EBE5",
+      "themeColor": "#E8EBE5",
+      "bundler": "metro",
+      "output": "single"
     },
     "plugins": [
       "expo-web-browser",
@@ -59,6 +65,9 @@
         }
       ]
     ],
-    "scheme": "nerve"
+    "scheme": "nerve",
+    "experiments": {
+      "baseUrl": "/NerveX"
+    }
   }
 }

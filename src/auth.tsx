@@ -2,6 +2,8 @@ import type { Session } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
+import { captureInvite } from './invite';
 import { supabase } from './supabase';
 
 type AuthApi = {
@@ -22,6 +24,14 @@ function first(value: string | string[] | undefined): string {
 // Opens Google in the system browser and comes back through nerve://auth.
 // Resolves '' on success, or a message to show the person.
 async function signInWithGoogle(): Promise<string> {
+  if (Platform.OS === 'web') {
+    // In a browser, go to Google in this tab and come back to the app's own page.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: webHome(), queryParams: { prompt: 'select_account' } },
+    });
+    return error ? 'Google sign-in is not set up yet. Try again in a moment.' : '';
+  }
   const redirectTo = Linking.createURL('auth');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -83,7 +93,7 @@ async function signUpWithEmail(name: string, email: string, password: string): P
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
-    options: { data: { full_name: name.trim().slice(0, 80) }, emailRedirectTo: Linking.createURL('auth') },
+    options: { data: { full_name: name.trim().slice(0, 80) }, emailRedirectTo: Platform.OS === 'web' ? webHome() : Linking.createURL('auth') },
   });
   if (error) return { error: emailProblem(error), confirm: false };
   // With confirmation on, an address that is already registered comes back with no identities.
@@ -98,6 +108,17 @@ async function finishFromLink(url: string | null) {
   if (!url) return;
   const code = first((Linking.parse(url).queryParams ?? {}).code);
   if (code) await supabase.auth.exchangeCodeForSession(code).catch(() => undefined);
+  if (code && Platform.OS === 'web') {
+    // Don't leave the one-time code in the address bar.
+    const clean = new URL(window.location.href);
+    clean.searchParams.delete('code');
+    window.history.replaceState(null, '', clean.toString());
+  }
+}
+
+// The web app's own address, without the query, for sign-in redirects.
+function webHome() {
+  return window.location.origin + window.location.pathname;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -115,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(next);
       setReady(true);
     });
-    Linking.getInitialURL().then(finishFromLink);
+    captureInvite().then(() => Linking.getInitialURL()).then(finishFromLink);
     const link = Linking.addEventListener('url', (event) => finishFromLink(event.url));
     return () => {
       alive = false;
