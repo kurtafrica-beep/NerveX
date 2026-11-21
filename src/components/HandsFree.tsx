@@ -10,6 +10,7 @@ import { StyleSheet, Vibration, View } from 'react-native';
 import { clockText, type Recording } from '../data';
 import { C } from '../theme';
 import { Btn, T } from '../ui';
+import { beep, START_BEEP_MS } from '../beep';
 
 // Hands-free takes are raw WAV (about 1.9 MB a minute), so they stop by themselves
 // at 25 minutes to stay under the 50 MB upload limit.
@@ -91,6 +92,7 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
   }, []);
 
   const finishTake = useCallback(async () => {
+    beep('stop');
     const { uri, seconds: length } = take.current;
     take.current = { uri: null, seconds: 0 };
     if (uri && length >= 1) {
@@ -174,7 +176,8 @@ export function useHandsFree(onTake: (rec: Recording) => Promise<boolean>) {
       setPhase('recording');
       setSeconds(0);
       Vibration.vibrate(150);
-      ExpoSpeechRecognitionModule.start({ ...BASE, recordingOptions: { persist: true } });
+      beep('start');
+      setTimeout(() => ExpoSpeechRecognitionModule.start({ ...BASE, recordingOptions: { persist: true } }), START_BEEP_MS);
     } else if (p === 'recording' || p === 'saving') {
       // "stop" heard, the limit was reached, or the recognizer stopped by itself: keep what was recorded.
       finishTake();

@@ -20,6 +20,7 @@ import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
 import { HandsFreePanel, useHandsFree } from './HandsFree';
 import { VoicePlayer } from './Media';
+import { beep, START_BEEP_MS, wait } from '../beep';
 
 // Quick takes: record now, decide later which move it belongs to.
 // Takes stay on this phone until they're moved to a move.
@@ -121,6 +122,8 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
 
   const begin = useCallback(async () => {
     await recorder.prepareToRecordAsync();
+    beep('start');
+    await wait(START_BEEP_MS);
     recorder.record();
     seg.current = { start: Date.now(), firstLoud: 0, lastLoud: 0, last: 0 };
   }, [recorder]);
@@ -162,6 +165,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   const stopAll = useCallback(async () => {
     setMode('idle');
     await finish(true, false);
+    beep('stop');
     try {
       await setAudioModeAsync({ allowsRecording: false });
     } catch {
