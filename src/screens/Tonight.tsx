@@ -1,7 +1,9 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Animated, Dimensions, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { LevelVideoRow } from '../components/Example';
 import { BranchBanner, Patch, PlaceBanner, PlacePoster } from '../components/Patches';
+import { ArtImage, Emo } from '../components/ArtIcon';
+import { BRANCH_ICON, PLACE_ICON, PLACE_POSTER } from '../artImages';
 import { PLACES } from '../rpgData';
 import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, dayNum, placeCard, todaysQuest } from '../progress';
 import { useNerve } from '../data';
@@ -121,7 +123,7 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
                     onPress={() => onOpenMove(m.id)}
                     style={({ pressed }) => [s.moveRow, !open && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
                     <View style={[s.tile, { backgroundColor: lines > 0 ? bc : bs }]}>
-                      <T style={[s.tileText, { color: lines > 0 ? C.accentInk : bc }, !open && { fontSize: 18 }]}>{open ? (m.cap ? '★' : m.i) : '🔒'}</T>
+                      {open ? <T style={[s.tileText, { color: lines > 0 ? C.accentInk : bc }]}>{m.cap ? '★' : m.i}</T> : <Emo e="🔒" size={32} />}
                     </View>
                     <View style={{ flex: 1 }}>
                       <T v="semi" style={{ lineHeight: 21 }}>
@@ -144,7 +146,7 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
                 );
               })}
               <View style={[s.reward, { borderColor: open ? bc : C.line, backgroundColor: open ? bs : 'transparent', borderStyle: earned ? 'solid' : 'dashed' }, !open && { opacity: 0.7 }]}>
-                <T style={{ fontSize: 22, width: 30 }}>{open ? TIER_EMOJI[k - 1] : '🔒'}</T>
+                <Emo e={open ? TIER_EMOJI[k - 1] : '🔒'} size={30} />
                 <View style={{ flex: 1 }}>
                   <T v="semi" style={{ fontSize: 16 }}>
                     {earned ? 'Earned: ' : 'Reward: '}
@@ -173,7 +175,8 @@ function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void
   return (
     <View style={[s.poster, { backgroundColor: deep }]}>
       <View style={s.posterArt}>
-        {tb ? <BranchBanner b={tb} height={150} glyphX={230} scale={1.15} /> : <PlaceBanner place={move.place ?? 0} height={150} />}
+        {tb ? <BranchBanner b={tb} height={150} glyphX={900} scale={1.15} /> : <PlaceBanner place={move.place ?? 0} height={150} />}
+        <ArtImage src={tb ? BRANCH_ICON[tb] : PLACE_ICON[PLACES[move.place ?? 0].id]} size={100} style={s.posterTile} />
         <View style={[s.fade, { backgroundColor: deep }]} />
       </View>
       <View style={s.pill}>
@@ -277,13 +280,17 @@ function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
                     scroller.current?.scrollTo({ x: k * STEP, animated: true });
                   }}
                   style={StyleSheet.absoluteFill}>
-                  <View style={[StyleSheet.absoluteFill, !isOpen && { opacity: 0.45 }]}>
-                    <PlacePoster place={k} width={CARD_W} height={CARD_H} />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: C.bg }, !isOpen && { opacity: 0.45 }]}>
+                    {PLACE_POSTER[place.id] ? (
+                      <Image source={PLACE_POSTER[place.id]} style={{ width: CARD_W, height: CARD_H }} resizeMode="cover" />
+                    ) : (
+                      <PlacePoster place={k} width={CARD_W} height={CARD_H} />
+                    )}
                   </View>
-                  <T style={s.pcName} numberOfLines={2}>
+                  <T style={[s.pcName, { color: C.ink }]} numberOfLines={2}>
                     {place.name}
                   </T>
-                  <View style={s.pcFoot}>
+                  <View style={[s.pcFoot, s.pcFootArt]}>
                     {isOpen ? (
                       <View style={{ flexDirection: 'row', gap: 3 }}>
                         {[0, 1, 2, 3, 4].map((i) => (
@@ -291,9 +298,12 @@ function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
                         ))}
                       </View>
                     ) : (
-                      <T style={s.pcLock}>🔒 Level {place.lv}</T>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                        <Emo e="🔒" size={18} />
+                        <T style={[s.pcN, { color: C.ink }]}>Level {place.lv}</T>
+                      </View>
                     )}
-                    {regular ? <T style={s.pcReg}>★ Regular</T> : isOpen ? <T style={s.pcN}>{done}/5</T> : null}
+                    {regular ? <T style={[s.pcReg, { color: C.goldText }]}>★ Regular</T> : isOpen ? <T style={[s.pcN, { color: C.ink }]}>{done}/5</T> : null}
                   </View>
                 </Pressable>
               </Animated.View>
@@ -312,7 +322,7 @@ function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
             onPress={() => onOpenMove(m.id)}
             style={({ pressed }) => [s.moveRow, !isOpen && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
             <View style={[s.tile, { backgroundColor: lines > 0 ? PLACE_HUE[pl.id][0] : PLACE_HUE[pl.id][1] }]}>
-              <T style={[s.tileText, { color: lines > 0 ? '#FFFFFF' : PLACE_HUE[pl.id][0] }, !isOpen && { fontSize: 18 }]}>{isOpen ? m.i : '🔒'}</T>
+              {isOpen ? <T style={[s.tileText, { color: lines > 0 ? '#FFFFFF' : PLACE_HUE[pl.id][0] }]}>{m.i}</T> : <Emo e="🔒" size={32} />}
             </View>
             <T v="semi" style={{ flex: 1, lineHeight: 21 }}>
               {m.title}
@@ -372,8 +382,10 @@ const s = StyleSheet.create({
   pcardRegular: { borderWidth: 2.5, borderColor: '#D9A521' },
   pcName: { position: 'absolute', left: 12, right: 10, top: 10, fontFamily: F.display, fontSize: 20, lineHeight: 21, letterSpacing: -0.4, color: '#FFFFFF' },
   pcFoot: { position: 'absolute', left: 12, right: 10, bottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pcPip: { width: 9, height: 9, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.3)' },
-  pcPipOn: { backgroundColor: C.accent, borderWidth: 1.5, borderColor: '#FFFFFF' },
+  pcFootArt: { left: 8, right: 8, bottom: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: 'rgba(246,247,243,0.94)', borderWidth: 1.5, borderColor: C.ink },
+  pcPip: { width: 9, height: 9, borderRadius: 5, backgroundColor: C.line },
+  pcPipOn: { backgroundColor: C.accent, borderWidth: 1.5, borderColor: C.ink },
+  posterTile: { position: 'absolute', right: 16, top: 16, borderWidth: 2, borderColor: C.ink },
   pcLock: { fontFamily: F.semi, fontSize: 12, color: '#FFFFFF', backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, overflow: 'hidden' },
   pcReg: { fontFamily: F.semi, fontSize: 12, color: '#FCE9A8' },
   pcN: { fontFamily: F.semi, fontSize: 12, color: '#FFFFFF' },

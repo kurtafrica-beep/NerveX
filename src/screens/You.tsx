@@ -4,6 +4,8 @@ import { useAuth } from '../auth';
 import { LineCard, TitleChip } from '../components/LineCard';
 import { BaseMountains, PathMountains } from '../components/Mountains';
 import { BranchBanner, CardSheet, PatchWall } from '../components/Patches';
+import { ArtImage, Emo } from '../components/ArtIcon';
+import { BRANCH_ICON } from '../artImages';
 import { SvgXml } from 'react-native-svg';
 import type { Card as PlayCard } from '../rpgData';
 import type { Reward } from '../components/Reward';
@@ -119,7 +121,8 @@ export function You({
           return (
             <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
               <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
-                <BranchBanner b={b} height={96} />
+                <BranchBanner b={b} height={96} glyphX={900} />
+                <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} />
               </View>
               <View style={[s.pathHead, { marginTop: -34 }]}>
                 <T style={s.pathName}>{BRANCH[b].name}</T>
@@ -201,7 +204,7 @@ export function You({
             const st = p.ach[a.k];
             return (
               <View key={a.k} style={[s.ach, st.done && { borderColor: C.accent, backgroundColor: C.accentSoft }]}>
-                <T style={{ fontSize: 24, opacity: st.done ? 1 : 0.4 }}>{a.e}</T>
+                <Emo e={a.e} size={34} dim={!st.done} />
                 <T v="semi" style={{ fontSize: 15, lineHeight: 19 }}>
                   {a.t}
                 </T>
@@ -352,6 +355,7 @@ const s = StyleSheet.create({
   xpBar: { height: 10, borderRadius: 5, backgroundColor: C.bgDeep, overflow: 'hidden' },
   pathCard: { padding: 14, paddingTop: 0, borderRadius: 8, gap: 8, overflow: 'hidden' },
   pathArt: { marginHorizontal: -14, height: 96 },
+  artTile: { position: 'absolute', right: 14, top: 10, borderWidth: 2, borderColor: C.ink },
   pathHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
   pathName: { fontFamily: F.display, fontSize: 26, lineHeight: 30, letterSpacing: -0.4, color: '#FFFFFF' },
   testRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

@@ -6,6 +6,8 @@ import { C, F } from '../theme';
 import { Btn, T } from '../ui';
 import { CARDS, PLACES } from '../rpgData';
 import { Patch } from './Patches';
+import { ArtImage, Emo } from './ArtIcon';
+import { BRANCH_ICON, PLACE_ICON } from '../artImages';
 
 export type Reward = { levels: string[]; level: number; ach: AchKey[]; gained: number; paths: PathKey[]; cards?: string[]; regulars?: number[]; places?: number[]; preview?: boolean };
 export type Snap = { xp: number; level: number; earned: string[]; ach: AchKey[]; paths: PathKey[]; cards: string[]; regulars: number[]; test: boolean };
@@ -128,7 +130,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
     if (r.level) rows.push(['⬆️', `You reached Level ${r.level}`]);
   } else if (np) {
     hue = HUE[np];
-    badge = '🧗';
+    badge = <ArtImage src={BRANCH_ICON[np]} size={72} />;
     eyebrow = r.preview ? 'Preview · New path' : 'New path';
     title = `${BRANCH[np].name} path unlocked`;
     rows.push(['⛰️', `Four stages and a capstone: ${MOVES.filter((m) => m.b === np).length} new moves`]);
@@ -139,7 +141,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
     badge = <Patch card={newCards[0] ?? CARDS[0]} mode="earned" size={84} />;
     eyebrow = PLACES[reg].name;
     title = 'You’re a regular';
-    rows.push(['🏠', `All five actions at the ${PLACES[reg].name.toLowerCase()}`]);
+    rows.push([<ArtImage key="reg" src={PLACE_ICON[PLACES[reg].id]} size={26} />, `All five actions at the ${PLACES[reg].name.toLowerCase()}`]);
   } else if (newCards.length && !r.level) {
     badge = <Patch card={newCards[0]} mode="earned" size={84} />;
     eyebrow = 'New patch';
@@ -152,7 +154,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
     rows.push(['✅', a0.d]);
   }
   for (const c of newCards) rows.push([<Patch key={c.id} card={c} mode="earned" size={24} />, `New patch: ${c.t}`]);
-  for (const k of r.places ?? []) rows.push(['📍', `New place: ${PLACES[k].name}`]);
+  for (const k of r.places ?? []) rows.push([<ArtImage key={k} src={PLACE_ICON[PLACES[k].id]} size={26} />, `New place: ${PLACES[k].name}`]);
   for (const a of ACH) {
     if (!r.ach.includes(a.k)) continue;
     rows.push([a.e, `${first || np || r.level ? `Achievement: ${a.t}` : 'Achievement bonus'} · +${ACH_XP} XP`]);
@@ -166,7 +168,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
       <View style={s.scrim}>
         <View style={s.card} accessibilityViewIsModal>
           <View style={[s.badge, { borderColor: bc }]}>
-            {typeof badge === 'string' ? <T style={{ fontSize: 44, lineHeight: 52 }}>{badge}</T> : badge}
+            {typeof badge === 'string' ? <Emo e={badge} size={72} /> : badge}
           </View>
           <T style={[s.eyebrow, { color: bc }]}>{eyebrow}</T>
           <T style={s.title} accessibilityRole="header">
@@ -175,7 +177,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
           <View style={{ gap: 6, alignSelf: 'stretch' }}>
             {rows.map((row, i) => (
               <View key={i} style={s.row}>
-                {typeof row[0] === 'string' ? <T style={{ fontSize: 18, width: 26 }}>{row[0]}</T> : <View style={{ width: 26, alignItems: 'center' }}>{row[0]}</View>}
+                <View style={{ width: 28, alignItems: 'center' }}>{typeof row[0] === 'string' ? <Emo e={row[0]} size={26} /> : row[0]}</View>
                 <T style={{ flex: 1, fontSize: 16, lineHeight: 21 }}>{row[1]}</T>
               </View>
             ))}
