@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { LevelVideoRow } from '../components/Example';
 import { useNerve } from '../data';
 import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey } from '../moves';
+import { levelVideo } from '../videos';
 import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type Req } from '../progress';
 import { C, F } from '../theme';
 import { Btn, Card, Seg, T } from '../ui';
@@ -74,6 +76,7 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
           value={branch}
           onChange={setBranch}
           color={HUE[branch][0]}
+          wrap
           options={PATH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))}
         />
         <T v="sub">{BRANCH[branch].tag}</T>
@@ -102,6 +105,7 @@ export function Tonight({ onOpenMove, initialBranch = 'c' }: { onOpenMove: (id: 
                 </View>
               ) : null}
               {by ? <T v="small">Built on ideas from {by}.</T> : null}
+              {open && levelVideo(branch, k) ? <LevelVideoRow v={levelVideo(branch, k)!} /> : null}
               {!open && pOpen ? (
                 <T v="small">
                   Drop a line on every {lvWord(branch)} {k - 1} move to open {moves.length === 1 ? 'the capstone' : `these ${moves.length}`}.

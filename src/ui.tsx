@@ -141,15 +141,18 @@ export function Seg<K extends string>({
   onChange,
   tall,
   color = C.ink,
+  wrap,
 }: {
   options: { key: K; label: string; sub?: string }[];
   value: K;
   onChange: (key: K) => void;
   tall?: boolean;
   color?: string;
+  // let options flow onto more rows, three to a row
+  wrap?: boolean;
 }) {
   return (
-    <View style={[seg.wrap, tall && { borderRadius: 30 }]}>
+    <View style={[seg.wrap, tall && { borderRadius: 30 }, wrap && { flexWrap: 'wrap' }]}>
       {options.map((o) => {
         const on = o.key === value;
         const labelStyle: StyleProp<TextStyle> = [seg.label, on && { color: C.surface }];
@@ -159,7 +162,7 @@ export function Seg<K extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.key)}
-            style={[seg.item, { flex: o.label.length > 6 ? 1.7 : 1 }, tall && { minHeight: 50, borderRadius: 26 }, on && { backgroundColor: color }]}>
+            style={[seg.item, wrap ? { flexBasis: '31%', flexGrow: 1 } : { flex: o.label.length > 6 ? 1.7 : 1 }, tall && { minHeight: 50, borderRadius: 26 }, on && { backgroundColor: color }]}>
             <Text style={labelStyle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               {o.label}
             </Text>

@@ -4,10 +4,10 @@ import { BRANCH, BRANCH_KEYS, PATH_KEYS, isPath, levelMoves, lvTitle, type Branc
 import { GREY, HUE, TITLES, branchState, type Progress } from '../progress';
 import { C, F } from '../theme';
 
-type Geo = { w: number; h: number; base: number; half: number; peak: Partial<Record<BranchKey, number>>; cx: (i: number) => number };
+type Geo = { w: number; h: number; base: number; half: number; peak: Partial<Record<BranchKey, number>>; cx: (i: number) => number; stagger?: number };
 
 const BASE_RANGE: Geo = { w: 380, h: 258, base: 214, half: 64, peak: { c: 46, t: 74, q: 36, v: 80, s: 58 }, cx: (i) => 38 + i * 76 };
-const PATH_RANGE: Geo = { w: 380, h: 196, base: 152, half: 100, peak: { n: 24, f: 40 }, cx: (i) => 100 + i * 180 };
+const PATH_RANGE: Geo = { w: 380, h: 284, base: 214, half: 64, peak: { n: 52, f: 70, m: 40, p: 76, k: 30 }, cx: (i) => 38 + i * 76, stagger: 28 };
 
 const f1 = (n: number) => n.toFixed(1);
 const poly = (pts: number[][]) => 'M ' + pts.map((q) => `${f1(q[0])} ${f1(q[1])}`).join(' L ');
@@ -78,7 +78,9 @@ function Range({ keys, geo, p, onOpen }: { keys: BranchKey[]; geo: Geo; p: Progr
           />
         </G>
       ))}
-      {shapes.map(({ b, cx, py, shut, bc, doneK, cur, mastered, pts, climbed }) => (
+      {shapes.map(({ b, cx, py, shut, bc, doneK, cur, mastered, pts, climbed }) => {
+        const ly = BASE + 20 + (geo.stagger && keys.indexOf(b) % 2 ? geo.stagger : 0);
+        return (
         <G key={`t${b}`}>
           <Path d={poly(pts)} fill="none" stroke={bc} strokeOpacity={0.35} strokeWidth={1.5} strokeDasharray="2 3" strokeLinecap="round" />
           {climbed ? <Path d={poly(climbed)} fill="none" stroke={bc} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /> : null}
@@ -114,14 +116,15 @@ function Range({ keys, geo, p, onOpen }: { keys: BranchKey[]; geo: Geo; p: Progr
               </G>
             );
           })}
-          <SvgText x={cx} y={BASE + 20} textAnchor="middle" fontFamily={F.displayBold} fontSize={12} fill={C.ink}>
+          <SvgText x={cx} y={ly} textAnchor="middle" fontFamily={F.displayBold} fontSize={12} fill={C.ink}>
             {BRANCH[b].name.toUpperCase()}
           </SvgText>
-          <SvgText x={cx} y={BASE + 34} textAnchor="middle" fontFamily={F.displayBold} fontSize={12} fill={bc}>
+          <SvgText x={cx} y={ly + 14} textAnchor="middle" fontFamily={F.displayBold} fontSize={12} fill={bc}>
             {mastered ? 'SUMMIT' : isPath(b) ? branchState(b, p).replace('🔒 ', '').toUpperCase() : `LV ${cur}`}
           </SvgText>
         </G>
-      ))}
+        );
+      })}
     </Svg>
   );
 }

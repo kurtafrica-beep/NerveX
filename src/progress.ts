@@ -26,6 +26,9 @@ export const HUE: Record<BranchKey, [string, string]> = {
   s: ['#A85800', '#FBEBD5'],
   n: ['#232A3B', '#E4E7EE'],
   f: ['#2E7D32', '#E2F2E1'],
+  m: ['#C92A2A', '#FFE3E3'],
+  p: ['#7A5212', '#F3EAD9'],
+  k: ['#9C36B5', '#F6E5FA'],
 };
 export const GREY: [string, string] = ['#8D929B', '#F0F0EC'];
 
@@ -38,6 +41,9 @@ export const TITLES: Record<BranchKey, string[]> = {
   s: ['Helper', 'Prospector', 'Closer', 'Rainmaker', 'Master Salesman'],
   n: ['Sharp Ear', 'Tactical Empath', 'Calibrator', 'Dealmaker', 'Negotiator'],
   f: ['Door Opener', 'Problem Finder', 'Positioner', 'Frame Setter', 'Founder'],
+  m: ['Camera Ready', 'Hook Setter', 'Story Cutter', 'Public Face', 'Creator'],
+  p: ['Dialer', 'Door Knocker', 'Follow-Up Pro', 'Meeting Setter', 'Prospector'],
+  k: ['Stage Ready', 'Structured', 'Story Sharp', 'Room Reader', 'Keynote Speaker'],
 };
 export const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 export const TIER_EMOJI = ['🥉', '🥈', '🥇', '💠', '💎'];
@@ -99,7 +105,7 @@ function dayNum(ms: number): number {
 }
 
 export function titleInfo(key: string | null | undefined): { key: string; b: BranchKey; k: number; text: string } | null {
-  if (typeof key !== 'string' || !/^[ctqvsnf][1-5]$/.test(key)) return null;
+  if (typeof key !== 'string' || !/^[ctqvsnfmpk][1-5]$/.test(key)) return null;
   const b = key.charAt(0) as BranchKey;
   const k = Number(key.charAt(1));
   return { key, b, k, text: TITLES[b][k - 1] };

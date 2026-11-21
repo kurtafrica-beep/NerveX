@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ExampleCard } from '../components/Example';
 import { RemoteMedia } from '../components/Media';
 import { HandsFreePanel, useHandsFree } from '../components/HandsFree';
 import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Recorders';
@@ -191,6 +192,8 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               </View>
             </View>
           ) : null}
+
+          <ExampleCard move={move} />
 
           <View style={s.section}>
             <T v="eyebrow">The line</T>

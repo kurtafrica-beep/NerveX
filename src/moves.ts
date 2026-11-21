@@ -1,7 +1,7 @@
 import { PATH_LAYOUT, PATH_SOURCE } from './pathMoves';
 
 export type BaseKey = 'c' | 't' | 'q' | 'v' | 's';
-export type PathKey = 'n' | 'f';
+export type PathKey = 'n' | 'f' | 'm' | 'p' | 'k';
 export type BranchKey = BaseKey | PathKey;
 
 export type Move = {
@@ -30,14 +30,20 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string; path?: boole
   s: { name: 'Sell', tag: 'How to get a yes. Built on Alex Hormozi’s sales frameworks. Only sell what you believe helps them.' },
   n: { name: 'Negotiator', path: true, tag: 'Getting to a deal both sides keep. Built on Chris Voss’s negotiation methods.' },
   f: { name: 'Founder', path: true, tag: 'Selling when you are the whole team. Built on ideas from Josh Braun, Keenan, April Dunford and Oren Klaff.' },
+  m: { name: 'Creator', path: true, tag: 'Being on camera and in public. Built on ideas from Ali Abdaal, Vinh Giang, MrBeast, Paddy Galloway and Alex Hormozi.' },
+  p: { name: 'Prospector', path: true, tag: 'Starting conversations that turn into business. Built on ideas from Jeb Blount and Mike Weinberg.' },
+  k: { name: 'Keynote', path: true, tag: 'Owning a room. Built on ideas from Julian Treasure, Chris Anderson’s TED guide, Matthew Dicks and Vinh Giang.' },
 };
 export const BRANCH_KEYS: BaseKey[] = ['c', 't', 'q', 'v', 's'];
-export const PATH_KEYS: PathKey[] = ['n', 'f'];
+export const PATH_KEYS: PathKey[] = ['n', 'f', 'm', 'p', 'k'];
 export const ALL_KEYS: BranchKey[] = [...BRANCH_KEYS, ...PATH_KEYS];
 // What each path needs: the level reached in each base branch, and recordings across those branches.
 export const PATH: Record<PathKey, { need: Partial<Record<BaseKey, number>>; recs: number; by: string[] }> = {
   n: { need: { t: 3, q: 3 }, recs: 8, by: [] },
   f: { need: { s: 3, c: 3, t: 2 }, recs: 8, by: ['Josh Braun', 'Keenan', 'April Dunford', 'Oren Klaff'] },
+  m: { need: { v: 3, c: 2 }, recs: 8, by: ['Ali Abdaal and Vinh Giang', 'MrBeast and Paddy Galloway', 'Alex Hormozi', ''] },
+  p: { need: { s: 3, c: 3 }, recs: 8, by: ['Jeb Blount', 'Mike Weinberg', 'Jeb Blount', 'Mike Weinberg'] },
+  k: { need: { v: 4, t: 3, c: 3 }, recs: 10, by: ['Julian Treasure', 'Chris Anderson’s TED Talks guide', 'Matthew Dicks', 'Vinh Giang'] },
 };
 // Reactions from other people a posted capstone needs before it counts.
 export const CAP_REACTS = 3;
@@ -447,6 +453,9 @@ for (let n = 1; n <= 17; n++) for (const b of PATH_KEYS) if (BYPOS[b + n]) ORDER
 export const LEVEL_NAMES: Record<BranchKey, string[]> = {
   n: ['Listen', 'Empathy', 'Calibrate', 'Bargain', 'Capstone'],
   f: ['Outreach', 'Discovery', 'Positioning', 'Pitch', 'Capstone'],
+  m: ['On camera', 'Hooks', 'Story', 'In public', 'Capstone'],
+  p: ['The call', 'Walk in', 'Follow up', 'Book it', 'Capstone'],
+  k: ['Presence', 'Structure', 'Story', 'The room', 'Capstone'],
   "c": [
     "Base",
     "Bold",
