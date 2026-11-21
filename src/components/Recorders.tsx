@@ -15,7 +15,7 @@ import { MAX_AUDIO_SECONDS, MAX_VIDEO_SECONDS } from '../config';
 import { clockText, type Recording } from '../data';
 import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
-import { beep, START_BEEP_MS, wait } from '../beep';
+import { AFTER_BEEP_MS, beep, wait } from '../beep';
 
 // Speech-quality mono AAC: about 7 MB for a full 30 minutes.
 const VOICE: RecordingOptions = {
@@ -47,8 +47,8 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
     try {
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
-      beep('start');
-      await wait(START_BEEP_MS);
+      await beep('start');
+      await wait(AFTER_BEEP_MS);
       last.current = 0;
       stopping.current = false;
       recorder.record();
