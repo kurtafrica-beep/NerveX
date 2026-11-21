@@ -3,7 +3,8 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { BRANCH, isPath, type Move } from '../moves';
 import { C, F } from '../theme';
 import { T } from '../ui';
-import { levelVideo, mmss, searchUrl, upText, videoUrl, type Video } from '../videos';
+import { levelVideo, mmss, searchUrl, upText, type Video } from '../videos';
+import { openVideo } from './VideoSheet';
 
 const RED = '#FF0033';
 
@@ -28,8 +29,8 @@ export function ExampleCard({ move }: { move: Move }) {
             </T>
           </View>
           <T>{v.take}</T>
-          <Pressable accessibilityRole="link" onPress={() => open(videoUrl(v))} style={({ pressed }) => [s.yt, pressed && { opacity: 0.85 }]}>
-            <T style={s.ytText}>▶ Watch on YouTube{v.at ? ` from ${mmss(v.at)}` : ''}</T>
+          <Pressable accessibilityRole="button" onPress={() => openVideo(v)} style={({ pressed }) => [s.yt, pressed && { opacity: 0.85 }]}>
+            <T style={s.ytText}>▶ Watch here{v.at ? ` from ${mmss(v.at)}` : ''}</T>
           </Pressable>
         </View>
       ) : null}
@@ -45,7 +46,7 @@ export function ExampleCard({ move }: { move: Move }) {
 // A compact row under a level heading on Tonight.
 export function LevelVideoRow({ v }: { v: Video }) {
   return (
-    <Pressable accessibilityRole="link" accessibilityLabel={`Example video: ${v.t}`} onPress={() => open(videoUrl(v))} style={({ pressed }) => [s.row, pressed && { opacity: 0.8 }]}>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Play example video: ${v.t}`} onPress={() => openVideo(v)} style={({ pressed }) => [s.row, pressed && { opacity: 0.8 }]}>
       <View style={s.play}>
         <T style={{ color: '#fff', fontSize: 13, lineHeight: 16 }}>▶</T>
       </View>

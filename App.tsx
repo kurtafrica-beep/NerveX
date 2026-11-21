@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/auth';
+import { VideoHost } from './src/components/VideoSheet';
 import { RewardSheet, XpToast, diff, isBig, snap, type Reward, type Snap } from './src/components/Reward';
 import { DataProvider, useNerve } from './src/data';
 import type { BranchKey } from './src/moves';
@@ -145,6 +146,7 @@ function Shell() {
       </View>
 
       {xpText ? <XpToast text={xpText} /> : null}
+      <VideoHost />
       {reward ? (
         <RewardSheet
           r={reward}
