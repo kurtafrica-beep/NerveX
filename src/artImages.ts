@@ -63,3 +63,30 @@ export const EMOJI_ICON: Record<string, ImageSourcePropType> = {
   '🌱': require('../assets/art/seedling.webp'),
   '📣': require('../assets/art/megaphone.webp'),
 };
+
+// Embroidered patch art, one per playbook card.
+export const PATCH_ART: Record<string, number> = {
+  c1: require('../assets/art/patch/c1.webp'),
+  c2: require('../assets/art/patch/c2.webp'),
+  c3: require('../assets/art/patch/c3.webp'),
+  pbar: require('../assets/art/patch/pbar.webp'),
+  pbooks: require('../assets/art/patch/pbooks.webp'),
+  pcafe: require('../assets/art/patch/pcafe.webp'),
+  pdogs: require('../assets/art/patch/pdogs.webp'),
+  pgrocery: require('../assets/art/patch/pgrocery.webp'),
+  pgym: require('../assets/art/patch/pgym.webp'),
+  pmeetup: require('../assets/art/patch/pmeetup.webp'),
+  pwork: require('../assets/art/patch/pwork.webp'),
+  q1: require('../assets/art/patch/q1.webp'),
+  q2: require('../assets/art/patch/q2.webp'),
+  q3: require('../assets/art/patch/q3.webp'),
+  s1: require('../assets/art/patch/s1.webp'),
+  s2: require('../assets/art/patch/s2.webp'),
+  s3: require('../assets/art/patch/s3.webp'),
+  t1: require('../assets/art/patch/t1.webp'),
+  t2: require('../assets/art/patch/t2.webp'),
+  t3: require('../assets/art/patch/t3.webp'),
+  v1: require('../assets/art/patch/v1.webp'),
+  v2: require('../assets/art/patch/v2.webp'),
+  v3: require('../assets/art/patch/v3.webp'),
+};

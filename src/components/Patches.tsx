@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Dimensions, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { PATCH_ART } from '../artImages';
+import { Emo } from './ArtIcon';
 import { SvgXml } from 'react-native-svg';
 import { PLACE_ART, branchPoster, patchSvg, placeArt, posterArt } from '../art';
 import { useNerve } from '../data';
@@ -13,9 +15,41 @@ export type PatchMode = 'locked' | 'earned' | 'mastered';
 
 // An embroidered trail patch: shape = branch, peaks and sun = level, gold thread = mastered.
 export function Patch({ card, mode, size }: { card: Card; mode: PatchMode; size: number }) {
-  const xml = useMemo(() => patchSvg(card, mode, size), [card, mode, size]);
-  return <SvgXml xml={xml} width={size} height={size} />;
+  const art = PATCH_ART[card.id];
+  const xml = useMemo(() => (art ? '' : patchSvg(card, mode, size)), [art, card, mode, size]);
+  if (!art) return <SvgXml xml={xml} width={size} height={size} />;
+  // Locked: faded and grey, with a lock. Mastered: a gold ring and a star.
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      {mode === 'mastered' ? (
+        <View style={[pa.ring, { width: size * 0.96, height: size * 0.96, borderRadius: size * 0.48, borderWidth: Math.max(2, size * 0.03) }]} />
+      ) : null}
+      <Image
+        source={art}
+        style={[{ width: size * 0.9, height: size * 0.9 }, mode === 'locked' && pa.locked]}
+        resizeMode="contain"
+        accessibilityIgnoresInvertColors
+      />
+      {mode === 'locked' ? (
+        <View style={pa.lock}>
+          <Emo e="🔒" size={Math.round(size * 0.22)} />
+        </View>
+      ) : null}
+      {mode === 'mastered' ? (
+        <View style={[pa.star, { right: 0, top: 0, width: size * 0.26, height: size * 0.26, borderRadius: size * 0.13 }]}>
+          <T style={{ color: '#FFF6D6', fontSize: Math.round(size * 0.15), lineHeight: Math.round(size * 0.2) }}>★</T>
+        </View>
+      ) : null}
+    </View>
+  );
 }
+
+const pa = StyleSheet.create({
+  ring: { position: 'absolute', borderColor: '#D9A521', backgroundColor: 'rgba(217,165,33,0.14)' },
+  locked: { opacity: 0.38, filter: [{ grayscale: 1 }] },
+  lock: { position: 'absolute' },
+  star: { position: 'absolute', backgroundColor: '#C9971C', borderWidth: 1.5, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+});
 
 // A poster banner: deep colour, map contours, the blaze sun and one big glyph.
 export function BranchBanner({ b, height, glyphX = 262, scale = 0.82 }: { b: BranchKey; height: number; glyphX?: number; scale?: number }) {
