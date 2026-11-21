@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Share, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { useAuth } from '../auth';
 import { LineCard, TitleChip } from '../components/LineCard';
 import { BaseMountains, PathMountains } from '../components/Mountains';
@@ -230,7 +230,7 @@ export function You({
           </T>
         </View>
         {n.circle.length === 0 ? (
-          <T v="sub">Nobody yet. Tap Follow on someone’s line in the feed to add them to your circle.</T>
+          <T v="sub">Nobody yet. Invite a friend below, or tap Follow on someone’s line in the feed.</T>
         ) : (
           n.circle.map((person, i) => {
             const shared = n.challengeWith(person.id);
@@ -278,6 +278,7 @@ export function You({
           })
         )}
         {n.circle.length > 0 ? <T v="small">Challenge sends them tonight’s move ({tonight.title}) until midnight.</T> : null}
+        <Invite onError={onError} />
       </Card>
 
       {n.mine.some((x) => x.posted !== false) ? (
@@ -345,7 +346,64 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
+const APK = 'https://github.com/kurtafrica-beep/NerveX/releases/latest/download/nerve.apk';
+
+function Invite({ onError }: { onError: (message: string) => void }) {
+  const n = useNerve();
+  const mine = n.uid.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [joined, setJoined] = useState('');
+  const send = () =>
+    Share.share({
+      message:
+        `Do the scary social stuff with me on Nerve. Get the app (Android): ${APK}\n\n` +
+        `Sign up, open You and enter my code ${mine} so we land in each other's circle.`,
+    }).catch(() => {});
+  const redeem = async () => {
+    setBusy(true);
+    const r = await n.redeemInvite(code);
+    setBusy(false);
+    if (r.problem) return onError(r.problem);
+    setCode('');
+    setJoined(r.who ?? 'your friend');
+  };
+  return (
+    <View style={s.invite}>
+      <View style={s.person}>
+        <View style={{ flex: 1 }}>
+          <T v="semi">Bring a friend</T>
+          <T v="small">
+            Your code is <T v="small" style={{ fontFamily: F.displayBold, color: C.ink, letterSpacing: 1 }}>{mine}</T>
+          </T>
+        </View>
+        <Btn label="Invite friends" small onPress={send} />
+      </View>
+      <View style={s.person}>
+        <TextInput
+          accessibilityLabel="Friend's invite code"
+          value={code}
+          onChangeText={(t) => setCode(t.toUpperCase().slice(0, 8))}
+          placeholder="Got a code?"
+          placeholderTextColor={C.muted}
+          autoCapitalize="characters"
+          autoCorrect={false}
+          maxLength={8}
+          style={s.codeField}
+        />
+        <Btn label="Join" kind="outline" small disabled={busy || code.length !== 8} onPress={redeem} />
+      </View>
+      {joined ? <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>You and {joined} are in each other’s circle now.</T> : null}
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
+  invite: { gap: 10, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, marginTop: 4 },
+  codeField: {
+    flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+    fontFamily: F.displayBold, fontSize: 15, letterSpacing: 2, color: C.ink, backgroundColor: C.bg,
+  },
   view: { padding: 16, gap: 12, paddingBottom: 32 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   name: { fontFamily: F.display, fontSize: 28, lineHeight: 30, color: C.ink },

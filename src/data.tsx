@@ -87,6 +87,7 @@ type Api = Store & {
   isFollowing: (other: string) => boolean;
   followersOf: (id: string) => number;
   toggleFollow: (other: string) => Promise<string>;
+  redeemInvite: (code: string) => Promise<{ who?: string; problem?: string }>;
   board: (period: 'week' | 'all', circleOnly: boolean) => BoardRow[];
   useCard: (id: string) => Promise<string>;
 };
@@ -359,6 +360,16 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       await reload();
       return error ? SAVE_FAILED : '';
     };
+    const redeemInvite: Api['redeemInvite'] = async (code) => {
+      const clean = code.trim().toLowerCase().replace(/[^0-9a-f]/g, '');
+      if (clean.length !== 8) return { problem: 'Invite codes are 8 letters and numbers.' };
+      if (uid.replace(/-/g, '').startsWith(clean)) return { problem: 'That’s your own code. Send it to a friend instead.' };
+      const { data, error } = await supabase.rpc('redeem_invite', { code: clean });
+      if (error) return { problem: SAVE_FAILED };
+      if (!data) return { problem: 'No one has that code. Check it and try again.' };
+      await reload();
+      return { who: data as string };
+    };
     // Leaderboard: 10 points a posted line, 20 with a recording, 2 per reaction from someone else.
     // Up to five lines a day count. Private takes stay private, so they don't count.
     const board: Api['board'] = (period, circleOnly) => {
@@ -442,6 +453,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       isFollowing: (other) => followSet.has(other),
       followersOf: (id) => follows.filter((f) => f.followee === id).length,
       toggleFollow,
+      redeemInvite,
       board,
       useCard,
     };
