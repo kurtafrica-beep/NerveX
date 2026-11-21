@@ -18,11 +18,12 @@ import { todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
 import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
+import { HandsFreePanel, useHandsFree } from './HandsFree';
 import { VoicePlayer } from './Media';
 
 // Quick takes: record now, decide later which move it belongs to.
 // Takes stay on this phone until they're moved to a move.
-export type Take = { id: string; uri: string; seconds: number; at: number; auto?: boolean };
+export type Take = { id: string; uri: string; seconds: number; at: number; auto?: boolean; wav?: boolean };
 const KEY = 'nerve.takes.inbox';
 
 const VOICE: RecordingOptions = {
@@ -36,14 +37,6 @@ const VOICE: RecordingOptions = {
   web: { mimeType: 'audio/webm', bitsPerSecond: 32000 },
 };
 
-// Auto mode: anything louder than this counts as someone talking.
-const SPEECH_DB = -38;
-// Stop a take after this much quiet once someone has spoken.
-const QUIET_MS = 6000;
-// Throw away a listening stretch with no speech after this long.
-const IDLE_MS = 25000;
-// Ignore blips shorter than this.
-const MIN_SPEECH_MS = 1500;
 
 export function useTakes() {
   const [takes, setTakes] = useState<Take[]>([]);
@@ -58,10 +51,10 @@ export function useTakes() {
 }
 
 // Move the recorder's temporary file somewhere the phone won't clear it.
-function keep(uri: string): string {
+function keep(uri: string, ext = 'm4a'): string {
   try {
     const src = new File(uri);
-    const dest = new File(Paths.document, `take-${Date.now()}.m4a`);
+    const dest = new File(Paths.document, `take-${Date.now()}.${ext}`);
     src.move(dest);
     return dest.uri;
   } catch {
@@ -82,6 +75,20 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   const recorder = useAudioRecorder(VOICE);
   const state = useAudioRecorderState(recorder, 200);
   const [mode, setModeState] = useState<'idle' | 'manual' | 'auto'>('idle');
+  const takesRef = useRef(takes);
+  useEffect(() => {
+    takesRef.current = takes;
+  }, [takes]);
+  // Voice commands: say "start" and "stop", same as hands-free inside a move.
+  const hf = useHandsFree(
+    useCallback(
+      async (rec: { uri: string; seconds: number; wav?: boolean }) => {
+        save([{ id: String(Date.now()), uri: keep(rec.uri, rec.wav ? 'wav' : 'm4a'), seconds: rec.seconds, at: Date.now(), auto: true, wav: rec.wav }, ...takesRef.current]);
+        return true;
+      },
+      [save],
+    ),
+  );
   const setMode = useCallback(
     (m: 'idle' | 'manual' | 'auto') => {
       setModeState(m);
@@ -89,14 +96,21 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
     },
     [onMode],
   );
+  const voiceToggle = useCallback(
+    async (on: boolean) => {
+      if (on) {
+        await hf.turnOn();
+        onMode?.('auto');
+      } else {
+        hf.turnOff();
+        onMode?.('idle');
+      }
+    },
+    [hf, onMode],
+  );
   const [picking, setPicking] = useState<Take | null>(null);
   const [busy, setBusy] = useState('');
-  const takesRef = useRef(takes);
-  useEffect(() => {
-    takesRef.current = takes;
-  }, [takes]);
   const seg = useRef({ start: 0, firstLoud: 0, lastLoud: 0, last: 0 });
-  const cycling = useRef(false);
 
   const add = useCallback(
     (t: Take) => {
@@ -135,8 +149,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
         return;
       }
       try {
-        // Auto mode keeps listening with the screen off; Android shows a notification while it does.
-        await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true, allowsBackgroundRecording: next === 'auto', shouldPlayInBackground: next === 'auto' });
+        await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
         await begin();
         setMode(next);
       } catch {
@@ -147,42 +160,14 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   );
 
   const stopAll = useCallback(async () => {
-    const wasAuto = mode === 'auto';
-    const s = seg.current;
     setMode('idle');
-    // Manual takes always keep; an auto stretch keeps only if someone spoke.
-    await finish(!wasAuto || (s.firstLoud > 0 && s.lastLoud - s.firstLoud >= MIN_SPEECH_MS), wasAuto);
+    await finish(true, false);
     try {
-      await setAudioModeAsync({ allowsRecording: false, allowsBackgroundRecording: false });
+      await setAudioModeAsync({ allowsRecording: false });
     } catch {
       // nothing to undo
     }
-  }, [mode, finish, setMode]);
-
-  // Auto mode: listen, keep the stretches where someone talks, drop the quiet ones.
-  useEffect(() => {
-    if (mode !== 'auto' || !state.isRecording || cycling.current) return;
-    const now = Date.now();
-    const s = seg.current;
-    const loud = (state.metering ?? -160) > SPEECH_DB;
-    if (loud) {
-      if (!s.firstLoud) s.firstLoud = now;
-      s.lastLoud = now;
-    }
-    const spoke = s.firstLoud > 0 && s.lastLoud - s.firstLoud >= MIN_SPEECH_MS;
-    const done = spoke && now - s.lastLoud > QUIET_MS;
-    const idle = !spoke && now - s.start > IDLE_MS;
-    const tooLong = now - s.start > MAX_AUDIO_SECONDS * 1000;
-    if (done || idle || tooLong) {
-      cycling.current = true;
-      finish(done || (tooLong && spoke), true)
-        .then(begin)
-        .catch(() => setMode('idle'))
-        .finally(() => {
-          cycling.current = false;
-        });
-    }
-  }, [mode, state.isRecording, state.metering, state.durationMillis, finish, begin, setMode]);
+  }, [finish, setMode]);
 
   // Manual takes stop at the limit.
   useEffect(() => {
@@ -191,13 +176,14 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
     return () => clearTimeout(t);
   }, [mode, state.durationMillis, stopAll]);
 
-  const heard = mode === 'auto' && (state.metering ?? -160) > SPEECH_DB;
   const level = Math.max(0, Math.min(1, ((state.metering ?? -160) + 60) / 60));
   const recording = mode !== 'idle';
+  const voiceOn = hf.on;
+  const busyMic = recording || voiceOn;
 
   const moveTo = async (take: Take, move: Move) => {
     setBusy(take.id);
-    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: { kind: 'voice', uri: take.uri, seconds: take.seconds }, posted: false });
+    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: { kind: 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
     setBusy('');
     if (problem) {
       onError(problem);
@@ -211,7 +197,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   return (
     <Modal transparent animationType="slide" visible={visible} onRequestClose={onClose} statusBarTranslucent>
       <View style={s.scrim}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={mode === 'manual' ? undefined : onClose} accessibilityLabel="Close" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={mode === 'manual' || voiceOn ? undefined : onClose} accessibilityLabel="Close" />
         <View style={s.sheet} accessibilityViewIsModal>
           <View style={s.grab} />
           {picking ? (
@@ -222,24 +208,25 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                 <T v="h" style={{ fontSize: 26 }}>
                   Quick take
                 </T>
-                <Btn label={mode === 'auto' ? 'Hide' : 'Close'} kind="quiet" small disabled={mode === 'manual'} onPress={onClose} />
+                <Btn label="Close" kind="quiet" small disabled={mode === 'manual' || voiceOn} onPress={onClose} />
               </View>
 
               <View style={s.deck}>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={recording ? 'Stop recording' : 'Start recording'}
+                  disabled={voiceOn}
                   onPress={() => (recording ? stopAll() : startMode('manual'))}
-                  style={({ pressed }) => [s.big, recording && s.bigOn, pressed && { transform: [{ scale: 0.96 }] }]}>
+                  style={({ pressed }) => [s.big, recording && s.bigOn, voiceOn && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.96 }] }]}>
                   <Icon name={recording ? 'stop' : 'mic'} size={36} color={recording ? '#FFFFFF' : C.ink} width={2.4} />
                 </Pressable>
                 <View style={{ flex: 1, gap: 6 }}>
                   <T style={s.clock}>{recording ? clockText(state.durationMillis / 1000) : '0:00'}</T>
                   <T v="small" style={{ color: C.ink }}>
-                    {mode === 'auto' ? (heard ? 'Hearing someone. Recording.' : 'Listening. Starts when someone talks.') : mode === 'manual' ? 'Recording. Tap to stop.' : 'Tap to record. It goes to your takes below.'}
+                    {mode === 'manual' ? 'Recording. Tap to stop.' : voiceOn ? 'Voice commands are on. Use them below.' : 'Tap to record. It goes to your takes below.'}
                   </T>
                   <View style={s.meter}>
-                    <View style={[s.meterFill, { width: `${Math.round(level * 100)}%` }, mode === 'auto' && !heard && { backgroundColor: C.line }]} />
+                    <View style={[s.meterFill, { width: `${Math.round(level * 100)}%` }]} />
                   </View>
                 </View>
               </View>
@@ -249,17 +236,19 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                   <T v="semi" style={{ fontSize: 16 }}>
                     Auto record
                   </T>
-                  <T v="small">Listens and keeps only the parts where someone talks. Keeps going if you hide this or turn the screen off. Record only conversations you’re part of.</T>
+                  <T v="small">Say “start” to record and “stop” to save it to your takes, then it listens again. Keep Nerve open; the screen stays on.</T>
                 </View>
                 <Switch
-                  value={mode === 'auto'}
-                  disabled={mode === 'manual'}
-                  onValueChange={(on) => (on ? startMode('auto') : stopAll())}
+                  value={voiceOn}
+                  disabled={recording}
+                  onValueChange={voiceToggle}
                   trackColor={{ true: C.accent, false: C.line }}
                   thumbColor={C.surface}
-                  accessibilityLabel="Auto record"
+                  accessibilityLabel="Auto record with start and stop"
                 />
               </View>
+              {voiceOn ? <HandsFreePanel hf={hf} /> : null}
+              {hf.error ? <T v="error">{hf.error}</T> : null}
 
               <View style={s.listHead}>
                 <T v="semi" style={{ fontSize: 16 }}>
@@ -282,7 +271,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                       </View>
                       <VoicePlayer uri={t.uri} />
                       <View style={s.row}>
-                        <Btn label="Add to a move" kind="primary" small disabled={recording} onPress={() => setPicking(t)} />
+                        <Btn label="Add to a move" kind="primary" small disabled={busyMic} onPress={() => setPicking(t)} />
                         <Btn
                           label="Delete"
                           kind="quiet"

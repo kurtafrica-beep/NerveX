@@ -35,8 +35,7 @@
         "expo-audio",
         {
           "microphonePermission": "Nerve uses the microphone when you record a voice note.",
-          "recordAudioAndroid": true,
-          "enableBackgroundRecording": true
+          "recordAudioAndroid": true
         }
       ],
       [
