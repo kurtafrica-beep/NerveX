@@ -2,7 +2,7 @@ import { PATH_LAYOUT, PATH_SOURCE } from './pathMoves';
 import { PLACES, PLACE_SOURCE, QUEST_SOURCE } from './rpgData';
 
 export type BaseKey = 'c' | 't' | 'q' | 'v' | 's';
-export type PathKey = 'n' | 'f' | 'm' | 'p' | 'k';
+export type PathKey = 'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y';
 export type BranchKey = BaseKey | PathKey;
 // x: an action at a place, z: a side quest
 export type MoveKey = BranchKey | 'x' | 'z';
@@ -39,17 +39,28 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string; path?: boole
   m: { name: 'Creator', path: true, tag: 'Being on camera and in public. Built on ideas from Ali Abdaal, Vinh Giang, MrBeast, Paddy Galloway and Alex Hormozi.' },
   p: { name: 'Prospector', path: true, tag: 'Starting conversations that turn into business. Built on ideas from Jeb Blount and Mike Weinberg.' },
   k: { name: 'Keynote', path: true, tag: 'Owning a room. Built on ideas from Julian Treasure, Chris Anderson’s TED guide, Matthew Dicks and Vinh Giang.' },
+  b: { name: "Creator Pro", path: true, tag: "Turning an audience into clients. Built on Brian Mark’s content and DM system. Only sell what you believe helps them." },
+  h: { name: "Comedian", path: true, tag: "Being funny out loud, on purpose. Built on Conan O’Brien’s way of doing it: commit to the bit, be the joke, and play." },
+  w: { name: "Headliner", path: true, tag: "Turning your life into stories that land. Built on Trevor Noah’s storytelling: start in the scene, play the voices and end with a point." },
+  g: { name: "Host", path: true, tag: "Social mastery: bringing people together on purpose. Built on Priya Parker’s The Art of Gathering." },
+  y: { name: "Spark", path: true, tag: "Confidence in dating and attraction. Built on Matthew Hussey’s coaching: warmth, standards and being the one who chooses. Always take a no well." },
 };
 export const BRANCH_KEYS: BaseKey[] = ['c', 't', 'q', 'v', 's'];
-export const PATH_KEYS: PathKey[] = ['n', 'f', 'm', 'p', 'k'];
+export const PATH_KEYS: PathKey[] = ['n', 'f', 'm', 'p', 'k', 'b', 'h', 'w', 'g', 'y'];
 export const ALL_KEYS: BranchKey[] = [...BRANCH_KEYS, ...PATH_KEYS];
 // What each path needs: the level reached in each base branch, and recordings across those branches.
-export const PATH: Record<PathKey, { need: Partial<Record<BaseKey, number>>; recs: number; by: string[] }> = {
+// after: a path that has to be finished first, capstone included.
+export const PATH: Record<PathKey, { need: Partial<Record<BaseKey, number>>; recs: number; after?: PathKey; by: string[] }> = {
   n: { need: { t: 3, q: 3 }, recs: 8, by: [] },
   f: { need: { s: 3, c: 3, t: 2 }, recs: 8, by: ['Josh Braun', 'Keenan', 'April Dunford', 'Oren Klaff'] },
   m: { need: { v: 3, c: 2 }, recs: 8, by: ['Ali Abdaal and Vinh Giang', 'MrBeast and Paddy Galloway', 'Alex Hormozi', ''] },
   p: { need: { s: 3, c: 3 }, recs: 8, by: ['Jeb Blount', 'Mike Weinberg', 'Jeb Blount', 'Mike Weinberg'] },
   k: { need: { v: 4, t: 3, c: 3 }, recs: 10, by: ['Julian Treasure', 'Chris Anderson’s TED Talks guide', 'Matthew Dicks', 'Vinh Giang'] },
+  b: { need: { s: 2 }, recs: 8, after: 'm', by: ["Brian Mark", "Brian Mark", "Brian Mark", "Brian Mark and Alex Hormozi"] },
+  h: { need: { v: 3, t: 3 }, recs: 8, by: ["Conan O’Brien", "Conan O’Brien", "Conan O’Brien", "Conan O’Brien"] },
+  w: { need: { t: 4 }, recs: 8, after: 'h', by: ["Trevor Noah", "Trevor Noah", "Trevor Noah", "Trevor Noah"] },
+  g: { need: { t: 3, q: 3, c: 3 }, recs: 10, by: ["Priya Parker", "Priya Parker", "Priya Parker", "Priya Parker"] },
+  y: { need: { c: 3, q: 2 }, recs: 8, by: ["Matthew Hussey", "Matthew Hussey", "Matthew Hussey", "Matthew Hussey"] },
 };
 // Reactions from other people a posted capstone needs before it counts.
 export const CAP_REACTS = 3;
@@ -482,6 +493,11 @@ export const LEVEL_NAMES: Record<BranchKey, string[]> = {
   m: ['On camera', 'Hooks', 'Story', 'In public', 'Capstone'],
   p: ['The call', 'Walk in', 'Follow up', 'Book it', 'Capstone'],
   k: ['Presence', 'Structure', 'Story', 'The room', 'Capstone'],
+  b: ["Proof", "Reach", "DMs", "Calls", "Capstone"],
+  h: ["Play", "Write", "Riff", "Stage", "Capstone"],
+  w: ["Story", "Voice", "Perspective", "The room", "Capstone"],
+  g: ["Purpose", "Opening", "Hosting", "Closing", "Capstone"],
+  y: ["Warm-up", "Approach", "Connection", "Standards", "Capstone"],
   "c": [
     "Base",
     "Bold",

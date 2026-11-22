@@ -1,6 +1,6 @@
 // Paths: harder routes above the five base branches. Four stages of four moves, then a capstone.
 // Each move is [title, the move, the rep, the upgrade]; the same content as the web page.
-export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k', [string, string, string, string][]> = {
+export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y', [string, string, string, string][]> = {
   "n": [
     [
       "Mirror three times",
@@ -520,10 +520,530 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k', [string, string, s
       "One live talk, with a recording or debrief posted.",
       "Speak at an event you were invited to."
     ]
+  ],
+  "b": [
+    [
+      "Say who you help",
+      "Record thirty seconds to camera: who you help, the problem they have and the result you get them.",
+      "One take, under thirty seconds.",
+      "Pin it to the top of your profile."
+    ],
+    [
+      "Post a proof video",
+      "Show one real result, yours or someone you helped (with their okay), and say what made the difference.",
+      "One proof video.",
+      "Get the person on camera telling it in their words."
+    ],
+    [
+      "Answer a question you get asked",
+      "Pick a question people actually ask you and answer it on camera in under a minute.",
+      "One question, one answer.",
+      "Answer three in one sitting."
+    ],
+    [
+      "Show the work",
+      "Film yourself doing the actual work, not the highlight: a session, a draft, a fix. Talk over it.",
+      "Sixty seconds behind the scenes.",
+      "Narrate it live as it happens."
+    ],
+    [
+      "Batch five videos",
+      "Plan five ideas and film all five in one sitting.",
+      "Five filmed in an hour.",
+      "Ten in one sitting."
+    ],
+    [
+      "Borrow a format",
+      "Find a format that is working in your space (split screen, myth vs fact, A vs B) and make your own version.",
+      "One video in a borrowed format.",
+      "Two formats on the same idea, and compare."
+    ],
+    [
+      "Post every day for a week",
+      "Publish something every day for seven days, then look at what got people talking.",
+      "Seven days, seven posts.",
+      "Fourteen days in a row."
+    ],
+    [
+      "Ask for the comment",
+      "End a video with one keyword to comment, and what they get for it: “Comment PLAN and I’ll send it.”",
+      "One video with a keyword ask.",
+      "Reply to every comment within the hour."
+    ],
+    [
+      "Start ten real conversations",
+      "Message ten people who liked, commented or followed. Open with something about them, not a pitch.",
+      "Ten conversations started.",
+      "Twenty in one day."
+    ],
+    [
+      "Reply with a voice note",
+      "Answer a message with a thirty-second voice note instead of text.",
+      "One voice note reply.",
+      "Five in a day."
+    ],
+    [
+      "Ask the problem question",
+      "In a conversation, ask what they have tried and what got in the way before you say what you do.",
+      "One problem question, then listen.",
+      "Say their problem back in one line and get a “yes, exactly”."
+    ],
+    [
+      "Invite them to a call",
+      "When someone has a problem you solve, ask if they want a short call about it.",
+      "One call invite.",
+      "Get it booked with a day and time."
+    ],
+    [
+      "Run a discovery call",
+      "On a twenty-minute call, find out where they are, where they want to be and what is in the way.",
+      "One discovery call.",
+      "Talk less than a third of the call."
+    ],
+    [
+      "Say your price and stop",
+      "Say your price in one sentence, then stay quiet until they answer.",
+      "One price said out loud.",
+      "Hold the price without offering a discount."
+    ],
+    [
+      "Handle “I need to think about it”",
+      "When you hear it, ask calmly what exactly they want to think through.",
+      "One calm follow-up question.",
+      "Get to a clear yes or no on the same call."
+    ],
+    [
+      "Ask for a testimonial video",
+      "Ask someone you helped to record thirty seconds on what changed for them.",
+      "One ask.",
+      "Get it and post it."
+    ],
+    [
+      "Land a client from your content",
+      "Take one person from a post to a conversation to a call to a paid yes, then post the story.",
+      "One paying client, with a debrief posted.",
+      "Three in a month."
+    ]
+  ],
+  "h": [
+    [
+      "Be the joke",
+      "Tell a short true story where you are the one who looks silly.",
+      "One story where you’re the punchline.",
+      "Tell it to someone you just met."
+    ],
+    [
+      "Commit to the bit",
+      "Start a small silly bit with a friend, like a fake premise or a voice, and keep it going past the point where it feels safe.",
+      "One bit held for a full minute.",
+      "Bring it back later the same day as a callback."
+    ],
+    [
+      "Catch three funny things",
+      "Through one day, record a quick voice note every time something strikes you as absurd.",
+      "Three notes in a day.",
+      "Turn one of them into a line and say it to someone."
+    ],
+    [
+      "Laugh at the miss",
+      "When a joke doesn’t land, say so out loud and have fun with it instead of moving on fast.",
+      "One miss, owned out loud.",
+      "Tell a joke you suspect will flop, on purpose, and enjoy the recovery."
+    ],
+    [
+      "Write ten jokes on one thing",
+      "Pick one topic and write ten jokes about it. Record the best three.",
+      "Ten written, three recorded.",
+      "Twenty written."
+    ],
+    [
+      "Find your angle",
+      "Write down something that annoys or confuses you, then say in one line what is ridiculous about it.",
+      "One premise with a clear angle.",
+      "Three premises on three topics."
+    ],
+    [
+      "Add tags",
+      "Take one joke that works and write three more punchlines that come right after it.",
+      "One joke with three tags.",
+      "Five tags, and keep the best two."
+    ],
+    [
+      "Cut it in half",
+      "Rewrite one joke with half the words, and put the funny word at the very end.",
+      "Two versions recorded, long and short.",
+      "Get it under fifteen words."
+    ],
+    [
+      "Yes, and a stranger",
+      "In small talk, take something the other person says and build on it playfully instead of moving on.",
+      "One “yes, and” with a stranger.",
+      "Three in a day."
+    ],
+    [
+      "Play with someone’s thing",
+      "Ask someone about their job or hobby and find the fun in it with them, not at them.",
+      "One playful chat where you both laugh.",
+      "Do it on camera, with their okay."
+    ],
+    [
+      "Riff for five minutes",
+      "Get a random topic from a friend and talk about it out loud for five minutes without stopping.",
+      "Five minutes, recorded.",
+      "Do it with a partner, taking turns."
+    ],
+    [
+      "Roast yourself",
+      "Write and record a one-minute roast of yourself. Be specific.",
+      "One minute of self-roast.",
+      "Perform it for friends."
+    ],
+    [
+      "Tell your best story to a group",
+      "Tell a funny three-minute true story to three or more people.",
+      "One story to a group.",
+      "Tell it to people you don’t know."
+    ],
+    [
+      "Record a tight three",
+      "Record three minutes of your own material in one take, start to finish.",
+      "Three minutes, one take.",
+      "Do it in front of one person."
+    ],
+    [
+      "Scout an open mic",
+      "Go to an open mic, watch the whole thing, and put your name down for next time.",
+      "You went and signed up.",
+      "Talk to one comic afterwards about how they started."
+    ],
+    [
+      "Keep going through silence",
+      "Do a short set for friends and keep going through any silence instead of stopping or apologising.",
+      "One set where you carried on through a quiet moment.",
+      "Do it for people who aren’t your friends."
+    ],
+    [
+      "Do your first open mic",
+      "Perform three to five minutes at a real open mic, record it, and post the set.",
+      "One open mic set, posted.",
+      "Do another one within two weeks."
+    ]
+  ],
+  "w": [
+    [
+      "Tell your origin story",
+      "Tell a two-minute true story from growing up that still makes you laugh.",
+      "One story, two minutes.",
+      "Tell it to someone who knew you then."
+    ],
+    [
+      "Start in the scene",
+      "Tell a story that opens in the middle of the moment, with no setup.",
+      "One story with no setup.",
+      "Open on a line of dialogue."
+    ],
+    [
+      "Find the turn",
+      "Tell a story where the ending changes how you see the beginning.",
+      "One story with a turn.",
+      "Hide the turn until the last line."
+    ],
+    [
+      "Act it out",
+      "Retell a story and show the key moment with your body and face instead of describing it.",
+      "One story, acted out.",
+      "Do it standing up, with room to move."
+    ],
+    [
+      "Do the voices",
+      "Tell a story with two people in it and give each one a distinct voice.",
+      "Two voices in one story.",
+      "Three characters, each clear without names."
+    ],
+    [
+      "Play with pitch",
+      "Say the same punchline three ways: higher, lower and slower. Keep the funniest.",
+      "Three versions, one kept.",
+      "Change pitch mid-sentence for the laugh."
+    ],
+    [
+      "Hold the pause",
+      "Build to your punchline and wait a full two seconds before you say it.",
+      "One two-second pause before the line.",
+      "Pause after the laugh too, and let it roll."
+    ],
+    [
+      "Bring in your language",
+      "Use a line from another language, dialect or family saying in a story, and make the translation part of the joke.",
+      "One line, translated for the laugh.",
+      "Two languages or sayings in one story."
+    ],
+    [
+      "Find the light in a hard moment",
+      "Tell a story about a hard time in your own life with some lightness in it.",
+      "One story about a hard moment.",
+      "End it with what it taught you."
+    ],
+    [
+      "Explain your world",
+      "Describe a custom from your family, culture or job as if to someone who has never seen it.",
+      "One custom, explained for laughs.",
+      "Tell it to someone from outside that world."
+    ],
+    [
+      "Flip the point of view",
+      "Tell the same story twice: once as you, once as the other person in it.",
+      "Two versions of one story.",
+      "Make the other person the hero."
+    ],
+    [
+      "Land a point",
+      "End a funny story with one honest line about what it meant to you.",
+      "One story with a point at the end.",
+      "Keep the point under ten words."
+    ],
+    [
+      "Read the room",
+      "Tell the same story to two different groups and change it to fit each one.",
+      "Two tellings, two groups.",
+      "Change it mid-story based on how it’s going."
+    ],
+    [
+      "Fold in an interruption",
+      "When someone cuts into your story, use what they said and keep going.",
+      "One interruption folded in.",
+      "Get a bigger laugh because of it."
+    ],
+    [
+      "Run ten minutes",
+      "Record ten minutes of story-based comedy in one take.",
+      "Ten minutes, one take.",
+      "In front of at least three people."
+    ],
+    [
+      "Host a story night",
+      "Get three or more friends to each tell a true story. You host and go first.",
+      "One story night hosted.",
+      "Invite people who don’t know each other."
+    ],
+    [
+      "Headline a set",
+      "Perform ten minutes of story-based comedy at a show or open mic, record it and post it.",
+      "Ten minutes performed and posted.",
+      "Get booked for a show."
+    ]
+  ],
+  "g": [
+    [
+      "Name the purpose",
+      "Pick a get-together you’re going to anyway and say its specific purpose out loud in one sentence.",
+      "One purpose, one sentence.",
+      "Change one thing about it to fit that purpose."
+    ],
+    [
+      "Make a plan specific",
+      "Turn a vague “let’s hang out” into a plan with a clear reason, and invite two to four people.",
+      "One specific invite sent.",
+      "Get everyone to say yes to a date."
+    ],
+    [
+      "Choose who’s in the room",
+      "For a gathering you’re planning, decide who comes based on the purpose, and say why.",
+      "One guest list, with reasons.",
+      "Leave someone out kindly because it’s not the right fit for this one."
+    ],
+    [
+      "Send an invite that sets the tone",
+      "Send a personal invite that says why you’re gathering and asks guests to bring something: a story, a question, a dish.",
+      "One invite with a why and an ask.",
+      "Call people instead of texting."
+    ],
+    [
+      "Greet every guest",
+      "At a gathering you host or help with, greet each person at the door and introduce them to someone.",
+      "Every guest greeted.",
+      "Remember one thing about each and use it."
+    ],
+    [
+      "Introduce two people with a reason",
+      "Introduce two people and tell them why they should talk.",
+      "One introduction with a reason.",
+      "Three in one evening."
+    ],
+    [
+      "Open strong",
+      "Start a gathering with a deliberate welcome that says why you’re here, not logistics.",
+      "One opening said out loud.",
+      "Under thirty seconds, and nobody checks their phone."
+    ],
+    [
+      "Set one pop-up rule",
+      "Give a gathering one simple temporary rule, like phones in a basket or no work talk for the first hour.",
+      "One rule set and kept.",
+      "Get the group to suggest the rule."
+    ],
+    [
+      "Bring in the quiet one",
+      "Notice someone who hasn’t spoken much and bring them in with a direct, easy question.",
+      "One quiet guest brought in.",
+      "Hand them the floor for a story."
+    ],
+    [
+      "Redirect someone who’s taking over",
+      "When someone dominates, kindly steer the conversation to someone else.",
+      "One kind redirect.",
+      "Do it without anyone noticing."
+    ],
+    [
+      "Run one table conversation",
+      "Get everyone to answer the same question, one at a time, so the whole table has one conversation.",
+      "One question, everyone answers.",
+      "Make the question one people think about afterwards."
+    ],
+    [
+      "Host a good disagreement",
+      "Ask a question people might disagree on, set one rule for how to disagree, and let it happen.",
+      "One respectful disagreement hosted.",
+      "Sum up both sides at the end so everyone feels heard."
+    ],
+    [
+      "Close on purpose",
+      "End a gathering deliberately: a last round, a thank-you, one word each.",
+      "One deliberate closing.",
+      "Give people something to take with them."
+    ],
+    [
+      "Follow up after",
+      "The next day, send guests a message with something from the night.",
+      "One follow-up sent to everyone.",
+      "Connect two guests who should keep talking."
+    ],
+    [
+      "Host strangers",
+      "Bring together four or more people who don’t all know each other.",
+      "One mixed gathering hosted.",
+      "Most of them didn’t know each other before."
+    ],
+    [
+      "Give a toast",
+      "Give a one-minute toast at a gathering: who you’re toasting, one story and why it matters.",
+      "One toast given.",
+      "Ask others to toast too, on a theme."
+    ],
+    [
+      "Host a gathering with purpose",
+      "Host six or more people with a clear purpose, a pop-up rule, an opening and a closing. Post the story.",
+      "One purposeful gathering, posted with a debrief.",
+      "Get one guest to post what it meant to them."
+    ]
+  ],
+  "y": [
+    [
+      "Say one line and go",
+      "Say one warm line to someone you find attractive, then walk on. No plan to keep talking.",
+      "One line, then go.",
+      "Three in one day."
+    ],
+    [
+      "Hold the look",
+      "Catch someone’s eye, hold it for a beat and smile.",
+      "Three looks and smiles.",
+      "Hold it until they smile back."
+    ],
+    [
+      "Use the imperfect opener",
+      "Start a conversation with whatever comes to mind instead of waiting for the perfect line.",
+      "One imperfect opener used.",
+      "Use it on someone you’d normally be too nervous to talk to."
+    ],
+    [
+      "Know what you bring",
+      "Record a minute on three things you genuinely bring to a relationship.",
+      "One minute, three things.",
+      "Ask a friend what they’d add."
+    ],
+    [
+      "Start a conversation you want",
+      "Talk to someone you’re drawn to for a minute or two, and be the one who ends it.",
+      "One conversation, you end it.",
+      "Five minutes."
+    ],
+    [
+      "Ask a real question",
+      "Ask something you’re actually curious about instead of the usual interview questions.",
+      "One real question.",
+      "Follow their answer for three more questions."
+    ],
+    [
+      "Tease kindly",
+      "Make one light, kind tease about something they chose: a drink, a hat, a hot take. Never their body.",
+      "One kind tease that gets a smile.",
+      "Let them tease you back, and enjoy it."
+    ],
+    [
+      "Make the ask",
+      "After a real conversation, ask for their number or to meet again. Take any answer well.",
+      "One clear ask.",
+      "Suggest a specific plan as you ask."
+    ],
+    [
+      "Share something true",
+      "On a date or in a good conversation, share something real about yourself.",
+      "One honest share.",
+      "Share why it matters to you."
+    ],
+    [
+      "Say what you liked",
+      "Tell someone specifically what you enjoyed about them or your time together.",
+      "One specific compliment about them.",
+      "Say it in person, not by text."
+    ],
+    [
+      "Plan a real date",
+      "Invite someone to a specific plan with a day and time, not “we should hang out”.",
+      "One specific invite.",
+      "Plan something that shows who you are."
+    ],
+    [
+      "Name your nerves",
+      "On a date, say lightly that you’re a bit nervous.",
+      "One “I’m a bit nervous”, said out loud.",
+      "Laugh about it together."
+    ],
+    [
+      "Say what you want",
+      "Early on, say out loud what you’re looking for.",
+      "One honest “here’s what I want”.",
+      "Say it before they do."
+    ],
+    [
+      "End it kindly",
+      "Tell someone who isn’t the right fit, kindly and clearly, instead of fading out.",
+      "One clear, kind ending.",
+      "Do it in person or by call."
+    ],
+    [
+      "Stop chasing",
+      "When someone is lukewarm, don’t chase. Record what you’ll do with your energy instead.",
+      "One time you chose not to chase.",
+      "Put that energy into meeting someone new that week."
+    ],
+    [
+      "Take a no well",
+      "When you hear no, answer with warmth and leave it there.",
+      "One no taken gracefully.",
+      "Notice it didn’t change how you feel about yourself."
+    ],
+    [
+      "Ask someone out in person",
+      "Ask someone out face to face, go on the date and post the story.",
+      "One in-person ask and a date, with a debrief posted.",
+      "Do it with someone you’d have been too nervous to ask before."
+    ]
   ]
 };
 
-export const PATH_LAYOUT: Record<'n' | 'f' | 'm' | 'p' | 'k', string[][]> = {
+export const PATH_LAYOUT: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y', string[][]> = {
   "n": [
     [
       "n1",
@@ -667,6 +1187,151 @@ export const PATH_LAYOUT: Record<'n' | 'f' | 'm' | 'p' | 'k', string[][]> = {
     ],
     [
       "k17"
+    ]
+  ],
+  "b": [
+    [
+      "b1",
+      "b2",
+      "b3",
+      "b4"
+    ],
+    [
+      "b5",
+      "b6",
+      "b7",
+      "b8"
+    ],
+    [
+      "b9",
+      "b10",
+      "b11",
+      "b12"
+    ],
+    [
+      "b13",
+      "b14",
+      "b15",
+      "b16"
+    ],
+    [
+      "b17"
+    ]
+  ],
+  "h": [
+    [
+      "h1",
+      "h2",
+      "h3",
+      "h4"
+    ],
+    [
+      "h5",
+      "h6",
+      "h7",
+      "h8"
+    ],
+    [
+      "h9",
+      "h10",
+      "h11",
+      "h12"
+    ],
+    [
+      "h13",
+      "h14",
+      "h15",
+      "h16"
+    ],
+    [
+      "h17"
+    ]
+  ],
+  "w": [
+    [
+      "w1",
+      "w2",
+      "w3",
+      "w4"
+    ],
+    [
+      "w5",
+      "w6",
+      "w7",
+      "w8"
+    ],
+    [
+      "w9",
+      "w10",
+      "w11",
+      "w12"
+    ],
+    [
+      "w13",
+      "w14",
+      "w15",
+      "w16"
+    ],
+    [
+      "w17"
+    ]
+  ],
+  "g": [
+    [
+      "g1",
+      "g2",
+      "g3",
+      "g4"
+    ],
+    [
+      "g5",
+      "g6",
+      "g7",
+      "g8"
+    ],
+    [
+      "g9",
+      "g10",
+      "g11",
+      "g12"
+    ],
+    [
+      "g13",
+      "g14",
+      "g15",
+      "g16"
+    ],
+    [
+      "g17"
+    ]
+  ],
+  "y": [
+    [
+      "y1",
+      "y2",
+      "y3",
+      "y4"
+    ],
+    [
+      "y5",
+      "y6",
+      "y7",
+      "y8"
+    ],
+    [
+      "y9",
+      "y10",
+      "y11",
+      "y12"
+    ],
+    [
+      "y13",
+      "y14",
+      "y15",
+      "y16"
+    ],
+    [
+      "y17"
     ]
   ]
 };
@@ -1606,5 +2271,940 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
     "why": "Everything on this path leads to one moment: standing in front of a room and owning it.",
     "watch": "Waiting until you feel ready.",
     "record": "Ask someone to film it, and post the recording or a debrief."
+  },
+  "b1": {
+    "steps": [
+      "Write one line: I help [who] get [result] without [the thing they hate].",
+      "Say it to camera in your own words. No intro, no logo.",
+      "Watch it back. If a stranger would not know whether it is for them, rewrite it."
+    ],
+    "say": "“I help busy dads get strong again in three workouts a week.”",
+    "why": "People follow a coach who solves their problem, not someone who just posts. Be clear about who it is for and the right people stay.",
+    "watch": "Trying to speak to everyone.",
+    "record": "The video is the recording."
+  },
+  "b2": {
+    "steps": [
+      "Pick a real result: a number, a before and after, a message someone sent you.",
+      "Ask first if it is someone else’s, and only show what they agreed to.",
+      "Say what they were stuck on, what changed and the one thing that made the difference."
+    ],
+    "say": "“Three months ago Sam couldn’t do one push-up. Here’s what changed.”",
+    "why": "Proof does the selling for you. One honest result beats ten tips.",
+    "watch": "Exaggerating, or showing someone without their okay.",
+    "record": "Record the proof video."
+  },
+  "b3": {
+    "steps": [
+      "Scroll your messages and comments for a question you get again and again.",
+      "Say the question as the first line, then answer it with one example.",
+      "Stop when it is answered."
+    ],
+    "say": "“Someone asked me this yesterday, and the answer surprises people.”",
+    "why": "The questions you get are the content your audience wants. It also shows you know the job.",
+    "watch": "Answering a question nobody asked.",
+    "record": "Record the answer."
+  },
+  "b4": {
+    "steps": [
+      "Set the phone up while you actually work.",
+      "Talk over it: what you are doing and why.",
+      "Keep one minute that shows how you think."
+    ],
+    "say": "“Most people never see this part. This is where the result actually comes from.”",
+    "why": "Seeing the work builds trust that a polished post can’t.",
+    "watch": "Staging it so it looks perfect.",
+    "record": "Record the behind-the-scenes video."
+  },
+  "b5": {
+    "steps": [
+      "Write five ideas with a first line for each.",
+      "Set up once: light, phone and the spot.",
+      "Film all five back to back without editing in between."
+    ],
+    "say": "“Five ideas, one sitting, no stopping.”",
+    "why": "Batching makes posting every day possible. Filming one video at a time is how people burn out.",
+    "watch": "Stopping after two to edit.",
+    "record": "Record all five."
+  },
+  "b6": {
+    "steps": [
+      "Find three videos in your space that did far better than usual for that account.",
+      "Name the format, not the topic: split screen, myth vs fact, reacting to a claim.",
+      "Make your own version on your own idea."
+    ],
+    "say": "“Myth: you need to post every day. Fact: …”",
+    "why": "Formats travel. Using one that already works lets your idea get seen.",
+    "watch": "Copying the video itself instead of the format.",
+    "record": "Record your version."
+  },
+  "b7": {
+    "steps": [
+      "Plan seven posts before day one, or batch them.",
+      "Post every day, even if one is rough.",
+      "On day seven, write down which post got the most comments and messages, not views."
+    ],
+    "say": "“Day four of seven. Posting it anyway.”",
+    "why": "Consistency teaches you what your audience responds to. It is the habit the rest of this path builds on.",
+    "watch": "Judging it on views. Messages and comments are what lead to clients.",
+    "record": "Record a one-minute voice note on day seven: what worked and what didn’t."
+  },
+  "b8": {
+    "steps": [
+      "Pick a useful thing you can send: a plan, a checklist, a short guide.",
+      "End the video with one keyword and what they get.",
+      "Reply to everyone who comments, by message."
+    ],
+    "say": "“Comment PLAN and I’ll send you the exact routine.”",
+    "why": "A keyword turns a viewer into a conversation, and conversations are where clients come from.",
+    "watch": "Promising something you then don’t send.",
+    "record": "Record the video with the ask at the end."
+  },
+  "b9": {
+    "steps": [
+      "Look at who liked, commented or followed this week.",
+      "Open with something about them: their post, their comment, where they are from.",
+      "Ask one easy question. No link, no offer."
+    ],
+    "say": "“Saw you comment on my squat video. Are you training for something?”",
+    "why": "Brian Mark’s rule is daily conversations with the people already watching. Clients come from talking to people, not from posting and waiting.",
+    "watch": "Copy-paste openers. People can tell.",
+    "record": "Record a voice note before you start, reading your first opener out loud."
+  },
+  "b10": {
+    "steps": [
+      "Pick a message you would normally answer with text.",
+      "Hit record and talk like you would in person, for thirty seconds or less.",
+      "End with a question so they reply."
+    ],
+    "say": "“Hey, easier to say this than type it…”",
+    "why": "Your voice builds trust faster than text. It is also a small nerve move most people avoid.",
+    "watch": "Rambling past a minute.",
+    "record": "Save your voice note, or record it again here."
+  },
+  "b11": {
+    "steps": [
+      "Ask what they want and what they have already tried.",
+      "Ask what got in the way.",
+      "Say it back in one line before you mention what you do."
+    ],
+    "say": "“What have you tried so far, and what stopped it from working?”",
+    "why": "When they feel understood, the offer sounds like help, not a pitch.",
+    "watch": "Jumping to your offer after the first answer.",
+    "record": "Record a voice note after with what they told you."
+  },
+  "b12": {
+    "steps": [
+      "Wait until they have told you a real problem.",
+      "Ask if a short call would help, with no pressure.",
+      "Offer two times."
+    ],
+    "say": "“Sounds like there’s a bit to unpack. Want to hop on a quick call this week? Thursday or Friday?”",
+    "why": "Messages are for starting. Most people decide on a call, not in a chat.",
+    "watch": "Asking before they have told you anything.",
+    "record": "Record a voice note after the ask with what they said."
+  },
+  "b13": {
+    "steps": [
+      "Open by asking where they are now.",
+      "Ask where they want to be, and why it matters now.",
+      "Ask what is in the way. Only then say how you could help."
+    ],
+    "say": "“Before I say anything about what I do, tell me where you’re at.”",
+    "why": "A good call is mostly questions. The more they talk, the clearer it gets for both of you.",
+    "watch": "Pitching in the first five minutes.",
+    "record": "Record your side or a debrief straight after. Don’t record them without asking."
+  },
+  "b14": {
+    "steps": [
+      "Say what they get, then the price, in one sentence.",
+      "Stop talking.",
+      "Let them answer first, however long it takes."
+    ],
+    "say": "“It’s twelve weeks, coaching and check-ins, and it’s $900.”",
+    "why": "Saying your price calmly tells them you believe in it. Talking past it tells them you don’t.",
+    "watch": "Dropping the price before they have even answered.",
+    "record": "Record yourself practising the line three times, then a debrief after the real one."
+  },
+  "b15": {
+    "steps": [
+      "Say it is fair to want to think.",
+      "Ask what exactly they want to think through.",
+      "Answer that one thing, then ask for a decision, yes or no."
+    ],
+    "say": "“Totally fair. What part do you want to think through?”",
+    "why": "“I need to think” usually hides one real question. Asking for it is respectful and it ends the limbo.",
+    "watch": "Pushing past a clear no.",
+    "record": "Record a voice note after with what the real question was."
+  },
+  "b16": {
+    "steps": [
+      "Pick someone who got a real result.",
+      "Ask for thirty seconds on where they were, what changed and how it feels now.",
+      "Make it easy: send them the three questions."
+    ],
+    "say": "“Would you record thirty seconds on what changed for you? I’ll send you three questions.”",
+    "why": "Your clients telling the story is the strongest proof you can post.",
+    "watch": "Writing it for them.",
+    "record": "Record your ask as a voice note, then post the testimonial if you get it."
+  },
+  "b17": {
+    "steps": [
+      "Post something that shows you solve one problem.",
+      "Start conversations with the people who respond, then invite the right one to a call.",
+      "Make the offer. If it is a yes, post the story here: the post, the messages, the call."
+    ],
+    "say": "“This started with one video. Here’s how it turned into a client.”",
+    "why": "Everything on this path leads to one thing: content that turns into paid work you are proud of.",
+    "watch": "Selling something you don’t believe helps them.",
+    "record": "Record a two-minute debrief and post it."
+  },
+  "h1": {
+    "steps": [
+      "Pick a moment you still cringe about a little.",
+      "Tell it fast, and make yourself the one who looks foolish.",
+      "Stop on the most embarrassing detail."
+    ],
+    "say": "“So I waved back at someone who wasn’t waving at me. For a full block.”",
+    "why": "Making yourself the joke lowers everyone’s guard, yours included. Conan built a career on being the one who looks ridiculous.",
+    "watch": "Making someone else the punchline instead.",
+    "record": "Record the story."
+  },
+  "h2": {
+    "steps": [
+      "Pick something silly and small: a fake job title, a voice, a made-up rule.",
+      "Keep it going when it gets a bit awkward. That’s when it gets funny.",
+      "Drop it cleanly when it’s run its course."
+    ],
+    "say": "“As your personal butler, I must advise against the second croissant.”",
+    "why": "Commitment is what makes a bit funny. Half-doing it is what makes it awkward.",
+    "watch": "Keeping it going after the other person clearly wants out.",
+    "record": "Record a voice note after describing the bit and how far it went."
+  },
+  "h3": {
+    "steps": [
+      "Keep your phone handy for a whole day.",
+      "Every time something seems absurd, record ten seconds on it.",
+      "That night, pick the one with the most potential."
+    ],
+    "say": "“Why does the gym play the slowest music at 6am?”",
+    "why": "Comedians notice. The habit of catching small absurd things is where material comes from.",
+    "watch": "Waiting for something big. Small is better.",
+    "record": "The voice notes are the recordings."
+  },
+  "h4": {
+    "steps": [
+      "Tell a joke in normal conversation.",
+      "If it misses, name it: “That was for me.”",
+      "Smile and move on."
+    ],
+    "say": "“Okay, that one stays in my notebook.”",
+    "why": "How you handle a miss matters more than the miss. People relax when you clearly don’t mind.",
+    "watch": "Explaining the joke after it missed.",
+    "record": "Record a voice note after with the joke and your recovery."
+  },
+  "h5": {
+    "steps": [
+      "Pick a topic you have opinions about.",
+      "Write ten jokes fast. Don’t judge them yet.",
+      "Record the three you’d actually say out loud."
+    ],
+    "say": "Quantity first, quality second.",
+    "why": "Most jokes don’t work. Writing ten is how you find the one that does.",
+    "watch": "Stopping at three because the first one was good.",
+    "record": "Record your best three."
+  },
+  "h6": {
+    "steps": [
+      "Write down something that bugs you.",
+      "Ask why it bugs you, then why again.",
+      "Say the angle in one line: what is actually ridiculous here."
+    ],
+    "say": "“Self-checkout means I now work at the grocery store, unpaid.”",
+    "why": "A joke needs an angle, an attitude about a thing. Without one it’s just an observation.",
+    "watch": "Complaining without a twist.",
+    "record": "Record yourself saying the premise and one joke from it."
+  },
+  "h7": {
+    "steps": [
+      "Take a joke that gets a laugh.",
+      "Write three more lines that build on the same idea.",
+      "Say all four in a row."
+    ],
+    "say": "Joke, then tag, tag, tag.",
+    "why": "Tags squeeze more laughs out of the same setup. Pros stack them.",
+    "watch": "Starting a new topic instead of building on the joke.",
+    "record": "Record the joke with its tags."
+  },
+  "h8": {
+    "steps": [
+      "Write the joke as you’d say it.",
+      "Cut every word that isn’t doing work.",
+      "Move the funniest word to the very end."
+    ],
+    "say": "Same joke, half the words.",
+    "why": "The shorter the setup, the bigger the laugh. The surprise has to come last.",
+    "watch": "Cutting the part that makes it make sense.",
+    "record": "Record both versions back to back."
+  },
+  "h9": {
+    "steps": [
+      "Listen for something you can play with.",
+      "Accept it and add to it: “Yes, and…”",
+      "Let them add back. Keep it light."
+    ],
+    "say": "“You’re right, the line is long. I think we live here now. I’ve named that pillar Gary.”",
+    "why": "“Yes, and” is the core rule of improv, and Conan came up through improv. It turns small talk into play.",
+    "watch": "Shutting their idea down to make your own joke.",
+    "record": "Record a voice note after with what was said."
+  },
+  "h10": {
+    "steps": [
+      "Ask someone about something they care about.",
+      "Find what’s funny in it with them. Laugh with, never at.",
+      "Let them be the star."
+    ],
+    "say": "“Wait, you train pigeons? Do they have names? Do they have agents?”",
+    "why": "Conan’s best work with fans is him being delighted by them. The joke is the shared moment.",
+    "watch": "Making fun of them.",
+    "record": "Record a voice note after, or film it if they say yes."
+  },
+  "h11": {
+    "steps": [
+      "Ask a friend for a random topic.",
+      "Start talking straight away and don’t stop for five minutes.",
+      "Follow anything that gets a laugh."
+    ],
+    "say": "“Topic: socks. Okay. Socks are the only clothes we lose in our own home.”",
+    "why": "Riffing trains your brain to find the next funny thing on the spot.",
+    "watch": "Stopping to think. Talk through it.",
+    "record": "Record the five minutes."
+  },
+  "h12": {
+    "steps": [
+      "List the things people tease you about.",
+      "Exaggerate each one.",
+      "Put the best one last."
+    ],
+    "say": "“I dress like a substitute teacher who is about to tell you he also DJs.”",
+    "why": "If you can roast yourself, nobody else’s jokes can land as hard. It also shows you can take it.",
+    "watch": "Being cruel to yourself. Funny, not harsh.",
+    "record": "Record your roast."
+  },
+  "h13": {
+    "steps": [
+      "Pick a true story that makes your friends laugh.",
+      "Start in the middle of the action.",
+      "Act out the key moment instead of describing it."
+    ],
+    "say": "“So I’m holding a cake, and the door is locked.”",
+    "why": "Telling a story to a group is the first step to telling it on stage.",
+    "watch": "Too much backstory.",
+    "record": "Record it, with everyone’s okay, or a debrief after."
+  },
+  "h14": {
+    "steps": [
+      "Pick your three best minutes of material.",
+      "Stand up and record it start to finish.",
+      "Don’t stop for mistakes."
+    ],
+    "say": "Three minutes, no restarts.",
+    "why": "A tight set is what you take to an open mic. Running it in one take is the rehearsal.",
+    "watch": "Sitting down to do it.",
+    "record": "Record the set."
+  },
+  "h15": {
+    "steps": [
+      "Find an open mic near you this week.",
+      "Watch every act, good and bad.",
+      "Put your name on the list for next time."
+    ],
+    "say": "“How do I get on the list next week?”",
+    "why": "Most people never go. Seeing how normal it is takes a lot of the fear away.",
+    "watch": "Leaving before the end.",
+    "record": "Record a voice note on the way home: what you saw and when you’ll go up."
+  },
+  "h16": {
+    "steps": [
+      "Do a short set for a small group.",
+      "When something gets silence, carry on with full confidence.",
+      "Finish strong."
+    ],
+    "say": "Keep going.",
+    "why": "Silence is part of comedy. Every comic bombs. What makes them comics is that they keep going.",
+    "watch": "Apologising for the joke.",
+    "record": "Record the set, or a debrief after."
+  },
+  "h17": {
+    "steps": [
+      "Sign up and practise your set out loud five times.",
+      "Get there early, watch, and go up when called.",
+      "Record your set and post it here with how it went."
+    ],
+    "say": "“Hi, I’m new. Be nice. Actually, don’t, it’s fine.”",
+    "why": "Everything on this path leads here: standing up and doing it in front of strangers.",
+    "watch": "Not going because it isn’t perfect yet.",
+    "record": "Record your set and post it."
+  },
+  "w1": {
+    "steps": [
+      "Pick a memory your family still brings up.",
+      "Tell it with the details only you would know.",
+      "End on the funniest image."
+    ],
+    "say": "“My mother had one rule about church: we went. All of it. Every service.”",
+    "why": "Trevor Noah’s best material comes from his own childhood. Specific beats clever.",
+    "watch": "Generic childhood jokes everyone has heard.",
+    "record": "Record the story."
+  },
+  "w2": {
+    "steps": [
+      "Pick the most dramatic moment of a story.",
+      "Start there.",
+      "Fill in the background only if it’s needed."
+    ],
+    "say": "“I’m in the back of a minibus taxi, and the driver turns around.”",
+    "why": "Starting in the scene grabs people straight away.",
+    "watch": "Spending the first minute on who, when and where.",
+    "record": "Record the story."
+  },
+  "w3": {
+    "steps": [
+      "Pick a story with a surprise.",
+      "Tell it so the audience assumes one thing.",
+      "Reveal the other thing at the end."
+    ],
+    "say": "Set them up, then flip it.",
+    "why": "A turn makes a story feel like a joke even without a punchline.",
+    "watch": "Giving the surprise away early.",
+    "record": "Record the story."
+  },
+  "w4": {
+    "steps": [
+      "Pick the key moment.",
+      "Stand up and show it: how they looked, how you reacted.",
+      "Let your face do the work."
+    ],
+    "say": "Show, don’t tell.",
+    "why": "Acting out a moment makes people see it, which makes it funnier.",
+    "watch": "Describing what you could show.",
+    "record": "Record it on video."
+  },
+  "w5": {
+    "steps": [
+      "Pick two people in your story.",
+      "Give each a voice, a pace and an attitude.",
+      "Switch between them clearly."
+    ],
+    "say": "Your voice, then theirs.",
+    "why": "Trevor plays everyone in his stories. Voices let you tell a story without saying “he said, she said”.",
+    "watch": "Mocking a group of people. Play the person, not a stereotype.",
+    "record": "Record the story."
+  },
+  "w6": {
+    "steps": [
+      "Take one punchline.",
+      "Say it high, then low, then slow.",
+      "Keep the version that surprises you most."
+    ],
+    "say": "Same words, three sounds.",
+    "why": "How you say a line changes whether it lands. Pitch is a tool, like timing.",
+    "watch": "Changing the words instead of the delivery.",
+    "record": "Record all three takes."
+  },
+  "w7": {
+    "steps": [
+      "Build to your punchline.",
+      "Stop. Count two seconds in your head.",
+      "Say it, and hold still for the laugh."
+    ],
+    "say": "Build… wait… land.",
+    "why": "The pause makes people lean in. It turns a line into a moment.",
+    "watch": "Rushing to fill the silence.",
+    "record": "Record it."
+  },
+  "w8": {
+    "steps": [
+      "Pick a phrase from a language or saying you grew up with.",
+      "Say it in the original first.",
+      "Then translate it, and let the translation be the joke."
+    ],
+    "say": "“In my family, ‘we’ll see’ means no. ‘We’ll talk about it’ means no, and you’re in trouble.”",
+    "why": "Trevor uses language and translation as comedy. Your own background is material nobody else has.",
+    "watch": "Using a language that isn’t yours to get a laugh.",
+    "record": "Record the story."
+  },
+  "w9": {
+    "steps": [
+      "Pick a hard moment that is now far enough behind you.",
+      "Tell it honestly, with the funny parts left in.",
+      "Don’t make light of anyone else’s pain."
+    ],
+    "say": "“It was the worst week of my life, and somehow the funniest part was the parking ticket.”",
+    "why": "Finding the funny in hard times is at the heart of Trevor’s storytelling. It shows you have come through it.",
+    "watch": "Using a story that still hurts too much to tell.",
+    "record": "Record the story, or keep it private."
+  },
+  "w10": {
+    "steps": [
+      "Pick a custom that seems normal to you.",
+      "Explain it step by step to someone who has never seen it.",
+      "Let them see how strange it looks from outside."
+    ],
+    "say": "“Every Sunday we visit eleven aunties. Not to talk. Just to eat and leave.”",
+    "why": "Explaining your world from the outside is how you find what is funny about it.",
+    "watch": "Making fun of your culture to please people outside it.",
+    "record": "Record the explanation."
+  },
+  "w11": {
+    "steps": [
+      "Tell a story from your side.",
+      "Retell it as the other person.",
+      "Notice where their version is funnier."
+    ],
+    "say": "“Now imagine you’re the bus driver.”",
+    "why": "Seeing it from the other side often reveals the best joke.",
+    "watch": "Making the other person the villain again.",
+    "record": "Record both versions."
+  },
+  "w12": {
+    "steps": [
+      "Tell your funny story.",
+      "Pause.",
+      "Say one honest line about why it matters."
+    ],
+    "say": "“And that’s when I realised my mom wasn’t strict. She was scared.”",
+    "why": "A point at the end makes people remember the laugh. It’s what makes a story feel like it was worth telling.",
+    "watch": "A long speech instead of one line.",
+    "record": "Record the story with its ending."
+  },
+  "w13": {
+    "steps": [
+      "Tell a story to one group.",
+      "Tell it to a different group.",
+      "Notice what you changed, and why."
+    ],
+    "say": "Same story, two rooms.",
+    "why": "Headliners adjust to every crowd. The story isn’t fixed.",
+    "watch": "Ignoring a room that isn’t with you.",
+    "record": "Record a voice note comparing the two."
+  },
+  "w14": {
+    "steps": [
+      "Keep telling your story when someone cuts in.",
+      "Use what they said.",
+      "Bring it back to your story."
+    ],
+    "say": "“Exactly. And that’s what I thought too, until…”",
+    "why": "Handling a cut-in shows you are in control of the room.",
+    "watch": "Getting thrown or annoyed.",
+    "record": "Record a debrief after."
+  },
+  "w15": {
+    "steps": [
+      "Line up your best stories in order.",
+      "Stand up and record ten minutes in one go.",
+      "Watch it back and mark where it dips."
+    ],
+    "say": "Ten minutes, no stopping.",
+    "why": "Ten minutes is the step from open micer to feature act.",
+    "watch": "Stopping to fix things.",
+    "record": "Record the ten minutes."
+  },
+  "w16": {
+    "steps": [
+      "Invite three or more people and ask each to bring one true story.",
+      "Open the night with yours.",
+      "Introduce each storyteller warmly."
+    ],
+    "say": "“Tonight’s theme is ‘the time I got it wrong’. I’ll go first.”",
+    "why": "Hosting a story night trains you to warm up a room and hold it.",
+    "watch": "Letting it become a normal hangout.",
+    "record": "Record your story, or a debrief after."
+  },
+  "w17": {
+    "steps": [
+      "Book a spot for ten minutes.",
+      "Run your set five times beforehand.",
+      "Perform it, record it and post it here."
+    ],
+    "say": "“My mom always said…”",
+    "why": "Ten minutes of your own stories, in front of strangers. That’s headlining.",
+    "watch": "Doing five minutes and calling it done.",
+    "record": "Record your set and post it."
+  },
+  "g1": {
+    "steps": [
+      "Pick something coming up: a dinner, a meeting, a birthday.",
+      "Ask: what is this actually for?",
+      "Say the answer in one specific sentence."
+    ],
+    "say": "“This dinner is for the four of us to finally talk about what we each want next year.”",
+    "why": "Priya Parker’s first rule: gatherings fail when the purpose is vague or assumed.",
+    "watch": "Purposes like “to have fun” or “to catch up”. Be specific.",
+    "record": "Record yourself saying it."
+  },
+  "g2": {
+    "steps": [
+      "Take a plan that would normally be vague.",
+      "Give it a reason people want to show up for.",
+      "Invite two to four people."
+    ],
+    "say": "“Dinner Thursday. Everyone brings one thing they’re stuck on and we help each other.”",
+    "why": "A clear reason makes people more likely to come and more likely to show up fully.",
+    "watch": "Making it so specific it feels like homework.",
+    "record": "Record a voice note reading your invite."
+  },
+  "g3": {
+    "steps": [
+      "Start from the purpose.",
+      "Ask who helps it and who works against it.",
+      "Decide, and be kind about it."
+    ],
+    "say": "“This one is just the new people, so they can get to know each other.”",
+    "why": "Who you leave out shapes the gathering as much as who you invite.",
+    "watch": "Inviting everyone to avoid an awkward conversation.",
+    "record": "Record your guest list and your reasons."
+  },
+  "g4": {
+    "steps": [
+      "Say why you’re gathering.",
+      "Ask each guest to bring something: a story, a question, a dish.",
+      "Make it personal to each one."
+    ],
+    "say": "“Bring one story about a time you surprised yourself.”",
+    "why": "The gathering starts with the invite. A good invite gets people ready before they arrive.",
+    "watch": "A group text with just a time and place.",
+    "record": "Record yourself reading the invite."
+  },
+  "g5": {
+    "steps": [
+      "Stand near the door.",
+      "Greet each person by name.",
+      "Introduce them to someone before you leave them."
+    ],
+    "say": "“So glad you came. Come meet Ana, she just moved here too.”",
+    "why": "The first two minutes decide how comfortable someone feels all night.",
+    "watch": "Leaving guests alone at the door.",
+    "record": "Record a voice note after with who you greeted."
+  },
+  "g6": {
+    "steps": [
+      "Know one thing about each of the two people.",
+      "Say their names and why they should talk.",
+      "Leave them to it."
+    ],
+    "say": "“Sam, this is Lee. You both just quit your jobs to start something. Go.”",
+    "why": "A reason makes it easy for two people to start talking.",
+    "watch": "Introducing with just names.",
+    "record": "Record a voice note after."
+  },
+  "g7": {
+    "steps": [
+      "Get everyone’s attention.",
+      "Say why you’re all here and what you hope for.",
+      "Keep it under thirty seconds."
+    ],
+    "say": "“Thank you for coming. Tonight is about meeting people we’d never meet otherwise. So, no talking to anyone you came with.”",
+    "why": "Most gatherings start with logistics. A real opening tells people what kind of night this is.",
+    "watch": "Starting with “so, the bathroom is over there”.",
+    "record": "Record your opening, or practise it out loud first."
+  },
+  "g8": {
+    "steps": [
+      "Pick one rule that serves the purpose.",
+      "Say it with a smile at the start.",
+      "Keep it yourself."
+    ],
+    "say": "“Phones in the bowl until dessert.”",
+    "why": "Temporary rules make people feel safe to behave differently for one night.",
+    "watch": "More than one rule.",
+    "record": "Record a voice note after with how it went."
+  },
+  "g9": {
+    "steps": [
+      "Notice who hasn’t spoken.",
+      "Ask them a direct, easy question.",
+      "Give them space to answer."
+    ],
+    "say": "“Priya, you’ve been to Lisbon, right? What did you love?”",
+    "why": "A generous host looks after everyone, not just the loud ones.",
+    "watch": "Putting them on the spot with something hard.",
+    "record": "Record a voice note after."
+  },
+  "g10": {
+    "steps": [
+      "Wait for a natural pause.",
+      "Thank them for what they said.",
+      "Turn to someone else with a question."
+    ],
+    "say": "“That’s a great point. Jamie, what do you think?”",
+    "why": "Priya calls it generous authority: protecting the gathering is the host’s job, even when it’s awkward.",
+    "watch": "Being harsh or making it a big moment.",
+    "record": "Record a voice note after."
+  },
+  "g11": {
+    "steps": [
+      "Pick one good question.",
+      "Ask everyone to answer, one at a time.",
+      "Go first so they know how deep to go."
+    ],
+    "say": "“What’s something you changed your mind about this year?”",
+    "why": "One conversation for the whole table turns a dinner into a shared experience.",
+    "watch": "Questions with one-word answers.",
+    "record": "Record a voice note after with the best answers, with everyone’s okay."
+  },
+  "g12": {
+    "steps": [
+      "Ask a question that matters and could split people.",
+      "Set one rule: ask before you argue.",
+      "Let it run, then sum up both sides."
+    ],
+    "say": "“Is it better to stay in a stable job or take the risk? One rule: ask a question before you disagree.”",
+    "why": "Priya argues good gatherings need a bit of healthy tension. Too polite is boring.",
+    "watch": "Topics that hurt people in the room.",
+    "record": "Record a voice note after."
+  },
+  "g13": {
+    "steps": [
+      "Give a heads-up that the night is ending.",
+      "Do a closing: thanks, a last round, one word each.",
+      "Send people off with something."
+    ],
+    "say": "“Before we go: one word for tonight.”",
+    "why": "Endings matter as much as openings. Most gatherings just fade out.",
+    "watch": "Letting it trail off.",
+    "record": "Record your closing words, or a voice note after."
+  },
+  "g14": {
+    "steps": [
+      "The next day, message everyone.",
+      "Share one thing from the night: a quote, a photo, a thank-you.",
+      "Connect two people who should keep talking."
+    ],
+    "say": "“Still thinking about what Ana said about changing jobs.”",
+    "why": "A follow-up keeps the night going and makes people want to come next time.",
+    "watch": "Waiting a week.",
+    "record": "Record a voice note reading your message."
+  },
+  "g15": {
+    "steps": [
+      "Invite four or more people from different parts of your life.",
+      "Plan the opening and how you’ll connect them.",
+      "Host it."
+    ],
+    "say": "“None of you know each other yet. That’s on purpose.”",
+    "why": "Mixing people is where hosting gets interesting and where new friendships come from.",
+    "watch": "Leaving them to sort it out.",
+    "record": "Record a debrief after."
+  },
+  "g16": {
+    "steps": [
+      "Pick who or what you’re toasting.",
+      "Tell one short story.",
+      "Say why it matters, and raise a glass."
+    ],
+    "say": "“To Sam, who drove four hours to help me move a couch he didn’t even like.”",
+    "why": "A good toast says out loud what everyone is feeling. It’s hosting in one minute.",
+    "watch": "A long list of thank-yous.",
+    "record": "Record your toast, or practise it first."
+  },
+  "g17": {
+    "steps": [
+      "Set a purpose, a guest list and one rule.",
+      "Open strong, host generously and close on purpose.",
+      "Post the story here: what you did and what happened."
+    ],
+    "say": "“Tonight is about…”",
+    "why": "Everything on this path in one night. This is how people remember you: as the one who brings people together.",
+    "watch": "Making it about the food or the venue.",
+    "record": "Record a debrief and post it."
+  },
+  "y1": {
+    "steps": [
+      "Notice someone you find attractive.",
+      "Say one warm, simple line as you pass.",
+      "Keep walking. That’s the whole move."
+    ],
+    "say": "“Great jacket.”",
+    "why": "Matthew Hussey calls this the two-hit approach: say something with no intention of continuing. It takes all the pressure off.",
+    "watch": "Stopping and waiting for more. Let it go.",
+    "record": "Record a voice note after."
+  },
+  "y2": {
+    "steps": [
+      "Look up and catch someone’s eye.",
+      "Hold it for a beat longer than usual.",
+      "Smile, then look away."
+    ],
+    "say": "No words.",
+    "why": "Eye contact and a smile are often the first step. It shows confidence without saying anything.",
+    "watch": "Staring. A beat, not a stare.",
+    "record": "Record a voice note after with how it felt."
+  },
+  "y3": {
+    "steps": [
+      "Notice the urge to wait for a better line.",
+      "Say whatever is true and simple instead.",
+      "Let the conversation do the rest."
+    ],
+    "say": "“Hi. I had to say hello. I’m ___.”",
+    "why": "Hussey’s point: people miss chances waiting for the perfect thing to say. Warmth matters more than wit.",
+    "watch": "Rehearsing for ten minutes and missing the moment.",
+    "record": "Record a voice note after."
+  },
+  "y4": {
+    "steps": [
+      "Think about what you bring: how you treat people, what you’re into, what you’re building.",
+      "Say three things out loud.",
+      "Keep it honest, not a sales pitch."
+    ],
+    "say": "“I’m loyal, I’m funny when I’m relaxed, and I plan great weekends.”",
+    "why": "Confidence comes from how you see yourself, not from other people’s approval. Knowing your value makes you less needy.",
+    "watch": "Listing only looks or money.",
+    "record": "Record your one minute."
+  },
+  "y5": {
+    "steps": [
+      "Approach with a simple, warm line.",
+      "Talk for a minute or two.",
+      "End it yourself, warmly."
+    ],
+    "say": "“I’ve got to run, but I’m glad I said hi.”",
+    "why": "Being the one who ends it keeps you in control and leaves a good impression.",
+    "watch": "Hanging on until it fizzles.",
+    "record": "Record a voice note after."
+  },
+  "y6": {
+    "steps": [
+      "Skip “what do you do?”.",
+      "Ask about something you noticed or are curious about.",
+      "Follow what they say."
+    ],
+    "say": "“You look like you’re plotting something. What is it?”",
+    "why": "Curiosity is attractive. Interview questions are not.",
+    "watch": "Firing questions without sharing anything back.",
+    "record": "Record a voice note after."
+  },
+  "y7": {
+    "steps": [
+      "Notice something they chose.",
+      "Tease it lightly, with a smile.",
+      "Make sure they’re smiling too."
+    ],
+    "say": "“Pineapple on pizza? Bold. I respect it. I don’t trust it.”",
+    "why": "Playful teasing creates spark. It shows you’re not putting them on a pedestal.",
+    "watch": "Teasing about their body or anything sensitive.",
+    "record": "Record a voice note after."
+  },
+  "y8": {
+    "steps": [
+      "Wait until you’ve had a real conversation.",
+      "Ask clearly: number or a plan.",
+      "Whatever they say, thank them warmly."
+    ],
+    "say": "“I’ve really enjoyed this. Can I take you for coffee this week?”",
+    "why": "Asking clearly is respectful and attractive. Hinting isn’t.",
+    "watch": "Asking before there’s been any real connection, or pushing after a no.",
+    "record": "Record a voice note after."
+  },
+  "y9": {
+    "steps": [
+      "Wait for a good moment.",
+      "Share something real: a fear, a goal, a story.",
+      "Let them respond."
+    ],
+    "say": "“Honestly, I’m trying to get better at saying what I want.”",
+    "why": "Opening up a little lets the other person do the same. That’s how connection happens.",
+    "watch": "Trauma-dumping on a first date.",
+    "record": "Record a voice note after."
+  },
+  "y10": {
+    "steps": [
+      "Notice something specific you liked.",
+      "Say it plainly.",
+      "Don’t follow it with a joke."
+    ],
+    "say": "“I loved how you talked about your sister. You light up.”",
+    "why": "Specific compliments show you were paying attention.",
+    "watch": "Generic compliments about looks.",
+    "record": "Record a voice note after."
+  },
+  "y11": {
+    "steps": [
+      "Pick a plan you’d genuinely enjoy.",
+      "Ask with a day and time.",
+      "Make it easy to say yes."
+    ],
+    "say": "“There’s a jazz night Thursday at 8. Come with me?”",
+    "why": "A clear plan shows confidence and intent.",
+    "watch": "“We should hang out sometime.”",
+    "record": "Record a voice note reading your invite."
+  },
+  "y12": {
+    "steps": [
+      "Notice the nerves.",
+      "Say it lightly.",
+      "Smile."
+    ],
+    "say": "“I’ll be honest, I’m a little nervous. It’s a good sign.”",
+    "why": "Admitting nerves makes you more relatable, not less attractive.",
+    "watch": "Making it a big confession.",
+    "record": "Record a voice note after."
+  },
+  "y13": {
+    "steps": [
+      "Know what you want.",
+      "Say it simply and early.",
+      "Watch how they respond."
+    ],
+    "say": "“I’m not looking for anything casual. I want something real.”",
+    "why": "Saying what you want filters for the right people. Hussey’s idea: be the one who chooses, not the one waiting to be chosen.",
+    "watch": "Hiding what you want to seem chill.",
+    "record": "Record a voice note after."
+  },
+  "y14": {
+    "steps": [
+      "Decide it’s not the right fit.",
+      "Say so kindly and clearly.",
+      "Don’t leave them guessing."
+    ],
+    "say": "“I’ve enjoyed getting to know you, but I don’t think we’re the right match. I wanted to tell you properly.”",
+    "why": "Ending things kindly shows self-respect and respect for them.",
+    "watch": "Ghosting.",
+    "record": "Record a voice note after, or one practising what you’ll say."
+  },
+  "y15": {
+    "steps": [
+      "Notice when someone is lukewarm.",
+      "Don’t send the extra message.",
+      "Put that energy into your own life."
+    ],
+    "say": "Silence is an answer too.",
+    "why": "Chasing people who aren’t interested wears down your confidence.",
+    "watch": "Double texting to get a reaction.",
+    "record": "Record a voice note on what you’ll do instead."
+  },
+  "y16": {
+    "steps": [
+      "Hear the no.",
+      "Respond warmly and briefly.",
+      "Leave it there."
+    ],
+    "say": "“Totally fair. It was nice to meet you.”",
+    "why": "Confidence isn’t getting a yes every time. It’s being fine either way.",
+    "watch": "Arguing or asking why.",
+    "record": "Record a voice note after."
+  },
+  "y17": {
+    "steps": [
+      "Pick someone you have a real connection with.",
+      "Ask them out in person, with a specific plan.",
+      "Go on the date, then post the story here."
+    ],
+    "say": "“I’d love to take you out. Friday, the Italian place?”",
+    "why": "Everything on this path in one move: you chose, you asked and you showed up.",
+    "watch": "Asking by text to avoid the nerves.",
+    "record": "Record a debrief after the date and post it."
   }
 };

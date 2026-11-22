@@ -4,7 +4,7 @@ import type { BranchKey } from './moves';
 
 export type Video = { t: string; by: string; id: string; at: number; up: string; take: string };
 
-export const VIDEO: Record<BranchKey, Video[]> = {
+export const VIDEO: Partial<Record<BranchKey, Video[]>> = {
   "c": [
     {
       "t": "How to talk to strangers",
@@ -383,6 +383,134 @@ export const VIDEO: Record<BranchKey, Video[]> = {
       "at": 0,
       "up": "2026-11",
       "take": "Vinh Giang on speaking with clarity and presence through small changes in how you behave. Watch before you take the room."
+    }
+  ],
+  "b": [
+    {
+      "t": "The content mistake costing coaches thousands",
+      "by": "Brian Mark",
+      "id": "fug-2NAPgmA",
+      "at": 0,
+      "up": "2026-03",
+      "take": "Why views and followers don’t pay, and what to post instead. It is aimed at fitness coaches, but it works for anything you sell. Watch before your first proof video."
+    },
+    {
+      "t": "How to hack the algorithm and go viral on Instagram",
+      "by": "Brian Mark",
+      "id": "hgt86CsQ8-Y",
+      "at": 0,
+      "up": "2024-06",
+      "take": "How he thinks about reach and formats. Take the format ideas for 'Borrow a format' and skip anything that chases views for their own sake."
+    },
+    {
+      "t": "How to get your first 10 clients, starting from zero",
+      "by": "Brian Mark",
+      "id": "0KE3BM3J7to",
+      "at": 0,
+      "up": "2026-10",
+      "take": "The profile, the content system and his DM scripts, word for word. Watch before you start your ten conversations."
+    },
+    {
+      "t": "Close any sale in 3 steps",
+      "by": "Alex Hormozi",
+      "id": "CwmV4azspI8",
+      "at": 0,
+      "up": "2024-12",
+      "take": "Talk less, ask more, and say the price plainly. It is the whole Calls stage in one video."
+    }
+  ],
+  "h": [
+    {
+      "t": "The advice Johnny Carson gave Conan",
+      "by": "Conan O’Brien",
+      "id": "GsibjmC_R3E",
+      "at": 0,
+      "up": "2026-09",
+      "take": "Conan on performing with his hero watching from a few feet away. Watch it before your first bit: everyone is nervous, even Conan."
+    },
+    {
+      "t": "Conan and Matt Groening on The Simpsons writers’ room",
+      "by": "Conan O’Brien Needs A Friend",
+      "id": "ZjWPkOHk_BM",
+      "at": 0,
+      "up": "2026-09",
+      "take": "Two comedy writers on how jokes got made in one of the best writers’ rooms ever. Listen for how many jokes get thrown away."
+    },
+    {
+      "t": "Lisa Kudrow and Conan bonded in improv class",
+      "by": "Conan O’Brien Needs A Friend",
+      "id": "QqQbTl1dKYY",
+      "at": 0,
+      "up": "2025-01",
+      "take": "Where Conan’s playfulness comes from: improv. Watch before you start riffing with strangers."
+    },
+    {
+      "t": "Conan on preparing to host the Oscars",
+      "by": "Jimmy Kimmel Live",
+      "id": "kTCMPedUSWU",
+      "at": 0,
+      "up": "2025-02",
+      "take": "How much preparation goes into looking loose on a big stage. Use it before your tight three."
+    }
+  ],
+  "w": [
+    {
+      "t": "Trevor Noah on storytelling",
+      "by": "Trevor Noah at CLEANPOWER 2025",
+      "id": "0neVALfl6zQ",
+      "at": 0,
+      "up": "2025-06",
+      "take": "Trevor on why stories move people more than facts. It’s not a comedy set, but it is the thinking behind his storytelling."
+    },
+    {
+      "t": "Meet Eugene Khoza",
+      "by": "What Now? with Trevor Noah",
+      "id": "GhlhkbAtN1g",
+      "at": 0,
+      "up": "2025-04",
+      "take": "Two South African comedians who grew up together. Listen to how they tell stories to each other: the voices, the languages, the timing."
+    },
+    {
+      "t": "Jon Stewart on What Now?",
+      "by": "What Now? with Trevor Noah",
+      "id": "44uC12g9ZVk",
+      "at": 0,
+      "up": "2025-06",
+      "take": "Trevor and his Daily Show predecessor on comedy and perspective. Use it for the Perspective stage."
+    },
+    {
+      "t": "Chris Rock’s advice to Trevor Noah",
+      "by": "Trevor Noah",
+      "id": "qflyIvSnl_I",
+      "at": 0,
+      "up": "2026-10",
+      "take": "A short one: what Chris Rock told him when he started hosting. Watch before you take a room."
+    }
+  ],
+  "g": [
+    {
+      "t": "The 3 rules that make every gathering better",
+      "by": "Priya Parker",
+      "id": "AItT7HrDrJU",
+      "at": 0,
+      "up": "2025-11",
+      "take": "Priya Parker on what turns a meeting or a dinner into something people remember. Start with the part on purpose."
+    },
+    {
+      "t": "Rethinking big ideas: Priya Parker on gathering",
+      "by": "Priya Parker",
+      "id": "oGBoMxew7xE",
+      "at": 0,
+      "up": "2024-01",
+      "take": "Her idea that every gathering is a chance to create the world you want. Use it for the Opening stage."
+    },
+    {
+      "t": "Priya Parker, The Art of Gathering",
+      "by": "Priya Parker",
+      "id": "9D4jg8nkDKA",
+      "at": 0,
+      "up": "2024-11",
+      "take": "Why gathering is a source of meaning, and what a host owes the guests. Watch before you redirect someone or bring in the quiet one."
     }
   ]
 };

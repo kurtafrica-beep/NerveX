@@ -122,8 +122,9 @@ export function You({
           return (
             <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
               <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
-                <BranchBanner b={b} height={96} glyphX={900} />
-                <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} />
+                {/* Paths without cel-shaded art yet show their drawn glyph instead. */}
+                <BranchBanner b={b} height={96} glyphX={BRANCH_ICON[b] ? 900 : 262} />
+                {BRANCH_ICON[b] ? <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} /> : null}
               </View>
               <View style={[s.pathHead, { marginTop: -34 }]}>
                 <T style={s.pathName}>{BRANCH[b].name}</T>

@@ -83,6 +83,11 @@ var BRANCH_ART = {
   f: '<path d="M50 4 C70 20 74 46 66 70 H34 C26 46 30 20 50 4 Z" fill="F"/><circle cx="50" cy="38" r="9" fill="B"/><path d="M34 52 L18 72 L34 70 Z M66 52 L82 72 L66 70 Z" fill="F"/><path d="M42 74 L50 96 L58 74 Z" fill="#FF6A1A"/>',
   m: '<rect x="4" y="18" width="92" height="64" rx="16" fill="F"/><path d="M40 34 L68 50 L40 66 Z" fill="B"/>',
   p: '<path d="M30 10 H70 L92 38 L50 94 L8 38 Z" fill="F"/><path d="M8 38 H92 M30 10 L40 38 L50 94 L60 38 L70 10" fill="none" stroke="B" stroke-width="3" stroke-linejoin="round"/>',
+  b: '<path d="M8 12 H80 A10 10 0 0 1 90 22 V62 A10 10 0 0 1 80 72 H38 L20 90 V72 H18 A10 10 0 0 1 8 62 V22 A10 10 0 0 1 18 12 Z" fill="F"/><path d="M36 26 L62 42 L36 58 Z" fill="B"/><circle cx="80" cy="78" r="16" fill="#FF6A1A"/><circle cx="80" cy="78" r="10" fill="none" stroke="#FFF6D6" stroke-width="3"/>',
+  h: '<path d="M14 12 H86 V48 C86 74 70 90 50 90 C30 90 14 74 14 48 Z" fill="F"/><path d="M28 40 Q35 30 42 40 M58 40 Q65 30 72 40" stroke="B" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M28 56 Q50 84 72 56 Z" fill="B"/>',
+  w: '<path d="M50 4 L88 94 H12 Z" fill="F" opacity="0.45"/><rect x="32" y="52" width="36" height="9" rx="3" fill="F"/><path d="M38 61 L32 94 M62 61 L68 94 M35 80 H65" stroke="F" stroke-width="5" stroke-linecap="round"/>',
+  g: '<rect x="8" y="44" width="84" height="12" rx="4" fill="F"/><circle cx="26" cy="30" r="10" fill="F"/><circle cx="50" cy="24" r="10" fill="F"/><circle cx="74" cy="30" r="10" fill="F"/><path d="M20 56 V90 M80 56 V90" stroke="F" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="50" r="4" fill="#FF6A1A"/>',
+  y: '<path d="M50 90 C20 68 6 52 6 33 C6 18 18 8 31 8 C40 8 46 13 50 20 C54 13 60 8 69 8 C82 8 94 18 94 33 C94 52 80 68 50 90 Z" fill="F"/><path d="M50 30 L54 44 L68 48 L54 52 L50 66 L46 52 L32 48 L46 44 Z" fill="B"/>',
   k: '<path d="M24 54 H76 L70 96 H30 Z" fill="F"/><rect x="18" y="44" width="64" height="12" rx="3" fill="F"/><path d="M50 44 V22" stroke="F" stroke-width="5"/><rect x="42" y="4" width="16" height="22" rx="8" fill="F"/><path d="M38 70 H62" stroke="B" stroke-width="4" stroke-linecap="round"/>'
 };
 // A poster banner: deep colour, map contours, the blaze sun and one big glyph.

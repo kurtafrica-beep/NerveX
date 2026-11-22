@@ -130,7 +130,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
     if (r.level) rows.push(['⬆️', `You reached Level ${r.level}`]);
   } else if (np) {
     hue = HUE[np];
-    badge = <ArtImage src={BRANCH_ICON[np]} size={72} />;
+    badge = BRANCH_ICON[np] ? <ArtImage src={BRANCH_ICON[np]} size={72} /> : <Emo e="🧗" size={72} />;
     eyebrow = r.preview ? 'Preview · New path' : 'New path';
     title = `${BRANCH[np].name} path unlocked`;
     rows.push(['⛰️', `Four stages and a capstone: ${MOVES.filter((m) => m.b === np).length} new moves`]);

@@ -182,8 +182,8 @@ function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void
   return (
     <View style={[s.poster, { backgroundColor: deep }]}>
       <View style={s.posterArt}>
-        {tb ? <BranchBanner b={tb} height={150} glyphX={900} scale={1.15} /> : <PlaceBanner place={move.place ?? 0} height={150} />}
-        <ArtImage src={tb ? BRANCH_ICON[tb] : PLACE_ICON[PLACES[move.place ?? 0].id]} size={100} style={s.posterTile} />
+        {tb ? <BranchBanner b={tb} height={150} glyphX={BRANCH_ICON[tb] ? 900 : 262} scale={1.15} /> : <PlaceBanner place={move.place ?? 0} height={150} />}
+        {tb && !BRANCH_ICON[tb] ? null : <ArtImage src={tb ? BRANCH_ICON[tb] : PLACE_ICON[PLACES[move.place ?? 0].id]} size={100} style={s.posterTile} />}
         <View style={[s.fade, { backgroundColor: deep }]} />
       </View>
       <View style={s.pill}>

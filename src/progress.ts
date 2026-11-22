@@ -37,6 +37,11 @@ export const HUE: Record<BranchKey, [string, string]> = {
   m: ['#9E2357', '#F3DAE5'],
   p: ['#2F6A6E', '#D8E8E8'],
   k: ['#8A3A12', '#F1DFD3'],
+  b: ["#5E1238", "#EED6E2"],
+  h: ["#3B3F9E", "#DEDFF3"],
+  w: ["#26285E", "#D9DAEC"],
+  g: ["#1F6B5C", "#D5EAE4"],
+  y: ["#556B2F", "#E3EAD6"],
 };
 export const PLACE_HUE: Record<string, [string, string]> = {
   cafe: ['#6B3E26', '#F0DCCB'], grocery: ['#3D6B2A', '#DDEBD2'], gym: ['#24485E', '#D5E3EC'], books: ['#6A2E4A', '#EEDAE3'],
@@ -56,6 +61,11 @@ export const TITLES: Record<BranchKey, string[]> = {
   m: ['Camera Ready', 'Hook Setter', 'Story Cutter', 'Public Face', 'Creator'],
   p: ['Dialer', 'Door Knocker', 'Follow-Up Pro', 'Meeting Setter', 'Prospector'],
   k: ['Stage Ready', 'Structured', 'Story Sharp', 'Room Reader', 'Keynote Speaker'],
+  b: ["Proof Poster", "Reach Builder", "DM Opener", "Call Closer", "Creator Pro"],
+  h: ["Bit Committer", "Joke Writer", "Riffer", "Open Micer", "Comedian"],
+  w: ["Story Finder", "Voice Player", "Perspective Shifter", "Room Holder", "Headliner"],
+  g: ["Purposeful", "Opener", "Generous Host", "Last Word", "Host"],
+  y: ["Warmed Up", "Approacher", "Connector", "Chooser", "Spark"],
 };
 export const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 export const TIER_EMOJI = ['🥉', '🥈', '🥇', '💠', '💎'];
@@ -219,6 +229,11 @@ export function computeProgress(
       now: `${Math.min(recs, PATH[b].recs)}/${PATH[b].recs}`,
       ok: recs >= PATH[b].recs,
     });
+    const after = PATH[b].after;
+    if (after) {
+      const done = (levels[after] ?? 0) >= 5;
+      reqs.unshift({ text: `Finish the ${BRANCH[after].name} path, capstone included`, now: done ? 'Summit' : `Stage ${(levels[after] ?? 0) + 1}`, ok: done });
+    }
     const met = reqs.every((r) => r.ok);
     paths[b] = { reqs, met, open: met || test };
     open[b] = met || test;
