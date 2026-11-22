@@ -332,7 +332,9 @@
       if (ws.length < 6 || speechSec < 6) return { error: 'Nerve could not hear enough of you. Find a quieter spot and read it a little louder.' };
       var st = stats(ws.map(function (w) { return w.vec; }));
       st.mu[2 * NCEP + 2] = NaN;
-      return { profile: { v: 1, mu: Array.from(st.mu, function (v) { return isNaN(v) ? null : v; }), sd: Array.from(st.sd), n: ws.length, sec: Math.round(speechSec) } };
+      var own = ws.map(function (w) { return dist(w.vec, st.mu, st.sd); });
+      var r = Math.max(4.5, percentile(own, 0.9));
+      return { profile: { v: 1, mu: Array.from(st.mu, function (v) { return isNaN(v) ? null : v; }), sd: Array.from(st.sd), r: r, n: ws.length, sec: Math.round(speechSec) } };
     },
 
     // Who spoke when. Returns stretches of you (kept) and of them (muted).
@@ -346,53 +348,65 @@
       var youMu = Float64Array.from(profile.mu, function (v) { return v === null ? NaN : v; });
       if (youMu.length !== DIMS) return { error: 'Set up your voice again. This version of Nerve describes voices differently.' };
 
+      // Distances to your voice use the spread measured when you enrolled, so
+      // they mean the same thing in every take. r is how far your own voice
+      // usually wanders from its average.
+      var psd = Float64Array.from(profile.sd), r = profile.r || 5.7;
+      var info = { speech: Math.round(S.on.reduce(function (a2, b2) { return a2 + b2; }, 0)) / 100, pieces: ws.length, r: Math.round(r * 10) / 10 };
+      function pNear(d, k) { return 1 / (1 + Math.exp((d - k * r) / (0.12 * r))); }
+
       if (ws.length >= 2) {
         var vs = ws.map(function (w) { return w.vec; });
+        var dAbs = ws.map(function (w) { return dist(w.vec, youMu, psd); });
         var st = stats(vs);
         var km = kmeans2(vs, st.sd);
-        var d0 = dist(youMu, km.cen[0], st.sd), d1 = dist(youMu, km.cen[1], st.sd);
-        var sep = dist(km.cen[0], km.cen[1], st.sd);
-        var n0 = 0, n1 = 0, l0 = 0, l1 = 0, i;
-        for (i = 0; i < ws.length; i++) {
-          if (km.lab[i] === 0) { n0++; l0 += ws[i].loud; } else { n1++; l1 += ws[i].loud; }
-        }
-        l0 = n0 ? l0 / n0 : -99; l1 = n1 ? l1 / n1 : -99;
-        // Which group is you: closest to your voice, with loudness as a small nudge.
-        var score0 = d1 - d0 + (l0 - l1) * 0.08;
-        var you = score0 >= 0 ? 0 : 1, them = 1 - you;
-        var youDist = you === 0 ? d0 : d1;
-        var twoVoices = sep > 2.6 && Math.min(n0, n1) >= 1;
-
-        // How far your enrolled voice may sit from a second of speech and still be you.
-        var reach = Math.max(4.2, 1.6 * Math.sqrt(DIMS / 4));
-        var pw = ws.map(function (w) {
-          var dy = dist(w.vec, km.cen[you], st.sd), dt = dist(w.vec, km.cen[them], st.sd), dp = dist(w.vec, youMu, st.sd);
-          var p;
-          if (twoVoices) {
-            p = 1 / (1 + Math.exp(-(dt * dt - dy * dy) / 2));
-            if (dp > reach * 1.6) p *= 0.5; // far from your voice entirely
-          } else {
-            // One voice in the whole take: keep it only if it sounds like you.
-            p = dp < reach ? 0.95 : dp < reach * 1.3 ? 0.6 : 0.05;
-          }
-          return p;
+        var i, g = [[], []], lo = [0, 0];
+        for (i = 0; i < ws.length; i++) { g[km.lab[i]].push(dAbs[i]); lo[km.lab[i]] += ws[i].loud; }
+        var med = g.map(function (a3) { return a3.length ? percentile(a3, 0.5) : 99; });
+        var loud = [g[0].length ? lo[0] / g[0].length : -99, g[1].length ? lo[1] / g[1].length : -99];
+        // You are the group that sounds more like your voice; if both sound
+        // like you, the louder one (your mouth is nearest the phone).
+        var you = Math.abs(med[0] - med[1]) < 0.6 * r ? (loud[0] >= loud[1] ? 0 : 1) : med[0] <= med[1] ? 0 : 1;
+        var them = 1 - you;
+        var louder = loud[you] - loud[them];
+        info.near = [Math.round(med[you] * 10) / 10, Math.round(med[them] * 10) / 10];
+        info.louder = Math.round(louder * 10) / 10;
+        var pClu = ws.map(function (w) {
+          var dy = dist(w.vec, km.cen[you], st.sd), dt = dist(w.vec, km.cen[them], st.sd);
+          return 1 / (1 + Math.exp(-(dt * dt - dy * dy) / 2));
         });
-        if (!twoVoices) {
-          var mine = pw.filter(function (p) { return p > KEEP_P; }).length;
-          quality = mine > pw.length / 2 ? 'one-you' : 'one-them';
-        } else if (Math.abs(d1 - d0) < 1 || youDist > reach * 1.8) {
-          quality = 'unsure';
+        var pw;
+        if (med[you] > 1.7 * r) {
+          // Nothing here sounds much like you. Keep only pieces that clearly do.
+          quality = 'one-them';
+          pw = dAbs.map(function (d) { return pNear(d, 1.1); });
+        } else if (med[them] > 2.1 * r && g[them].length) {
+          // Someone who sounds clearly different from you.
+          quality = 'good';
+          pw = pClu.map(function (p, k) { return p * pNear(dAbs[k], 2.0); });
+        } else {
+          // Both groups sound like you. Either it was only you, or the other
+          // person sounds a lot like you. Loudness settles it: your mouth is
+          // nearest the phone, so keep pieces that sound like you AND are about
+          // as loud as your loudest speech. Quieter look-alikes are muted.
+          var louds = ws.map(function (w) { return w.loud; });
+          var top = percentile(louds, 0.85);
+          var dropped = 0;
+          pw = dAbs.map(function (d, k) {
+            var p = pNear(d, 1.4), byLoud = 1 / (1 + Math.exp(-(ws[k].loud - (top - 4)) / 0.8));
+            if (p > KEEP_P && p * byLoud <= KEEP_P) dropped++;
+            return p * byLoud;
+          });
+          quality = dropped > 0 ? 'unsure' : 'one-you';
         }
-        // Average each frame over the seconds that cover it.
+        // Average each frame over the pieces that cover it.
         var acc = new Float32Array(F.nf), cnt = new Uint8Array(F.nf);
         ws.forEach(function (w, k) { for (var f = w.t0; f < w.t1; f++) if (S.on[f]) { acc[f] += pw[k]; cnt[f]++; } });
         for (i = 0; i < F.nf; i++) keep[i] = S.on[i] && cnt[i] && acc[i] / cnt[i] > KEEP_P ? 1 : 0;
-        if (quality === 'unsure') {
-          // Not sure who is who: only keep the stretches that are very clearly you.
-          for (i = 0; i < F.nf; i++) if (keep[i] && acc[i] / cnt[i] < 0.95) keep[i] = 0;
-          note = 'The voices were hard to tell apart, so Nerve muted anything it was unsure of.';
-        }
-        note = note || (quality === 'one-them' ? 'Only one voice was heard and it did not sound like you, so it is all muted.' : '');
+        note =
+          quality === 'unsure' ? 'Some speech sounded like you but quieter, so Nerve muted it in case it was someone else. Check before saving.'
+          : quality === 'one-them' ? 'This didn’t sound like your voice, so most of it is muted. If it was you, set up your voice again in a quiet spot.'
+          : '';
       } else {
         quality = 'empty';
         note = 'Nerve heard almost no speech in this take.';
@@ -409,7 +423,7 @@
       var theirRuns = runs(themMask, 1).filter(function (r) { return r[1] - r[0] >= 20; }).map(toSec);
       var youSec = mineRuns.reduce(function (a, r) { return a + r[1] - r[0]; }, 0);
       var themSec = theirRuns.reduce(function (a, r) { return a + r[1] - r[0]; }, 0);
-      return { duration: duration, you: mineRuns, them: theirRuns, youSec: youSec, themSec: themSec, quality: quality, note: note };
+      return { duration: duration, you: mineRuns, them: theirRuns, youSec: youSec, themSec: themSec, quality: quality, note: note, info: info };
     },
 
     // Build the shareable file: your stretches, silence everywhere else.

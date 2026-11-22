@@ -11,10 +11,12 @@ export type Analysis = {
   themSec: number;
   quality: 'good' | 'unsure' | 'one-you' | 'one-them' | 'empty';
   note: string;
+  // numbers for tuning, shown under Details
+  info?: { speech: number; pieces: number; r: number; near?: [number, number]; louder?: number };
 };
 
 // Your voice, as numbers. Stays on this phone or browser; never uploaded.
-export type VoiceProfile = { v: 1; mu: (number | null)[]; sd: number[]; n: number; sec: number };
+export type VoiceProfile = { v: 1; mu: (number | null)[]; sd: number[]; r?: number; n: number; sec: number };
 
 // Saved with a redacted take so playback can show the muted stretches and
 // what the person said in them (written by you, optional).

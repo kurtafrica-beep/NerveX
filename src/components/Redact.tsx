@@ -114,6 +114,7 @@ export function RedactReview({
   const [caps, setCaps] = useState<string[]>([]);
   const [preview, setPreview] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [details, setDetails] = useState(false);
   const made = useRef<string[]>([]);
   const started = useRef(false);
 
@@ -245,6 +246,13 @@ export function RedactReview({
                   </View>
                 </View>
                 {a.note ? <T v="small" style={st.note}>{a.note}</T> : null}
+                <Pressable accessibilityRole="button" onPress={() => setDetails((d) => !d)} hitSlop={8}>
+                  <T v="small" style={{ textDecorationLine: 'underline' }}>
+                    {details && a.info
+                      ? `Heard ${a.info.speech}s of speech in ${a.info.pieces} pieces. Match to your voice: you ${a.info.near?.[0] ?? '-'}, other ${a.info.near?.[1] ?? '-'} (yours is usually under ${a.info.r}). Loudness gap ${a.info.louder ?? '-'} dB. Result: ${a.quality}.`
+                      : 'Details'}
+                  </T>
+                </Pressable>
                 {sel != null && a.you[sel] ? (
                   <View style={st.selRow}>
                     <T v="semi" style={{ flex: 1, fontSize: 16 }}>
