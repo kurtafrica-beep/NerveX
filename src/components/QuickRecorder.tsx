@@ -22,6 +22,9 @@ import { Btn, Icon, T } from '../ui';
 import { HandsFreePanel, useHandsFree } from './HandsFree';
 import { VideoPlayer, VoicePlayer } from './Media';
 import { VideoRecorder } from './Recorders';
+import { RedactReview } from './Redact';
+import { useVoice } from '../redact/voice';
+import type { Recording } from '../data';
 import { AFTER_BEEP_MS, beep, wait } from '../beep';
 
 // Quick takes: record now, decide later which move it belongs to.
@@ -37,7 +40,9 @@ const VOICE: RecordingOptions = {
   isMeteringEnabled: true,
   android: { outputFormat: 'mpeg4', audioEncoder: 'aac' },
   ios: { outputFormat: IOSOutputFormat.MPEG4AAC, audioQuality: AudioQuality.MEDIUM },
-  web: { mimeType: 'audio/webm', bitsPerSecond: 32000 },
+  // bitRate above becomes the audio bitrate. bitsPerSecond here would be split
+  // with a video track the browser assumes, leaving voice at about 5 kbps.
+  web: { mimeType: 'audio/webm' },
 };
 
 
@@ -183,17 +188,27 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   const voiceOn = hf.on;
   const busyMic = recording || voiceOn;
 
-  const moveTo = async (take: Take, move: Move) => {
+  const { muteOthers } = useVoice();
+  const [reviewing, setReviewing] = useState<{ take: Take; move: Move } | null>(null);
+
+  const moveTo = async (take: Take, move: Move, redacted?: Recording) => {
+    // With Mute other voices on, check your side before it goes anywhere.
+    if (!redacted && muteOthers && (take.kind ?? 'voice') === 'voice') {
+      setReviewing({ take, move });
+      return false;
+    }
     setBusy(take.id);
-    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: { kind: take.kind ?? 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
+    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: redacted ?? { kind: take.kind ?? 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
     setBusy('');
     if (problem) {
       onError(problem);
-      return;
+      return false;
     }
     remove(take.uri);
+    if (redacted) remove(redacted.uri);
     save(takesRef.current.filter((t) => t.id !== take.id));
     setPicking(null);
+    return true;
   };
 
   return (
@@ -315,6 +330,15 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
             }}
           />
         </Modal>
+      ) : null}
+      {reviewing ? (
+        <RedactReview
+          key={reviewing.take.id}
+          take={{ kind: 'voice', uri: reviewing.take.uri, seconds: reviewing.take.seconds, wav: reviewing.take.wav }}
+          keepOnCancel
+          onSave={(rec) => moveTo(reviewing.take, reviewing.move, rec)}
+          onDiscard={() => setReviewing(null)}
+        />
       ) : null}
     </Modal>
   );

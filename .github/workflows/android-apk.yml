@@ -35,6 +35,9 @@ jobs:
       - name: Install packages
         run: npm ci
 
+      - name: Redaction engine is built
+        run: node scripts/build-engine.mjs --check
+
       - name: Typecheck
         run: npx tsc --noEmit
 
