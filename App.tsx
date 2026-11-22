@@ -8,7 +8,7 @@ import { AuthProvider, useAuth } from './src/auth';
 import { VideoHost } from './src/components/VideoSheet';
 import { RewardSheet, XpToast, diff, isBig, snap, type Reward, type Snap } from './src/components/Reward';
 import { DataProvider, useNerve } from './src/data';
-import type { BranchKey } from './src/moves';
+import { RopeProvider, useRope } from './src/rope';
 import { Feed } from './src/screens/Feed';
 import { MoveScreen } from './src/screens/MoveScreen';
 import { SignIn } from './src/screens/SignIn';
@@ -48,18 +48,20 @@ function Root() {
   if (!session) return <SignIn />;
   return (
     <DataProvider key={session.user.id} uid={session.user.id}>
-      <Shell />
+      <RopeProvider>
+        <Shell />
+      </RopeProvider>
     </DataProvider>
   );
 }
 
 function Shell() {
   const n = useNerve();
+  const rope = useRope();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('tonight');
   const [recOpen, setRecOpen] = useState(false);
   const [recMode, setRecMode] = useState<'idle' | 'manual' | 'auto'>('idle');
-  const [branch, setBranch] = useState<BranchKey>('c');
   const [moveId, setMoveId] = useState<string | null>(null);
   const [toast, setToast] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +77,12 @@ function Shell() {
   // Opened from a friend's invite link: put you both in each other's circle.
   const { redeemInvite } = n;
   const inviteChecked = useRef(false);
+  // Looking at the Feed clears the rope team dot (invites stay until answered).
+  const ropeEvents = rope.events.length;
+  const markSeen = rope.markSeen;
+  useEffect(() => {
+    if (tab === 'feed') markSeen();
+  }, [tab, ropeEvents, markSeen]);
   useEffect(() => {
     if (inviteChecked.current) return;
     inviteChecked.current = true;
@@ -159,13 +167,13 @@ function Shell() {
 
       <View style={{ flex: 1 }}>
         {tab === 'feed' ? <Feed onOpenMove={setMoveId} onError={showError} /> : null}
-        {tab === 'tonight' ? <Tonight key={branch} initialBranch={branch} onOpenMove={setMoveId} onRecord={() => setRecOpen(true)} /> : null}
+        {tab === 'tonight' ? <Tonight onOpenMove={setMoveId} onRecord={() => setRecOpen(true)} /> : null}
         {tab === 'you' ? (
           <You
             onOpenMove={setMoveId}
             onPreview={setReward}
             onOpenBranch={(b) => {
-              setBranch(b);
+              n.setBranch(b);
               setTab('tonight');
             }}
             onError={showError}
@@ -188,7 +196,7 @@ function Shell() {
             <T style={s.youLv}>{`Lv ${n.progress.level}`}</T>
           </Pressable>
         </View>
-        <NavItem icon="feed" label="Feed" on={tab === 'feed'} onPress={() => setTab('feed')} />
+        <NavItem icon="feed" label="Feed" on={tab === 'feed'} dot={rope.unseen > 0} onPress={() => setTab('feed')} />
       </View>
 
       {xpText ? <XpToast text={xpText} /> : null}
@@ -220,11 +228,19 @@ function Shell() {
   );
 }
 
-function NavItem({ icon, label, on, onPress }: { icon: IconName; label: string; on: boolean; onPress: () => void }) {
+function NavItem({ icon, label, on, onPress, dot }: { icon: IconName; label: string; on: boolean; onPress: () => void; dot?: boolean }) {
   const color = on ? C.ink : C.muted;
   return (
-    <Pressable accessibilityRole="tab" accessibilityState={{ selected: on }} onPress={onPress} style={s.navSlot}>
-      <Icon name={icon} color={color} />
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityLabel={dot ? `${label}, new from your rope team` : label}
+      accessibilityState={{ selected: on }}
+      onPress={onPress}
+      style={s.navSlot}>
+      <View>
+        <Icon name={icon} color={color} />
+        {dot ? <View style={s.dot} /> : null}
+      </View>
       <T style={{ fontFamily: F.semi, fontSize: 13, lineHeight: 16, color }}>{label}</T>
     </Pressable>
   );
@@ -262,6 +278,7 @@ const s = StyleSheet.create({
     borderTopColor: C.line,
     backgroundColor: C.surface,
   },
+  dot: { position: 'absolute', top: -2, right: -6, width: 10, height: 10, borderRadius: 5, backgroundColor: C.accent, borderWidth: 1.5, borderColor: C.ink },
   navSlot: { flex: 1, minHeight: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
   // The You button sits fully inside the bar: Android ignores taps on anything drawn outside its parent.
   you: {

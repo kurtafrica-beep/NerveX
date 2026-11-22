@@ -3,7 +3,7 @@ import { readRecording } from './takeStore';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { BUCKET } from './config';
-import { BY, ORDER, unlocked, type Move } from './moves';
+import { BRANCH, BY, MOVES, ORDER, isPath, unlocked, type BranchKey, type Move } from './moves';
 import { computeProgress, type Progress } from './progress';
 import type { ReactionKey } from './reactions';
 import { supabase } from './supabase';
@@ -48,7 +48,7 @@ type Store = {
 
 const EMPTY: Store = { profiles: {}, lines: [], comments: [], kudos: [], challenges: [], follows: [], cardUses: [], loaded: false, error: '' };
 
-export type Tonight = { move: Move; together: boolean };
+export type Tonight = { move: Move; together: boolean; path: boolean };
 
 type Api = Store & {
   uid: string;
@@ -68,6 +68,9 @@ type Api = Store & {
   circle: Profile[];
   tonight: Tonight;
   skipTonight: () => void;
+  // what you're training: a base branch or a path. Remembered between visits.
+  branch: BranchKey;
+  setBranch: (b: BranchKey) => void;
   nameOf: (id: string) => string;
   kudosFor: (lineId: string) => Kudos[];
   commentsFor: (lineId: string) => Comment[];
@@ -87,6 +90,7 @@ type Api = Store & {
   // following: people you follow make up your circle
   following: string[];
   isFollowing: (other: string) => boolean;
+  isFollowedBy: (other: string) => boolean;
   followersOf: (id: string) => number;
   toggleFollow: (other: string) => Promise<string>;
   redeemInvite: (code: string) => Promise<{ who?: string; problem?: string }>;
@@ -119,6 +123,19 @@ async function uploadRecording(uid: string, rec: Recording): Promise<string> {
 export function DataProvider({ uid, children }: { uid: string; children: React.ReactNode }) {
   const [store, setStore] = useState<Store>(EMPTY);
   const [skip, setSkip] = useState(0);
+  const [branch, setBranchState] = useState<BranchKey>('c');
+  useEffect(() => {
+    AsyncStorage.getItem('nerve.branch')
+      .then((v) => {
+        if (v && v in BRANCH) setBranchState(v as BranchKey);
+      })
+      .catch(() => {});
+  }, []);
+  const setBranch = useCallback((b: BranchKey) => {
+    setBranchState(b);
+    setSkip(0);
+    AsyncStorage.setItem('nerve.branch', b).catch(() => {});
+  }, []);
   const [clock, setClock] = useState(() => Date.now());
   const [test, setTestState] = useState(false);
   useEffect(() => {
@@ -223,12 +240,16 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     const pendingIn = incoming.find((x) => !loggedSince(x.move, x.created_at) && unlocked(BY[x.move], count, open));
     const pendingOut = outgoing.find((x) => !loggedSince(x.move, x.created_at));
     let tonight: Tonight;
-    if (pendingIn) tonight = { move: BY[pendingIn.move], together: true };
-    else if (pendingOut) tonight = { move: BY[pendingOut.move], together: true };
+    if (pendingIn) tonight = { move: BY[pendingIn.move], together: true, path: false };
+    else if (pendingOut) tonight = { move: BY[pendingOut.move], together: true, path: false };
     else {
-      let ready = ORDER.filter((id) => !count[id] && unlocked(BY[id], count, open));
+      // On an open path, tonight's move comes from that path. Otherwise from the base branches.
+      const onPath = isPath(branch) && !!open[branch];
+      const pool = onPath ? MOVES.filter((m) => m.b === branch && !m.retired).map((m) => m.id) : ORDER;
+      let ready = pool.filter((id) => !count[id] && unlocked(BY[id], count, open));
+      if (!ready.length) ready = pool.filter((id) => unlocked(BY[id], count, open));
       if (!ready.length) ready = ORDER.filter((id) => unlocked(BY[id], count, open));
-      tonight = { move: BY[ready[skip % ready.length]], together: false };
+      tonight = { move: BY[ready[skip % ready.length]], together: false, path: onPath && BY[ready[skip % ready.length]].b === branch };
     }
 
     const nameOf = (id: string) => (id === uid ? profiles[id]?.name || 'You' : profiles[id]?.name || 'Someone');
@@ -433,6 +454,8 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       circle,
       tonight,
       skipTonight: () => setSkip((n) => n + 1),
+      branch,
+      setBranch,
       nameOf,
       kudosFor: (lineId) => kudos.filter((x) => x.line_id === lineId),
       commentsFor: (lineId) => comments.filter((x) => x.line_id === lineId),
@@ -450,13 +473,14 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       toggleChallenge,
       following,
       isFollowing: (other) => followSet.has(other),
+      isFollowedBy: (other) => follows.some((f) => f.follower === other && f.followee === uid),
       followersOf: (id) => follows.filter((f) => f.followee === id).length,
       toggleFollow,
       redeemInvite,
       board,
       useCard,
     };
-  }, [store, uid, skip, clock, reload, test, setTest]);
+  }, [store, uid, skip, clock, reload, test, setTest, branch, setBranch]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

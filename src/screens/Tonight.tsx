@@ -1,13 +1,13 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { Animated, Dimensions, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { LevelVideoRow } from '../components/Example';
 import { BranchBanner, Patch, PlaceBanner, PlacePoster } from '../components/Patches';
 import { ArtImage, Emo } from '../components/ArtIcon';
 import { BRANCH_ICON, PLACE_ICON, PLACE_POSTER } from '../artImages';
 import { PLACES } from '../rpgData';
-import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, dayNum, placeCard, todaysQuest } from '../progress';
+import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, REP_BONUS, dayNum, placeCard, todaysQuest } from '../progress';
 import { useNerve } from '../data';
-import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey, type PathKey } from '../moves';
+import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, MOVES, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey, type PathKey } from '../moves';
 import { lensed, moveKey } from '../placePaths';
 import { MENTOR, MentorFace } from '../components/Mentor';
 import { levelVideo } from '../videos';
@@ -15,9 +15,12 @@ import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type R
 import { C, F } from '../theme';
 import { Btn, Card, Icon, Seg, T } from '../ui';
 
-export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenMove: (id: string) => void; onRecord: () => void; initialBranch?: BranchKey }) {
+export function Tonight({ onOpenMove, onRecord }: { onOpenMove: (id: string) => void; onRecord: () => void }) {
   const n = useNerve();
-  const [branch, setBranch] = useState<BranchKey>(initialBranch);
+  const branch = n.branch;
+  const [picking, setPicking] = useState(false);
+  const [stagePick, setStagePick] = useState<Partial<Record<BranchKey, number>>>({});
+  const scroller = useRef<{ scrollTo: (o: { y: number; animated: boolean }) => void } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const move = n.tonight.move;
   const mates = n.partnersFor(move.id);
@@ -25,9 +28,23 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
   const path = isPath(branch);
   const pOpen = !path || !!p.open[branch];
   const [bc, bs] = HUE[branch];
+  const current = (() => {
+    if (!pOpen) return 1;
+    for (const k of LEVELS) if (!levelDone(branch, k, n.count)) return k;
+    return 5;
+  })();
+  const shown = stagePick[branch] ?? current;
+  const pick = (b: BranchKey) => {
+    n.setBranch(b);
+    setPicking(false);
+    scroller.current?.scrollTo({ y: 0, animated: true });
+  };
 
   return (
     <ScrollView
+      ref={(el) => {
+        scroller.current = el as unknown as { scrollTo: (o: { y: number; animated: boolean }) => void } | null;
+      }}
       contentContainerStyle={s.view}
       refreshControl={
         <RefreshControl
@@ -41,9 +58,7 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
         />
       }>
       <View style={s.topRow}>
-        <T v="sub" style={{ flex: 1 }}>
-          Do the move. Drop the line.
-        </T>
+        <PathBar key={branch} b={branch} open={pOpen} onPress={() => setPicking(true)} />
         <Pressable accessibilityRole="button" accessibilityLabel="Quick take: record now, add it to a move later" onPress={onRecord} style={({ pressed }) => [s.plus, pressed && { transform: [{ translateY: 2 }], borderBottomWidth: 2 }]}>
           <Icon name="plus" size={26} color={C.ink} width={2.6} />
         </Pressable>
@@ -63,29 +78,34 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
 
       <TonightPoster onOpenMove={onOpenMove} mates={mates.map(n.nameOf)} />
       <QuestCard onOpenMove={onOpenMove} />
+      {path && pOpen ? <BaseRep onOpenMove={onOpenMove} /> : null}
       <Places onOpenMove={onOpenMove} lens={path ? (branch as PathKey) : null} />
 
-      <Card>
-        <View>
-          <T v="h">Five branches</T>
-          <T v="sub">Five levels each. Finish every move in a level to open the next. Paths open once your base is strong enough.</T>
+      <Modal visible={picking} transparent animationType="slide" onRequestClose={() => setPicking(false)}>
+        <Pressable style={s.sheetShade} accessibilityLabel="Close" onPress={() => setPicking(false)} />
+        <View style={s.sheet}>
+          <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 28 }}>
+            <View style={s.sheetHead}>
+              <T v="h">What to train</T>
+              <Btn label="Close" kind="quiet" small onPress={() => setPicking(false)} />
+            </View>
+            <T v="sub">Five branches with five levels each. Paths open once your base is strong enough.</T>
+            <T v="eyebrow">Branches</T>
+            <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} options={BRANCH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+            <T v="eyebrow">Paths</T>
+            <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={PATH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+          </ScrollView>
         </View>
-        <Seg
-          tall
-          value={branch}
-          onChange={setBranch}
-          color={HUE[branch][0]}
-          options={BRANCH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))}
-        />
-        <T v="eyebrow">Paths</T>
-        <Seg
-          tall
-          value={branch}
-          onChange={setBranch}
-          color={HUE[branch][0]}
-          wrap
-          options={PATH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))}
-        />
+      </Modal>
+
+      <Card>
+        <View style={s.movesHead}>
+          <T v="h" style={{ flex: 1 }}>
+            {BRANCH[branch].name}
+            {path ? ' path' : ''}
+          </T>
+          <Btn label="Change" small onPress={() => setPicking(true)} />
+        </View>
         {MENTOR[branch] ? (
           <View style={s.mentorIntro}>
             <MentorFace b={branch} size={44} />
@@ -104,7 +124,27 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
             <Gate reqs={p.paths[branch as 'n' | 'f'].reqs} />
           </View>
         ) : null}
-        {LEVELS.map((k) => {
+        <View style={s.tabs} accessibilityRole="tablist">
+          {LEVELS.map((k) => {
+            const open = pOpen && (k === 1 || levelDone(branch, k - 1, n.count));
+            const done = pOpen && levelDone(branch, k, n.count);
+            const st = done ? 'Done' : open ? (k === current ? 'Now' : 'Open') : 'Locked';
+            const on = k === shown;
+            return (
+              <Pressable
+                key={k}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={`${lvWord(branch)} ${k}, ${st}`}
+                onPress={() => setStagePick((sp) => ({ ...sp, [branch]: k }))}
+                style={[s.tab, on && [s.tabOn, { borderBottomColor: bc }]]}>
+                <T style={[s.tabNum, !open && { color: C.muted }]}>{path && k === 5 ? '★' : String(k)}</T>
+                <T style={[s.tabSt, done && { color: bc }, on && { color: C.ink }]}>{st}</T>
+              </Pressable>
+            );
+          })}
+        </View>
+        {LEVELS.filter((k) => k === shown).map((k) => {
           const moves = levelMoves(branch, k);
           const open = pOpen && (k === 1 || levelDone(branch, k - 1, n.count));
           const done = moves.filter((m) => n.count[m.id]).length;
@@ -185,6 +225,91 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
   );
 }
 
+// The bar at the top of Tonight: what you're training, so a switch never goes unnoticed.
+function PathBar({ b, open, onPress }: { b: BranchKey; open: boolean; onPress: () => void }) {
+  const [glow] = useState(() => new Animated.Value(1));
+  useEffect(() => {
+    Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: false }).start();
+  }, [glow]);
+  const [bc] = HUE[b];
+  const mentor = MENTOR[b];
+  const sub = `${mentor ? `Guide: ${mentor.name}. ` : ''}${isPath(b) ? (open ? 'Tonight’s move and places follow it.' : 'Locked for now, so tonight is a base move.') : 'Its moves are below.'}`;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${isPath(b) ? 'Your path' : 'Your branch'}: ${BRANCH[b].name}. ${sub} Change`}
+      onPress={onPress}
+      style={{ flex: 1 }}>
+      <Animated.View
+        style={[
+          s.pathBar,
+          { borderLeftColor: bc, shadowColor: bc, borderColor: glow.interpolate({ inputRange: [0, 1], outputRange: [C.ink, bc] }), borderWidth: glow.interpolate({ inputRange: [0, 1], outputRange: [1.5, 3] }) },
+        ]}>
+        {mentor ? <MentorFace b={b} size={40} /> : <View style={[s.pathDot, { backgroundColor: bc }]} />}
+        <View style={{ flex: 1 }}>
+          <T style={s.pathKicker}>{isPath(b) ? 'Your path' : 'Your branch'}</T>
+          <T style={[s.pathName, { color: bc }]} numberOfLines={1}>
+            {BRANCH[b].name}
+          </T>
+          <T style={s.pathSub} numberOfLines={2}>
+            {sub}
+          </T>
+        </View>
+        <T style={s.pathChange}>Change</T>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+// Base rep: on a path, one line that keeps the base branches moving toward the next path.
+function BaseRep({ onOpenMove }: { onOpenMove: (id: string) => void }) {
+  const n = useNerve();
+  const p = n.progress;
+  const [today] = useState(() => dayNum(Date.now()));
+  const lv = (k: BranchKey) => Math.min(5, (p.levels[k] ?? 0) + 1);
+  let best: { gap: number; p: PathKey; k: BranchKey; need: number } | null = null;
+  for (const pk of PATH_KEYS) {
+    const info = PATH[pk];
+    if (p.paths[pk]?.met || pk === n.branch || (info.after && (p.levels[info.after] ?? 0) < 5)) continue;
+    let gap = 0;
+    let worst: BranchKey | null = null;
+    for (const [k, need] of Object.entries(info.need) as [BranchKey, number][]) {
+      const g = need - lv(k);
+      if (g > 0) {
+        gap += g;
+        if (!worst || g > (info.need as Record<string, number>)[worst] - lv(worst)) worst = k;
+      }
+    }
+    if (worst && (!best || gap < best.gap)) best = { gap, p: pk, k: worst, need: (info.need as Record<string, number>)[worst] };
+  }
+  const k = best ? best.k : [...BRANCH_KEYS].sort((a, b) => lv(a) - lv(b))[0];
+  const pool = MOVES.filter((m) => m.b === k && !m.retired && (m.lv === 1 || levelDone(k, m.lv - 1, n.count)));
+  const m = pool.find((x) => !n.count[x.id]) ?? pool[0];
+  if (!m) return null;
+  const why = best ? `${BRANCH[best.p].name} needs Level ${best.need}. You’re on ${lv(k)}.` : 'Your lowest base branch.';
+  const done = !!p.repDays[today];
+  const [bc] = HUE[k];
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Extra: base rep. ${m.title}. ${why} ${done ? 'Bonus earned today.' : `Plus ${REP_BONUS} bonus XP on a day you also log a path move.`}`}
+      onPress={() => onOpenMove(m.id)}
+      style={({ pressed }) => [s.rep, pressed && { opacity: 0.85 }]}>
+      <View style={[s.repDot, { backgroundColor: bc }]} />
+      <View style={{ flex: 1 }}>
+        <T style={[s.repK, { color: bc }]}>{`Extra: base rep, ${BRANCH[k].name}`}</T>
+        <T v="semi" numberOfLines={1}>
+          {m.title}
+        </T>
+        <T v="small" numberOfLines={1}>
+          {why}
+        </T>
+      </View>
+      <T style={s.repXp}>{done ? 'Bonus earned' : `+${moveXp(m) + REP_BONUS} XP`}</T>
+    </Pressable>
+  );
+}
+
 // Tonight's move as a poster: the branch's colour and picture, the title over it.
 function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void; mates: string[] }) {
   const n = useNerve();
@@ -226,7 +351,7 @@ function QuestCard({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   return (
     <View style={s.quest}>
       <View style={s.questTag}>
-        <T style={s.questTagText}>{done ? 'Side quest done ✓' : `Today’s side quest, +${QUEST_BONUS + moveXp(q)} XP`}</T>
+        <T style={s.questTagText}>{done ? 'Side quest done ✓' : `Bonus: today’s side quest, +${QUEST_BONUS + moveXp(q)} XP`}</T>
       </View>
       <T style={s.questTitle}>{q.title}</T>
       {echoes(q.title, q.doIt) ? null : <T>{q.doIt}</T>}
@@ -401,12 +526,31 @@ export function Gate({ reqs, light }: { reqs: Req[]; light?: boolean }) {
 
 const s = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pathBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingRight: 12, paddingLeft: 10, borderRadius: 8, borderLeftWidth: 6, backgroundColor: C.surface },
+  pathDot: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: C.ink },
+  pathKicker: { fontFamily: F.semi, fontSize: 12, lineHeight: 15, color: C.muted },
+  pathName: { fontFamily: F.display, fontSize: 19, lineHeight: 23 },
+  pathSub: { fontSize: 12, lineHeight: 16, color: C.muted },
+  pathChange: { fontFamily: F.semi, fontSize: 13, color: C.ink, textDecorationLine: 'underline' },
+  rep: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: -6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
+  repDot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: C.ink },
+  repK: { fontFamily: F.semi, fontSize: 12, lineHeight: 15 },
+  repXp: { fontFamily: F.semi, fontSize: 13, color: C.muted },
+  movesHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 10, backgroundColor: C.bgDeep },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: 6, borderRadius: 7, borderBottomWidth: 3, borderBottomColor: 'transparent' },
+  tabOn: { backgroundColor: C.surface, borderWidth: 1.5, borderColor: C.ink, borderBottomWidth: 3 },
+  tabNum: { fontFamily: F.display, fontSize: 19, lineHeight: 23, color: C.ink },
+  tabSt: { fontFamily: F.semi, fontSize: 11, lineHeight: 14, color: C.muted },
+  sheetShade: { flex: 1, backgroundColor: 'rgba(20,28,24,0.45)' },
+  sheet: { maxHeight: '86%', paddingHorizontal: 16, paddingTop: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16, borderTopWidth: 2, borderColor: C.ink, backgroundColor: C.surface },
+  sheetHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   plus: { width: 48, height: 48, borderRadius: 12, backgroundColor: C.accent, borderWidth: 2, borderColor: C.ink, borderBottomWidth: 4, alignItems: 'center', justifyContent: 'center' },
   poster: { borderRadius: 8, overflow: 'hidden' },
   posterArt: { height: 150 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 40, opacity: 0.55 },
   pill: { position: 'absolute', top: 14, left: 16, maxWidth: '58%', backgroundColor: 'rgba(0,0,0,0.32)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  pillText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: C.ink },
+  pillText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: '#FFFFFF' },
   quest: { borderRadius: 8, padding: 18, gap: 10, backgroundColor: C.surface, borderWidth: 2, borderColor: C.ink },
   questTag: { alignSelf: 'flex-start', backgroundColor: C.bgDeep, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   questTagText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: C.ink },

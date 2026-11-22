@@ -20,6 +20,8 @@ import { BRANCH_STATS, CARDS, PLACES, QUEST_SOURCE, QUEST_STATS, STATS, type Car
 
 export const REGULAR_XP = 100;
 export const QUEST_BONUS = 50;
+// Base rep: a bonus on any day you log both a path move and a base move.
+export const REP_BONUS = 25;
 export const CARD_USE_XP = 15;
 export const CARD_MASTER = 3;
 export const BEST_LINE_REACTS = 5;
@@ -127,6 +129,8 @@ export type Progress = {
   regulars: number[];
   // days you did that day's side quest
   questDays: Record<number, true>;
+  // days you logged both a path move and a base move
+  repDays: Record<number, true>;
   stats: Record<StatKey, number>;
   // playbook patches you've earned, and how often you've used each
   cards: string[];
@@ -264,6 +268,18 @@ export function computeProgress(
   }
   const questCount = Object.keys(questDays).length;
   xp += QUEST_BONUS * questCount;
+  const kinds: Record<number, { path?: true; base?: true }> = {};
+  for (const x of mine) {
+    const m = MOVES.find((mm) => mm.id === x.move);
+    if (!m) continue;
+    const day = dayNum(new Date(x.created_at).getTime());
+    const k = (kinds[day] ??= {});
+    if (isPath(m.b)) k.path = true;
+    else if ((BRANCH_KEYS as readonly string[]).includes(m.b)) k.base = true;
+  }
+  const repDays: Record<number, true> = {};
+  for (const d of Object.keys(kinds)) if (kinds[+d].path && kinds[+d].base) repDays[+d] = true;
+  xp += REP_BONUS * Object.keys(repDays).length;
 
   // Best run of days in a row.
   const nums = [...new Set(mine.map((x) => dayNum(new Date(x.created_at).getTime())))].sort((a, b) => a - b);
@@ -315,7 +331,7 @@ export function computeProgress(
     const keys = m.b === 'x' ? PLACES[m.place ?? 0].stats : m.b === 'z' ? QUEST_STATS[m.quest ?? 0] : BRANCH_STATS[m.b] ?? [];
     for (const k of keys) stats[k] += moveXp(m);
   }
-  return { count, pending, done, levels, earned, paths, open, ach, xp, level, regulars, questDays, stats, cards, uses };
+  return { count, pending, done, levels, earned, paths, open, ach, xp, level, regulars, questDays, repDays, stats, cards, uses };
 }
 
 // Short status for a branch or path button.

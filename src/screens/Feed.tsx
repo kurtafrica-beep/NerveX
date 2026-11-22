@@ -37,7 +37,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
       }
       ListHeaderComponent={
         <View style={{ gap: 12, marginBottom: 12 }}>
-          <RopeTeam />
+          <RopeTeam onError={onError} />
           <T v="sub">Lines from your circle. React or say something.</T>
           <Seg
             tall
