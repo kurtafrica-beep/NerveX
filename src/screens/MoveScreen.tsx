@@ -293,7 +293,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               </View>
             ) : null}
             {!voice.active && !saving && !saved && !handsFree.on ? (
-              <T v="small">Recording starts on the tap and saves to your log when you stop. {ON_WEB ? 'Audio up to 30 minutes. Video and hands-free are in the Android app.' : 'Audio up to 30 minutes, video up to 1 minute. Film yourself, not them.'}</T>
+              <T v="small">Recording starts on the tap and saves to your log when you stop. {ON_WEB ? 'Audio up to 30 minutes. Video and hands-free are in the Android app.' : 'Audio up to 30 minutes, video up to 90 seconds. Film yourself, not them.'}</T>
             ) : null}
             {failed && !saving ? (
               <View style={s.recRow}>

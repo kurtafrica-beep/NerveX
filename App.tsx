@@ -153,6 +153,15 @@ function Shell() {
           <View style={s.chip}>
             <T style={s.chipText}>{`Lv ${n.progress.level}, ${n.progress.xp} XP`}</T>
           </View>
+          {recMode === 'idle' ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Quick take: record voice or video now, add it to a move later"
+              onPress={() => setRecOpen(true)}
+              style={({ pressed }) => [s.plus, pressed && { transform: [{ translateY: 2 }], borderBottomWidth: 2 }]}>
+              <Icon name="plus" size={22} color={C.ink} width={2.6} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
 
@@ -169,7 +178,7 @@ function Shell() {
 
       <View style={{ flex: 1 }}>
         {tab === 'feed' ? <Feed onOpenMove={setMoveId} onError={showError} /> : null}
-        {tab === 'tonight' ? <Tonight onOpenMove={setMoveId} onRecord={() => setRecOpen(true)} /> : null}
+        {tab === 'tonight' ? <Tonight onOpenMove={setMoveId} /> : null}
         {tab === 'you' ? (
           <You
             onOpenMove={setMoveId}
@@ -264,6 +273,7 @@ const s = StyleSheet.create({
   blaze: { width: 9, height: 26, borderRadius: 2, backgroundColor: C.accent, borderWidth: 2, borderColor: C.ink },
   wordmark: { fontFamily: F.display, fontSize: 30, lineHeight: 38, letterSpacing: -0.6, color: C.ink },
   recChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: C.rec },
+  plus: { width: 40, height: 40, borderRadius: 10, backgroundColor: C.accent, borderWidth: 2, borderColor: C.ink, borderBottomWidth: 4, alignItems: 'center', justifyContent: 'center' },
   recDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
   chip: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
   chipText: { fontFamily: F.semi, fontSize: 14, lineHeight: 18, color: C.ink },

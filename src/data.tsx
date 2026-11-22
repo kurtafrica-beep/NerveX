@@ -247,9 +247,13 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     else if (pendingOut) tonight = { move: BY[pendingOut.move], together: true, path: false };
     else {
       // On an open path, tonight's move comes from that path. Otherwise from the base branches.
+      // Tonight's move comes from what you're training: a base branch, or a path once it's open.
       const onPath = isPath(branch) && !!open[branch];
-      const pool = onPath ? MOVES.filter((m) => m.b === branch && !m.retired).map((m) => m.id) : ORDER;
+      const own = !isPath(branch) || onPath;
+      const pool = own ? MOVES.filter((m) => m.b === branch && !m.retired).map((m) => m.id) : ORDER;
+      // Unlogged moves from what you're training, then unlogged moves anywhere, then repeats.
       let ready = pool.filter((id) => !count[id] && unlocked(BY[id], count, open));
+      if (!ready.length) ready = ORDER.filter((id) => !count[id] && unlocked(BY[id], count, open));
       if (!ready.length) ready = pool.filter((id) => unlocked(BY[id], count, open));
       if (!ready.length) ready = ORDER.filter((id) => unlocked(BY[id], count, open));
       tonight = { move: BY[ready[skip % ready.length]], together: false, path: onPath && BY[ready[skip % ready.length]].b === branch };

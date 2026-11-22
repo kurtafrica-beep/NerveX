@@ -13,9 +13,9 @@ import { MENTOR, MentorFace } from '../components/Mentor';
 import { levelVideo } from '../videos';
 import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type Req } from '../progress';
 import { C, F } from '../theme';
-import { Btn, Card, Icon, Seg, T } from '../ui';
+import { Btn, Card, Seg, T } from '../ui';
 
-export function Tonight({ onOpenMove, onRecord }: { onOpenMove: (id: string) => void; onRecord: () => void }) {
+export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   const n = useNerve();
   const branch = n.branch;
   const [picking, setPicking] = useState(false);
@@ -59,9 +59,6 @@ export function Tonight({ onOpenMove, onRecord }: { onOpenMove: (id: string) => 
       }>
       <View style={s.topRow}>
         <PathBar key={branch} b={branch} open={pOpen} onPress={() => setPicking(true)} />
-        <Pressable accessibilityRole="button" accessibilityLabel="Quick take: record now, add it to a move later" onPress={onRecord} style={({ pressed }) => [s.plus, pressed && { transform: [{ translateY: 2 }], borderBottomWidth: 2 }]}>
-          <Icon name="plus" size={26} color={C.ink} width={2.6} />
-        </Pressable>
       </View>
 
       {n.incoming.map((c) => (
@@ -233,7 +230,7 @@ function PathBar({ b, open, onPress }: { b: BranchKey; open: boolean; onPress: (
   }, [glow]);
   const [bc] = HUE[b];
   const mentor = MENTOR[b];
-  const sub = `${mentor ? `Guide: ${mentor.name}. ` : ''}${isPath(b) ? (open ? 'Tonight’s move and places follow it.' : 'Locked for now, so tonight is a base move.') : 'Its moves are below.'}`;
+  const sub = `${mentor ? `Guide: ${mentor.name}. ` : ''}${isPath(b) ? (open ? 'Tonight’s move and places follow it.' : 'Locked for now, so tonight is a base move.') : 'Tonight’s move comes from it.'}`;
   return (
     <Pressable
       accessibilityRole="button"

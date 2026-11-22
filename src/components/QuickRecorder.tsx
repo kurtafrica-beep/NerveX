@@ -20,12 +20,13 @@ import { PLACES } from '../rpgData';
 import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
 import { HandsFreePanel, useHandsFree } from './HandsFree';
-import { VoicePlayer } from './Media';
+import { VideoPlayer, VoicePlayer } from './Media';
+import { VideoRecorder } from './Recorders';
 import { AFTER_BEEP_MS, beep, wait } from '../beep';
 
 // Quick takes: record now, decide later which move it belongs to.
 // Takes stay on this device until they're moved to a move.
-export type Take = { id: string; uri: string; seconds: number; at: number; auto?: boolean; wav?: boolean };
+export type Take = { id: string; uri: string; seconds: number; at: number; auto?: boolean; wav?: boolean; kind?: 'voice' | 'video' };
 const KEY = 'nerve.takes.inbox';
 
 const VOICE: RecordingOptions = {
@@ -106,6 +107,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
     [hf, onMode],
   );
   const [picking, setPicking] = useState<Take | null>(null);
+  const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState('');
   const seg = useRef({ start: 0, firstLoud: 0, lastLoud: 0, last: 0 });
 
@@ -183,7 +185,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
 
   const moveTo = async (take: Take, move: Move) => {
     setBusy(take.id);
-    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: { kind: 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
+    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: { kind: take.kind ?? 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
     setBusy('');
     if (problem) {
       onError(problem);
@@ -220,10 +222,20 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                   style={({ pressed }) => [s.big, recording && s.bigOn, voiceOn && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.96 }] }]}>
                   <Icon name={recording ? 'stop' : 'mic'} size={36} color={recording ? '#FFFFFF' : C.ink} width={2.4} />
                 </Pressable>
+                {ON_WEB ? null : (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Record a video take"
+                    disabled={recording || voiceOn}
+                    onPress={() => setCamera(true)}
+                    style={({ pressed }) => [s.big, { backgroundColor: C.surface }, (recording || voiceOn) && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.96 }] }]}>
+                    <Icon name="cam" size={34} color={C.ink} width={2.4} />
+                  </Pressable>
+                )}
                 <View style={{ flex: 1, gap: 6 }}>
                   <T style={s.clock}>{recording ? clockText(state.durationMillis / 1000) : '0:00'}</T>
                   <T v="small" style={{ color: C.ink }}>
-                    {mode === 'manual' ? 'Recording. Tap to stop.' : voiceOn ? 'Voice commands are on. Use them below.' : 'Tap to record. It goes to your takes below.'}
+                    {mode === 'manual' ? 'Recording. Tap to stop.' : voiceOn ? 'Voice commands are on. Use them below.' : ON_WEB ? 'Tap to record. It goes to your takes below.' : 'Voice or video, up to 90 seconds on video. It goes to your takes below.'}
                   </T>
                   <View style={s.meter}>
                     <View style={[s.meterFill, { width: `${Math.round(level * 100)}%` }]} />
@@ -267,11 +279,12 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                       <View style={s.takeHead}>
                         <T v="semi" style={{ fontSize: 15 }}>
                           {new Date(t.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' })}
-                          {t.auto ? '  · auto' : ''}
+                          {t.kind === 'video' ? ', video' : ''}
+                          {t.auto ? ', auto' : ''}
                         </T>
                         <T v="small">{clockText(t.seconds)}</T>
                       </View>
-                      <TakePlayer uri={t.uri} />
+                      {t.kind === 'video' ? <TakeVideo uri={t.uri} /> : <TakePlayer uri={t.uri} />}
                       <View style={s.row}>
                         <Btn label="Add to a move" kind="primary" small disabled={busyMic} onPress={() => setPicking(t)} />
                         <Btn
@@ -292,8 +305,31 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
           )}
         </View>
       </View>
+      {camera ? (
+        <Modal visible animationType="fade" onRequestClose={() => setCamera(false)} statusBarTranslucent>
+          <VideoRecorder
+            onCancel={() => setCamera(false)}
+            onDone={async (rec) => {
+              setCamera(false);
+              add({ id: String(Date.now()), uri: await keep(rec.uri, 'mp4'), seconds: rec.seconds, at: Date.now(), kind: 'video' });
+            }}
+          />
+        </Modal>
+      ) : null}
     </Modal>
   );
+}
+
+function TakeVideo({ uri }: { uri: string }) {
+  const [src, setSrc] = useState('');
+  useEffect(() => {
+    let live = true;
+    playable(uri).then((u) => live && setSrc(u)).catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [uri]);
+  return src ? <VideoPlayer uri={src} /> : <T v="small">Loading take…</T>;
 }
 
 // Pick the move a take belongs to: tonight's move and today's quest first, then everything open.
