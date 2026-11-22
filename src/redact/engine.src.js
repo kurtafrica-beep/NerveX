@@ -393,11 +393,26 @@
           var top = percentile(louds, 0.85);
           var dropped = 0;
           pw = dAbs.map(function (d, k) {
-            var p = pNear(d, 1.4), byLoud = 1 / (1 + Math.exp(-(ws[k].loud - (top - 4)) / 0.8));
+            var p = pNear(d, 1.7), byLoud = 1 / (1 + Math.exp(-(ws[k].loud - (top - 7)) / 1));
             if (p > KEEP_P && p * byLoud <= KEEP_P) dropped++;
             return p * byLoud;
           });
           quality = dropped > 0 ? 'unsure' : 'one-you';
+        }
+        // Bridge short dips inside your own speech: a piece between two kept
+        // pieces, close in time, that still sounds broadly like you and isn't
+        // much quieter, is you mid-sentence (a soft word, a breath, a laugh).
+        var topL = percentile(ws.map(function (w) { return w.loud; }), 0.85);
+        for (var pass = 0; pass < 2; pass++) {
+          for (i = 1; i < ws.length - 1; i++) {
+            if (pw[i] > KEEP_P) continue;
+            var prev = -1, next = -1, j;
+            for (j = i - 1; j >= 0; j--) if (pw[j] > KEEP_P) { prev = j; break; }
+            for (j = i + 1; j < ws.length; j++) if (pw[j] > KEEP_P) { next = j; break; }
+            if (prev < 0 || next < 0) continue;
+            if ((ws[next].t0 - ws[prev].t1) > 250) continue; // more than 2.5 s apart
+            if (dAbs[i] < 1.9 * r && ws[i].loud > topL - 9 && (quality !== 'good' || pClu[i] > 0.3)) pw[i] = KEEP_P + 0.01;
+          }
         }
         // Average each frame over the pieces that cover it.
         var acc = new Float32Array(F.nf), cnt = new Uint8Array(F.nf);
@@ -411,7 +426,7 @@
         quality = 'empty';
         note = 'Nerve heard almost no speech in this take.';
       }
-      closeGaps(keep, 8);
+      closeGaps(keep, 20);
       // Never let gap-closing pull in their speech
       var themMask = new Uint8Array(F.nf), i2;
       for (i2 = 0; i2 < F.nf; i2++) if (S.on[i2] && !keep[i2]) themMask[i2] = 1;
