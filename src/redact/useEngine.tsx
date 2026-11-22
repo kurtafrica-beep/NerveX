@@ -36,22 +36,44 @@ type Waiter = { resolve: (v: unknown) => void; reject: (e: Error) => void; file?
 
 export function useRedactEngine(): { engine: Engine; host: React.ReactNode } {
   const view = useRef<{ injectJavaScript: (js: string) => void } | null>(null);
-  const [ready, setReady] = useState(false);
+  // A ref, not state: calls made by an earlier render must still see the page
+  // become ready. (Keeping this in state froze takes on "Finding your voice".)
+  const ready = useRef(false);
+  const [, setReadyShown] = useState(false);
   const readyWait = useRef<(() => void)[]>([]);
   const waiters = useRef(new Map<number, Waiter>());
   const nextId = useRef(1);
 
   const whenReady = useCallback(
-    () => new Promise<void>((resolve) => (ready ? resolve() : readyWait.current.push(resolve))),
-    [ready],
+    () =>
+      new Promise<void>((resolve, reject) => {
+        if (ready.current) return resolve();
+        const timer = setTimeout(() => reject(new Error('The voice engine did not start. Close this and try again.')), 15000);
+        readyWait.current.push(() => {
+          clearTimeout(timer);
+          resolve();
+        });
+      }),
+    [],
   );
 
   const call = useCallback(
     async <R,>(method: string, args: unknown[] = [], file?: File): Promise<R> => {
       await whenReady();
       const id = nextId.current++;
+      // Never hang: a step that doesn't answer in time fails with a message.
+      const limit = method === 'push' || method === 'reset' || method === 'clear' ? 20000 : 180000;
       return new Promise<R>((resolve, reject) => {
-        waiters.current.set(id, { resolve: resolve as (v: unknown) => void, reject, file });
+        const timer = setTimeout(() => {
+          if (!waiters.current.has(id)) return;
+          waiters.current.delete(id);
+          reject(new Error('Nerve took too long reading this take. Try a shorter take, or restart the app.'));
+        }, limit);
+        const done = (fn: (v: never) => void) => (v: never) => {
+          clearTimeout(timer);
+          fn(v);
+        };
+        waiters.current.set(id, { resolve: done(resolve as (v: never) => void) as (v: unknown) => void, reject: done(reject as (v: never) => void) as (e: Error) => void, file });
         view.current?.injectJavaScript(`window.__call(${id}, ${JSON.stringify(method)}, ${JSON.stringify(args)}); true;`);
       });
     },
@@ -66,7 +88,8 @@ export function useRedactEngine(): { engine: Engine; host: React.ReactNode } {
       return;
     }
     if (m.ready) {
-      setReady(true);
+      ready.current = true;
+      setReadyShown(true);
       readyWait.current.splice(0).forEach((f) => f());
       return;
     }
@@ -89,7 +112,9 @@ export function useRedactEngine(): { engine: Engine; host: React.ReactNode } {
 
   const engine = useMemo<Engine>(
     () => ({
-      ready,
+      get ready() {
+        return ready.current;
+      },
       load: async (uri) => {
         const b64 = await new File(uri).base64();
         await call('reset');
@@ -110,7 +135,7 @@ export function useRedactEngine(): { engine: Engine; host: React.ReactNode } {
         call('clear').catch(() => {});
       },
     }),
-    [ready, call],
+    [call],
   );
 
   const host = (

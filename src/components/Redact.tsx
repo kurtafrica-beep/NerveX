@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View, type GestureResponderEvent } from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View, type GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { clockText, type Recording } from '../data';
 import { useRedactEngine } from '../redact/useEngine';
@@ -134,7 +134,8 @@ export function RedactReview({
     })();
   }, [engine, profile, take.uri]);
 
-  // Tidy up preview files and the engine's copy when the sheet closes.
+  // Tidy up preview files and the engine's copy when the sheet closes (only then).
+  // (engine is stable for the life of the sheet, so this runs once, on close)
   useEffect(
     () => () => {
       made.current.forEach(remove);
@@ -216,9 +217,7 @@ export function RedactReview({
             <T v="error">Set up your voice first. It’s in Account, under Your voice.</T>
           ) : phase === 'reading' ? (
             <View style={st.waiting}>
-              <View style={[st.track, { height: 44 }]}>
-                <View style={st.scan} />
-              </View>
+              <Scanning />
               <T v="semi">Finding your voice in {clockText(take.seconds)}…</T>
               <T v="small">Longer takes take longer. Keep Nerve open.</T>
             </View>
@@ -305,6 +304,22 @@ export function RedactReview({
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+// Moving band while the engine works, so a long take doesn't look stuck.
+function Scanning() {
+  const [x] = useState(() => new Animated.Value(0));
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const loop = Animated.loop(Animated.timing(x, { toValue: 1, duration: 1400, easing: Easing.inOut(Easing.quad), useNativeDriver: Platform.OS !== 'web' }));
+    loop.start();
+    return () => loop.stop();
+  }, [x]);
+  return (
+    <View style={[st.track, { height: 44 }]} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      <Animated.View style={[st.scan, { transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [-0.3 * w, w] }) }] }]} />
+    </View>
   );
 }
 
