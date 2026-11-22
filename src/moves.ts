@@ -2,7 +2,7 @@ import { PATH_LAYOUT, PATH_SOURCE } from './pathMoves';
 import { PLACES, PLACE_SOURCE, QUEST_SOURCE } from './rpgData';
 
 export type BaseKey = 'c' | 't' | 'q' | 'v' | 's';
-export type PathKey = 'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y';
+export type PathKey = 'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y' | 'a';
 export type BranchKey = BaseKey | PathKey;
 // x: an action at a place, z: a side quest
 export type MoveKey = BranchKey | 'x' | 'z';
@@ -22,6 +22,8 @@ export type Move = {
   cap: boolean;
   // taken out of the levels; kept so lines already posted on it still show
   retired?: boolean;
+  // a place move shown in a path's version (see placePaths.ts)
+  via?: PathKey;
   title: string;
   doIt: string;
   rep: string;
@@ -44,9 +46,10 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string; path?: boole
   w: { name: "Headliner", path: true, tag: "Turning your life into stories that land. Built on Trevor Noah’s storytelling: start in the scene, play the voices and end with a point." },
   g: { name: "Host", path: true, tag: "Social mastery: bringing people together on purpose. Built on Priya Parker’s The Art of Gathering." },
   y: { name: "Spark", path: true, tag: "Confidence in dating and attraction. Built on Matthew Hussey’s coaching: warmth, standards and being the one who chooses. Always take a no well." },
+  a: { name: "Charisma", path: true, tag: "Presence people remember. Built on how Muhammad Ali carried himself: say it before you’ve earned it, play with words, own the room, and stay kind." },
 };
 export const BRANCH_KEYS: BaseKey[] = ['c', 't', 'q', 'v', 's'];
-export const PATH_KEYS: PathKey[] = ['n', 'f', 'm', 'p', 'k', 'b', 'h', 'w', 'g', 'y'];
+export const PATH_KEYS: PathKey[] = ['n', 'f', 'm', 'p', 'k', 'b', 'h', 'w', 'g', 'y', 'a'];
 export const ALL_KEYS: BranchKey[] = [...BRANCH_KEYS, ...PATH_KEYS];
 // What each path needs: the level reached in each base branch, and recordings across those branches.
 // after: a path that has to be finished first, capstone included.
@@ -61,6 +64,7 @@ export const PATH: Record<PathKey, { need: Partial<Record<BaseKey, number>>; rec
   w: { need: { t: 4 }, recs: 8, after: 'h', by: ["Trevor Noah", "Trevor Noah", "Trevor Noah", "Trevor Noah"] },
   g: { need: { t: 3, q: 3, c: 3 }, recs: 10, by: ["Priya Parker", "Priya Parker", "Priya Parker", "Priya Parker"] },
   y: { need: { c: 3, q: 2 }, recs: 8, by: ["Matthew Hussey", "Matthew Hussey", "Matthew Hussey", "Matthew Hussey"] },
+  a: { need: { v: 3, c: 3 }, recs: 8, by: ["Muhammad Ali", "Muhammad Ali", "Muhammad Ali", "Muhammad Ali"] },
 };
 // Reactions from other people a posted capstone needs before it counts.
 export const CAP_REACTS = 3;
@@ -498,6 +502,7 @@ export const LEVEL_NAMES: Record<BranchKey, string[]> = {
   w: ["Story", "Voice", "Perspective", "The room", "Capstone"],
   g: ["Purpose", "Opening", "Hosting", "Closing", "Capstone"],
   y: ["Warm-up", "Approach", "Connection", "Standards", "Capstone"],
+  a: ["Belief", "Presence", "Wordplay", "The crowd", "Capstone"],
   "c": [
     "Base",
     "Bold",
@@ -541,7 +546,7 @@ export function lvWord(b: BranchKey): string {
   return isPath(b) ? 'Stage' : 'Level';
 }
 export function lvTitle(b: BranchKey, k: number): string {
-  return isPath(b) && k === 5 ? 'Capstone' : `${lvWord(b)} ${k} · ${LEVEL_NAMES[b][k - 1]}`;
+  return isPath(b) && k === 5 ? 'Capstone' : `${lvWord(b)} ${k}, ${LEVEL_NAMES[b][k - 1]}`;
 }
 export function levelMoves(b: MoveKey, k: number): Move[] {
   return MOVES.filter((m) => m.b === b && m.lv === k);
@@ -563,7 +568,7 @@ export function currentLevel(b: BranchKey, count: Record<string, number>): numbe
   return k;
 }
 export function label(m: Move): string {
-  if (m.b === 'x') return `${PLACES[m.place ?? 0].name} · ${m.i} of 5`;
+  if (m.b === 'x') return `${PLACES[m.place ?? 0].name}, ${m.i} of 5`;
   if (m.b === 'z') return 'Side quest';
-  return m.retired ? `${BRANCH[m.b].name} · Retired move` : `${BRANCH[m.b].name} · ${lvTitle(m.b, m.lv)}`;
+  return m.retired ? `${BRANCH[m.b].name}, retired move` : `${BRANCH[m.b].name}, ${lvTitle(m.b, m.lv)}`;
 }

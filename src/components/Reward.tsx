@@ -113,7 +113,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
   if (first) {
     hue = HUE[first.b];
     badge = TIER_EMOJI[first.k - 1];
-    eyebrow = `${BRANCH[first.b].name} · ${isPath(first.b) && first.k === 5 ? 'Capstone' : `${lvWord(first.b)} ${first.k}`} complete`;
+    eyebrow = `${BRANCH[first.b].name}, ${isPath(first.b) && first.k === 5 ? 'Capstone' : `${lvWord(first.b)} ${first.k}`} complete`;
     title = `You earned “${first.text}”`;
     rows.push(['🏷️', `New title: ${first.text}`]);
     rows.push([TIER_EMOJI[first.k - 1], `${TIERS[first.k - 1]} ${BRANCH[first.b].name} badge`]);
@@ -131,7 +131,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
   } else if (np) {
     hue = HUE[np];
     badge = BRANCH_ICON[np] ? <ArtImage src={BRANCH_ICON[np]} size={72} /> : <Emo e="🧗" size={72} />;
-    eyebrow = r.preview ? 'Preview · New path' : 'New path';
+    eyebrow = r.preview ? 'Preview, new path' : 'New path';
     title = `${BRANCH[np].name} path unlocked`;
     rows.push(['⛰️', `Four stages and a capstone: ${MOVES.filter((m) => m.b === np).length} new moves`]);
     rows.push(['🎓', BRANCH[np].tag]);
@@ -157,7 +157,7 @@ export function RewardSheet({ r, onClose, onWear }: { r: Reward; onClose: () => 
   for (const k of r.places ?? []) rows.push([<ArtImage key={k} src={PLACE_ICON[PLACES[k].id]} size={26} />, `New place: ${PLACES[k].name}`]);
   for (const a of ACH) {
     if (!r.ach.includes(a.k)) continue;
-    rows.push([a.e, `${first || np || r.level ? `Achievement: ${a.t}` : 'Achievement bonus'} · +${ACH_XP} XP`]);
+    rows.push([a.e, `${first || np || r.level ? `Achievement: ${a.t}` : 'Achievement bonus'}, +${ACH_XP} XP`]);
   }
   if (r.gained > 0) rows.push(['✨', `+${r.gained} XP in total`]);
   const bc = hue ? hue[0] : C.accent;

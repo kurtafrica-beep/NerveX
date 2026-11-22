@@ -9,9 +9,12 @@ type Geo = { w: number; h: number; base: number; half: number; peak: Partial<Rec
 const BASE_RANGE: Geo = { w: 380, h: 258, base: 214, half: 64, peak: { c: 46, t: 74, q: 36, v: 80, s: 58 }, cx: (i) => 38 + i * 76 };
 const PATH_RANGE: Geo = {
   w: 380, h: 284, base: 214, half: 64,
-  peak: { n: 52, f: 70, m: 40, p: 76, k: 30, b: 34, h: 66, w: 28, g: 58, y: 46 },
+  peak: { n: 52, f: 70, m: 40, p: 76, k: 30, b: 34, h: 66, w: 28, g: 58, y: 46, a: 38 },
   cx: (i) => 38 + i * 76, stagger: 28,
 };
+
+// Six mountains on the first row: narrower and closer together.
+const PATH_ROW6: Geo = { ...PATH_RANGE, half: 54, cx: (i) => 34 + i * 62.4 };
 
 const f1 = (n: number) => n.toFixed(1);
 const poly = (pts: number[][]) => 'M ' + pts.map((q) => `${f1(q[0])} ${f1(q[1])}`).join(' L ');
@@ -121,10 +124,10 @@ function Range({ keys, geo, p, onOpen }: { keys: BranchKey[]; geo: Geo; p: Progr
             );
           })}
           <SvgText x={cx} y={ly} textAnchor="middle" fontFamily={F.displayBold} fontSize={12} fill={C.ink}>
-            {BRANCH[b].name.toUpperCase()}
+            {BRANCH[b].name}
           </SvgText>
           <SvgText x={cx} y={ly + 14} textAnchor="middle" fontFamily={F.displayBold} fontSize={12} fill={bc}>
-            {mastered ? 'SUMMIT' : isPath(b) ? branchState(b, p).replace('🔒 ', '').toUpperCase() : `LV ${cur}`}
+            {mastered ? 'Summit' : isPath(b) ? branchState(b, p).replace('🔒 ', '') : `Lv ${cur}`}
           </SvgText>
         </G>
         );
@@ -137,11 +140,11 @@ export function BaseMountains({ p, onOpen }: { p: Progress; onOpen: (b: BranchKe
   return <Range keys={BRANCH_KEYS} geo={BASE_RANGE} p={p} onOpen={onOpen} />;
 }
 export function PathMountains({ p, onOpen }: { p: Progress; onOpen: (b: BranchKey) => void }) {
-  // Five mountains per row so they still fit on a phone.
+  // Six then five mountains so they still fit on a phone.
   return (
     <>
-      <Range keys={PATH_KEYS.slice(0, 5)} geo={PATH_RANGE} p={p} onOpen={onOpen} />
-      <Range keys={PATH_KEYS.slice(5)} geo={PATH_RANGE} p={p} onOpen={onOpen} />
+      <Range keys={PATH_KEYS.slice(0, 6)} geo={PATH_ROW6} p={p} onOpen={onOpen} />
+      <Range keys={PATH_KEYS.slice(6)} geo={PATH_RANGE} p={p} onOpen={onOpen} />
     </>
   );
 }

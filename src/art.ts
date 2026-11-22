@@ -88,6 +88,7 @@ var BRANCH_ART = {
   w: '<path d="M50 4 L88 94 H12 Z" fill="F" opacity="0.45"/><rect x="32" y="52" width="36" height="9" rx="3" fill="F"/><path d="M38 61 L32 94 M62 61 L68 94 M35 80 H65" stroke="F" stroke-width="5" stroke-linecap="round"/>',
   g: '<rect x="8" y="44" width="84" height="12" rx="4" fill="F"/><circle cx="26" cy="30" r="10" fill="F"/><circle cx="50" cy="24" r="10" fill="F"/><circle cx="74" cy="30" r="10" fill="F"/><path d="M20 56 V90 M80 56 V90" stroke="F" stroke-width="6" stroke-linecap="round"/><circle cx="50" cy="50" r="4" fill="#FF6A1A"/>',
   y: '<path d="M50 90 C20 68 6 52 6 33 C6 18 18 8 31 8 C40 8 46 13 50 20 C54 13 60 8 69 8 C82 8 94 18 94 33 C94 52 80 68 50 90 Z" fill="F"/><path d="M50 30 L54 44 L68 48 L54 52 L50 66 L46 52 L32 48 L46 44 Z" fill="B"/>',
+  a: '<path d="M30 40 C30 22 44 12 58 12 C76 12 86 26 86 44 L86 62 C86 74 76 82 64 82 L44 82 C36 82 30 76 30 68 Z" fill="F"/><path d="M30 46 C18 46 14 56 18 64 C22 72 30 70 30 64" fill="F"/><rect x="38" y="82" width="40" height="12" rx="3" fill="F"/><path d="M46 34 H74" stroke="B" stroke-width="5" stroke-linecap="round"/>',
   k: '<path d="M24 54 H76 L70 96 H30 Z" fill="F"/><rect x="18" y="44" width="64" height="12" rx="3" fill="F"/><path d="M50 44 V22" stroke="F" stroke-width="5"/><rect x="42" y="4" width="16" height="22" rx="8" fill="F"/><path d="M38 70 H62" stroke="B" stroke-width="4" stroke-linecap="round"/>'
 };
 // A poster banner: deep colour, map contours, the blaze sun and one big glyph.

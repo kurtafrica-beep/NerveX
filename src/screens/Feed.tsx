@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { LineCard, TitleChip } from '../components/LineCard';
+import { RopeTeam } from '../components/RopeTeam';
 import { useNerve } from '../data';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, Seg, T } from '../ui';
@@ -36,6 +37,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
       }
       ListHeaderComponent={
         <View style={{ gap: 12, marginBottom: 12 }}>
+          <RopeTeam />
           <T v="sub">Lines from your circle. React or say something.</T>
           <Seg
             tall
@@ -75,7 +77,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
                       <TitleChip uid={r.uid} />
                     </View>
                     <T v="small" style={{ fontSize: 13 }}>
-                      {r.lines} {r.lines === 1 ? 'line' : 'lines'} · {r.reacts} {r.reacts === 1 ? 'reaction' : 'reactions'}
+                      {r.lines} {r.lines === 1 ? 'line' : 'lines'}, {r.reacts} {r.reacts === 1 ? 'reaction' : 'reactions'}
                     </T>
                   </View>
                   <T style={s.pts}>{r.pts} pts</T>
@@ -112,9 +114,9 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
 }
 
 const s = StyleSheet.create({
-  boardHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
+  boardHead: { gap: 10 },
   boardRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 6 },
-  boardMe: { backgroundColor: C.accentSoft },
+  boardMe: { backgroundColor: C.bg, borderWidth: 2, borderColor: C.ink },
   rank: { width: 26, textAlign: 'center', fontFamily: F.display, fontSize: 18 },
   pts: { fontFamily: F.display, fontSize: 18, color: C.ink },
   view: { padding: 16, paddingBottom: 32 },

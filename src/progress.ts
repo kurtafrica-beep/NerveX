@@ -42,6 +42,7 @@ export const HUE: Record<BranchKey, [string, string]> = {
   w: ["#26285E", "#D9DAEC"],
   g: ["#1F6B5C", "#D5EAE4"],
   y: ["#556B2F", "#E3EAD6"],
+  a: ["#7A1F1F", "#F2DADA"],
 };
 export const PLACE_HUE: Record<string, [string, string]> = {
   cafe: ['#6B3E26', '#F0DCCB'], grocery: ['#3D6B2A', '#DDEBD2'], gym: ['#24485E', '#D5E3EC'], books: ['#6A2E4A', '#EEDAE3'],
@@ -66,6 +67,7 @@ export const TITLES: Record<BranchKey, string[]> = {
   w: ["Story Finder", "Voice Player", "Perspective Shifter", "Room Holder", "Headliner"],
   g: ["Purposeful", "Opener", "Generous Host", "Last Word", "Host"],
   y: ["Warmed Up", "Approacher", "Connector", "Chooser", "Spark"],
+  a: ["Believer", "Magnetic", "Wordsmith", "Crowd Pleaser", "Charismatic"],
 };
 export const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'];
 export const TIER_EMOJI = ['🥉', '🥈', '🥇', '💠', '💎'];
@@ -131,7 +133,7 @@ export type Progress = {
   uses: Record<string, number>;
 };
 
-type Logged = { id: string; move: string; posted: boolean; media_kind: string | null; upgrade: boolean; created_at: string };
+type Logged = { id: string; move: string; posted: boolean; media_kind: string | null; upgrade: boolean; via?: string | null; created_at: string };
 
 export function dayNum(ms: number): number {
   const x = new Date(ms);
@@ -218,7 +220,7 @@ export function computeProgress(
   for (const b of PATH_KEYS) {
     const need = PATH[b].need;
     const keys = Object.keys(need) as BaseKey[];
-    const recs = mine.filter((x) => x.media_kind && BY[x.move] && keys.includes(BY[x.move].b as BaseKey)).length;
+    const recs = mine.filter((x) => x.media_kind && BY[x.move] && (keys.includes(BY[x.move].b as BaseKey) || x.via === b)).length;
     const names = keys.map((k) => BRANCH[k].name);
     const reqs: Req[] = keys.map((k) => {
       const at = Math.min(5, levels[k] + 1);

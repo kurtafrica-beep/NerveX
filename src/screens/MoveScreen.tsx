@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExampleCard } from '../components/Example';
@@ -9,7 +9,9 @@ import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Rec
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
 import { GUIDE } from '../guides';
-import { BRANCH, BY, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
+import { MentorLine, MENTOR } from '../components/Mentor';
+import { parseMoveKey } from '../placePaths';
+import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
 import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
 import { C, F } from '../theme';
@@ -20,7 +22,7 @@ type Props = { moveId: string; onClose: () => void; onPosted: () => void };
 export function MoveScreen({ moveId, onClose, onPosted }: Props) {
   const n = useNerve();
   const insets = useSafeAreaInsets();
-  const move = BY[moveId];
+  const { move, via } = useMemo(() => parseMoveKey(moveId), [moveId]);
 
   const [version, setVersion] = useState<'base' | 'up'>('base');
   const [text, setText] = useState('');
@@ -76,7 +78,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
         return false;
       }
       setSaving(true);
-      const problem = await dropLine({ move: move.id, line: '', upgrade: version === 'up', recording: take, posted: false });
+      const problem = await dropLine({ move: move.id, line: '', upgrade: version === 'up', recording: take, posted: false, via });
       setSaving(false);
       if (problem) {
         setFailed(take);
@@ -87,7 +89,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       setSaved(`${take.kind === 'voice' ? 'Voice note' : 'Video'} saved to your log. Only you can see it until you post it.`);
       return true;
     },
-    [dropLine, locked, move.id, version],
+    [dropLine, locked, move.id, version, via],
   );
   const voice = useVoiceRecorder(saveTake);
   const handsFree = useHandsFree(saveTake);
@@ -125,7 +127,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       return;
     }
     setBusy(true);
-    const problem = await n.dropLine({ move: move.id, line, upgrade: version === 'up', recording: null });
+    const problem = await n.dropLine({ move: move.id, line, upgrade: version === 'up', recording: null, via });
     setBusy(false);
     if (problem) setError(problem);
     else onPosted();
@@ -140,7 +142,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
         <T v="semi" style={{ fontSize: 16 }}>
           {move.b === 'x' || move.b === 'z'
             ? label(move)
-            : `${BRANCH[bk].name} · ${move.retired ? 'Retired' : move.cap ? 'Capstone' : `${lvWord(bk)} ${move.lv} · ${move.i} of ${move.of}`}`}
+            : `${BRANCH[bk].name}, ${move.retired ? 'Retired' : move.cap ? 'Capstone' : `${lvWord(bk)} ${move.lv}, ${move.i} of ${move.of}`}`}
         </T>
         <View style={{ width: 48 }} />
       </View>
@@ -150,7 +152,8 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           <View style={s.section}>
             <T v="accent" style={{ color: move.b === 'x' ? PLACE_HUE[PLACES[move.place ?? 0].id][0] : move.b === 'z' ? C.accentText : HUE[bk][0] }}>
               {label(move)}
-              {move.retired ? '' : ` · +${moveXp(move)} XP`}
+              {via ? `, ${BRANCH[via].name} version` : ''}
+              {move.retired ? '' : `, +${moveXp(move)} XP`}
             </T>
             <T v="big">{move.title}</T>
             {note ? (
@@ -172,8 +175,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             <T v="sub">{version === 'up' ? 'Same move, one notch harder. Your line gets tagged as an upgrade.' : move.rep}</T>
           </View>
 
-          {GUIDE[move.id] ? (
+          {GUIDE[move.id] && !via ? (
             <View style={s.guide}>
+              {MENTOR[move.b as 'a'] ? <MentorLine b={move.b as 'a'} text={GUIDE[move.id].why} /> : null}
               <View style={s.part}>
                 <T v="eyebrow">How to do it</T>
                 {GUIDE[move.id].steps.map((step, i) => (
@@ -193,10 +197,12 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                   </View>
                 </View>
               ) : null}
-              <View style={s.part}>
-                <T v="eyebrow">Why it works</T>
-                <T>{GUIDE[move.id].why}</T>
-              </View>
+              {MENTOR[move.b as 'a'] ? null : (
+                <View style={s.part}>
+                  <T v="eyebrow">Why it works</T>
+                  <T>{GUIDE[move.id].why}</T>
+                </View>
+              )}
               <View style={s.part}>
                 <T v="eyebrow">Watch out for</T>
                 <T>{GUIDE[move.id].watch}</T>

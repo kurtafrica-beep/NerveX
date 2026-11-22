@@ -141,7 +141,7 @@ function Shell() {
             </Pressable>
           ) : null}
           <View style={s.chip}>
-            <T style={s.chipText}>{`Lv ${n.progress.level} · ${n.progress.xp} XP`}</T>
+            <T style={s.chipText}>{`Lv ${n.progress.level}, ${n.progress.xp} XP`}</T>
           </View>
         </View>
       </View>
@@ -184,7 +184,7 @@ function Shell() {
             accessibilityState={{ selected: tab === 'you' }}
             onPress={() => setTab('you')}
             style={({ pressed }) => [s.you, tab === 'you' && s.youOn, pressed && { opacity: 0.85 }]}>
-            <Icon name="you" size={26} color={C.accentInk} width={2.2} />
+            <Icon name="you" size={26} color={C.surface} width={2.2} />
             <T style={s.youLv}>{`Lv ${n.progress.level}`}</T>
           </Pressable>
         </View>
@@ -268,13 +268,13 @@ const s = StyleSheet.create({
     width: 62,
     height: 60,
     borderRadius: 14,
-    backgroundColor: C.accent,
+    backgroundColor: C.ink,
     borderWidth: 2,
     borderColor: C.ink,
     borderBottomWidth: 5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  youOn: { backgroundColor: '#FF8A45' },
-  youLv: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.accentInk, letterSpacing: 0.5 },
+  youOn: { borderBottomColor: C.accent },
+  youLv: { fontFamily: F.semi, fontSize: 11, lineHeight: 13, color: C.surface, letterSpacing: 0.5 },
 });

@@ -21,6 +21,8 @@ export type Line = {
   media_seconds: number | null;
   // false while it is a private take in the author's log
   posted: boolean;
+  // place lines done in a path's version: which path
+  via?: string | null;
   created_at: string;
 };
 export type Comment = { id: string; line_id: string; author: string; body: string; created_at: string };
@@ -75,7 +77,7 @@ type Api = Store & {
   challengeWith: (other: string) => Challenge | null;
   myChallengeTo: (other: string, moveId?: string) => Challenge | null;
   // actions: resolve '' on success or a message to show
-  dropLine: (input: { move: string; line: string; upgrade: boolean; recording: Recording | null; posted?: boolean }) => Promise<string>;
+  dropLine: (input: { move: string; line: string; upgrade: boolean; recording: Recording | null; posted?: boolean; via?: string | null }) => Promise<string>;
   postLine: (line: Line, caption: string) => Promise<string>;
   deleteLine: (line: Line) => Promise<string>;
   react: (lineId: string, kind: ReactionKey) => Promise<string>;
@@ -257,7 +259,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     const myChallengeTo = (other: string, moveId?: string) =>
       outgoing.find((x) => x.target === other && (!moveId || x.move === moveId)) ?? null;
 
-    const dropLine: Api['dropLine'] = async ({ move, line, upgrade, recording, posted = true }) => {
+    const dropLine: Api['dropLine'] = async ({ move, line, upgrade, recording, posted = true, via = null }) => {
       let path: string | null = null;
       try {
         if (recording) path = await uploadRecording(uid, recording);
@@ -272,6 +274,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
         media_kind: recording ? recording.kind : null,
         media_seconds: recording ? Math.min(1830, Math.round(recording.seconds)) : null,
         posted,
+        via: via && move.startsWith('x') ? via : null,
       });
       if (error) {
         if (path) supabase.storage.from(BUCKET).remove([path]);

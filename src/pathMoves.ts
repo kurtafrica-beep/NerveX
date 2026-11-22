@@ -1,6 +1,6 @@
 // Paths: harder routes above the five base branches. Four stages of four moves, then a capstone.
 // Each move is [title, the move, the rep, the upgrade]; the same content as the web page.
-export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y', [string, string, string, string][]> = {
+export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y' | 'a', [string, string, string, string][]> = {
   "n": [
     [
       "Mirror three times",
@@ -1040,10 +1040,114 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "One in-person ask and a date, with a debrief posted.",
       "Do it with someone you’d have been too nervous to ask before."
     ]
+  ],
+  "a": [
+    [
+      "Say it before it’s true",
+      "Say out loud, to someone, one thing you’re going to be good at, as if it’s already true.",
+      "One bold statement to a person.",
+      "Say it to someone who might laugh."
+    ],
+    [
+      "Walk in like you belong",
+      "Walk into a room slowly, head up, and take a second to look around before you sit.",
+      "One entrance.",
+      "Do it somewhere you feel out of place."
+    ],
+    [
+      "Talk yourself up",
+      "Before something hard, record thirty seconds telling yourself why you’ll win.",
+      "One self-talk recording.",
+      "Do it out loud, not in your head."
+    ],
+    [
+      "Make a prediction",
+      "Tell a friend exactly how something you’re doing this week will go, then report back.",
+      "One prediction made and checked.",
+      "Make it public."
+    ],
+    [
+      "Hold the room’s eyes",
+      "When you speak to a group, look at each person for a full sentence.",
+      "One talk with steady eye contact.",
+      "Five or more people."
+    ],
+    [
+      "Slow down",
+      "In a conversation, talk at half your normal speed and let pauses sit.",
+      "One slow conversation.",
+      "With someone who intimidates you."
+    ],
+    [
+      "Be fully there",
+      "Give someone your full attention for five minutes: phone away, body turned, no thinking about your reply.",
+      "Five full minutes.",
+      "Notice what they tell you that they usually wouldn’t."
+    ],
+    [
+      "Make an entrance at a gathering",
+      "Arrive, greet the room with energy and say hello to the host by name.",
+      "One entrance.",
+      "Get a laugh in the first minute."
+    ],
+    [
+      "Write a rhyme",
+      "Write a four-line rhyme about yourself or a friend, playful and bold.",
+      "Four lines, recorded.",
+      "Perform it for someone."
+    ],
+    [
+      "Banter, never bully",
+      "Trade a few playful lines with a friend who enjoys it. Tease the situation, not the person.",
+      "One back-and-forth.",
+      "Let them win one."
+    ],
+    [
+      "Give someone a nickname",
+      "Give a friend a flattering, playful nickname that sticks.",
+      "One nickname.",
+      "Others start using it."
+    ],
+    [
+      "Talk fast and funny",
+      "Tell a story at high energy, with rhythm and repetition.",
+      "One high-energy story.",
+      "Record it."
+    ],
+    [
+      "Hype someone up",
+      "Introduce a friend to others like they’re a champion.",
+      "One big introduction.",
+      "They’re smiling at the end."
+    ],
+    [
+      "Take a crowd question",
+      "When a group asks you something, answer with a joke first, then the real answer.",
+      "One crowd answer.",
+      "Three in one night."
+    ],
+    [
+      "Stand for something",
+      "Say what you believe about something that matters to you, calmly, even if the room disagrees.",
+      "One stand taken.",
+      "Hold it when someone pushes back."
+    ],
+    [
+      "Lift a stranger",
+      "Make one stranger’s day: a real compliment, a laugh, your full attention.",
+      "One stranger lifted.",
+      "Three in a day."
+    ],
+    [
+      "Own a room",
+      "At an event, get up and speak for two minutes with belief, wordplay and warmth. Post it.",
+      "Two minutes, posted.",
+      "People come up to you after."
+    ]
   ]
 };
 
-export const PATH_LAYOUT: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y', string[][]> = {
+export const PATH_LAYOUT: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' | 'g' | 'y' | 'a', string[][]> = {
   "n": [
     [
       "n1",
@@ -1332,6 +1436,35 @@ export const PATH_LAYOUT: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
     ],
     [
       "y17"
+    ]
+  ],
+  "a": [
+    [
+      "a1",
+      "a2",
+      "a3",
+      "a4"
+    ],
+    [
+      "a5",
+      "a6",
+      "a7",
+      "a8"
+    ],
+    [
+      "a9",
+      "a10",
+      "a11",
+      "a12"
+    ],
+    [
+      "a13",
+      "a14",
+      "a15",
+      "a16"
+    ],
+    [
+      "a17"
     ]
   ]
 };
@@ -3206,5 +3339,192 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
     "why": "Everything on this path in one move: you chose, you asked and you showed up.",
     "watch": "Asking by text to avoid the nerves.",
     "record": "Record a debrief after the date and post it."
+  },
+  "a1": {
+    "steps": [
+      "Pick something you’re working towards.",
+      "Say it in the present tense to someone you trust.",
+      "Don’t soften it with “maybe” or “hopefully”."
+    ],
+    "say": "“I’m the best speaker in this office. Give it six months.”",
+    "why": "Ali called himself the greatest before the world agreed. Saying it out loud commits you and changes how you carry yourself.",
+    "watch": "Saying it to put someone else down.",
+    "record": "Record the moment, or a voice note after."
+  },
+  "a2": {
+    "steps": [
+      "Pause at the door.",
+      "Walk in slower than feels normal.",
+      "Look around, find someone, smile."
+    ],
+    "say": "No words needed.",
+    "why": "Charisma starts before you speak. People notice who takes their time.",
+    "watch": "Rushing to a seat with your head down.",
+    "record": "Record a voice note after with how it felt."
+  },
+  "a3": {
+    "steps": [
+      "Pick a hard moment coming up.",
+      "Record why you’ll do well, in the second person: “You’ve done harder.”",
+      "Listen back right before."
+    ],
+    "say": "“You’ve trained for this. You’re ready. Go.”",
+    "why": "Ali talked himself up constantly. Self-talk said out loud is harder to ignore.",
+    "watch": "Making it vague. Use specifics.",
+    "record": "Record the self-talk."
+  },
+  "a4": {
+    "steps": [
+      "Pick something happening this week.",
+      "Predict the outcome out loud, specifically.",
+      "Report back, either way."
+    ],
+    "say": "“By Friday I’ll have asked three people for feedback. Watch.”",
+    "why": "Ali predicted the round he’d win in. A prediction is belief with a deadline.",
+    "watch": "Predicting things out of your control.",
+    "record": "Record the prediction and the follow-up."
+  },
+  "a5": {
+    "steps": [
+      "Before you speak, take a breath.",
+      "Pick one person and finish a whole sentence to them.",
+      "Move to the next person."
+    ],
+    "say": "One sentence, one person.",
+    "why": "Steady eye contact makes everyone feel spoken to.",
+    "watch": "Staring at the floor or the slides.",
+    "record": "Record it if you can, or a debrief after."
+  },
+  "a6": {
+    "steps": [
+      "Notice your normal speed.",
+      "Halve it.",
+      "Let silence sit after you finish a point."
+    ],
+    "say": "Slow is confident.",
+    "why": "Calm pace says you’re not in a hurry to be liked.",
+    "watch": "Speaking so slowly it’s odd.",
+    "record": "Record a voice note after."
+  },
+  "a7": {
+    "steps": [
+      "Put your phone away, out of sight.",
+      "Turn your body to them.",
+      "Ask, then follow what they say."
+    ],
+    "say": "“Wait, tell me more about that.”",
+    "why": "Ali made fans feel like the only person in the room. Attention is the warmest kind of charisma.",
+    "watch": "Waiting for your turn to talk.",
+    "record": "Record a voice note after with what you learned."
+  },
+  "a8": {
+    "steps": [
+      "Arrive with energy, not noise.",
+      "Greet the host by name, loudly enough to be heard.",
+      "Say hello to one more person straight away."
+    ],
+    "say": "“There she is! Thanks for having us.”",
+    "why": "How you arrive sets how people see you all night.",
+    "watch": "Arriving and going straight to your phone.",
+    "record": "Record a voice note after."
+  },
+  "a9": {
+    "steps": [
+      "Pick a subject: you, a friend, something you’re about to do.",
+      "Write four lines that rhyme.",
+      "Make it playful and bold."
+    ],
+    "say": "Your own four lines, not anyone else’s.",
+    "why": "Ali’s rhymes made people grin and remember him. Wordplay is a charisma trick anyone can learn.",
+    "watch": "Copying someone else’s lines.",
+    "record": "Record yourself saying it."
+  },
+  "a10": {
+    "steps": [
+      "Pick a friend who enjoys banter.",
+      "Tease the situation, not their insecurities.",
+      "Laugh at their comebacks."
+    ],
+    "say": "“You call that a parking job? I’ve seen better from my cousin, and he’s nine.”",
+    "why": "Ali’s trash talk was a show. The aim is a laugh both ways, not a win.",
+    "watch": "Going after something they’re sensitive about.",
+    "record": "Record a voice note after."
+  },
+  "a11": {
+    "steps": [
+      "Notice something great about a friend.",
+      "Turn it into a playful title.",
+      "Use it in front of others."
+    ],
+    "say": "“The Architect”, for the friend who plans everything.",
+    "why": "A good nickname shows you see someone. It’s warmth with a wink.",
+    "watch": "Nicknames that mock.",
+    "record": "Record a voice note after."
+  },
+  "a12": {
+    "steps": [
+      "Pick a funny story.",
+      "Tell it with energy, rhythm and a repeated line.",
+      "End on the repeated line."
+    ],
+    "say": "“And I said: not today.”",
+    "why": "Energy is contagious. Rhythm makes people listen.",
+    "watch": "Mumbling the punchline.",
+    "record": "Record the story."
+  },
+  "a13": {
+    "steps": [
+      "Introduce a friend to a group.",
+      "Say their best qualities like a ring announcer, with a smile.",
+      "Hand them the floor."
+    ],
+    "say": "“This man has never lost an argument about pizza. Never.”",
+    "why": "Making others look great is charisma too. People remember how you made them feel.",
+    "watch": "Embarrassing them.",
+    "record": "Record a voice note after."
+  },
+  "a14": {
+    "steps": [
+      "When a group asks you something, smile.",
+      "Give a short joke first.",
+      "Then the real answer."
+    ],
+    "say": "“Was I nervous? Me? …Yes. Very.”",
+    "why": "Ali’s press conferences were shows. A quick joke first relaxes the room.",
+    "watch": "Only joking, never answering.",
+    "record": "Record a voice note after."
+  },
+  "a15": {
+    "steps": [
+      "Pick something you actually believe.",
+      "Say it calmly, without attacking anyone.",
+      "If someone pushes back, listen, then hold your view."
+    ],
+    "say": "“I hear you. I still think it matters.”",
+    "why": "Ali stood for what he believed even when it cost him. Conviction is magnetic when it’s calm.",
+    "watch": "Picking a fight to look brave.",
+    "record": "Record a voice note after."
+  },
+  "a16": {
+    "steps": [
+      "Notice a stranger.",
+      "Give them something real: a compliment, a laugh, full attention.",
+      "Leave before it gets long."
+    ],
+    "say": "“That’s the best laugh I’ve heard all week.”",
+    "why": "Ali’s charisma included how warm he was to ordinary people.",
+    "watch": "Expecting something back.",
+    "record": "Record a voice note after."
+  },
+  "a17": {
+    "steps": [
+      "Find a chance to speak at an event.",
+      "Bring belief, a line of wordplay and warmth.",
+      "Record it and post it here."
+    ],
+    "say": "Your own opening line.",
+    "why": "Everything on this path, live: belief, presence, play and warmth.",
+    "watch": "Playing it safe and quiet.",
+    "record": "Record your two minutes and post it."
   }
 };

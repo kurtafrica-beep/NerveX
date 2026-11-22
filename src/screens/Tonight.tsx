@@ -7,7 +7,9 @@ import { BRANCH_ICON, PLACE_ICON, PLACE_POSTER } from '../artImages';
 import { PLACES } from '../rpgData';
 import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, dayNum, placeCard, todaysQuest } from '../progress';
 import { useNerve } from '../data';
-import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey } from '../moves';
+import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey, type PathKey } from '../moves';
+import { lensed, moveKey } from '../placePaths';
+import { MENTOR, MentorFace } from '../components/Mentor';
 import { levelVideo } from '../videos';
 import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type Req } from '../progress';
 import { C, F } from '../theme';
@@ -61,7 +63,7 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
 
       <TonightPoster onOpenMove={onOpenMove} mates={mates.map(n.nameOf)} />
       <QuestCard onOpenMove={onOpenMove} />
-      <Places onOpenMove={onOpenMove} />
+      <Places onOpenMove={onOpenMove} lens={path ? (branch as PathKey) : null} />
 
       <Card>
         <View>
@@ -84,7 +86,17 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
           wrap
           options={PATH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))}
         />
-        <T v="sub">{BRANCH[branch].tag}</T>
+        {MENTOR[branch] ? (
+          <View style={s.mentorIntro}>
+            <MentorFace b={branch} size={44} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <T v="semi">{`Your guide: ${MENTOR[branch]!.name}`}</T>
+              <T v="sub">{BRANCH[branch].tag}</T>
+            </View>
+          </View>
+        ) : (
+          <T v="sub">{BRANCH[branch].tag}</T>
+        )}
         {path && !pOpen ? (
           <View style={s.gate}>
             <T v="semi">This path is locked</T>
@@ -160,7 +172,7 @@ export function Tonight({ onOpenMove, onRecord, initialBranch = 'c' }: { onOpenM
                     {TITLES[branch][k - 1]}
                   </T>
                   <T v="small" style={{ fontSize: 13 }}>
-                    Title · {TIERS[k - 1]} badge · +{levelBonus(k, branch)} XP
+                    Title, {TIERS[k - 1]} badge, +{levelBonus(k, branch)} XP
                   </T>
                 </View>
                 {open ? <T style={[s.count, { color: earned ? bc : C.muted }]}>{earned ? '✓ Earned' : `${moves.length - done} to go`}</T> : null}
@@ -188,7 +200,7 @@ function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void
       </View>
       <View style={s.pill}>
         <T style={s.pillText} numberOfLines={2}>
-          Tonight · {label(move)}
+          Tonight: {label(move)}
         </T>
       </View>
       <View style={{ padding: 18, paddingTop: 0, gap: 12, marginTop: -40 }}>
@@ -214,23 +226,31 @@ function QuestCard({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   return (
     <View style={s.quest}>
       <View style={s.questTag}>
-        <T style={s.questTagText}>{done ? 'Side quest done ✓' : `Today’s side quest · +${QUEST_BONUS + moveXp(q)} XP`}</T>
+        <T style={s.questTagText}>{done ? 'Side quest done ✓' : `Today’s side quest, +${QUEST_BONUS + moveXp(q)} XP`}</T>
       </View>
       <T style={s.questTitle}>{q.title}</T>
-      <T style={{ color: 'rgba(255,255,255,0.85)' }}>{q.doIt}</T>
+      {echoes(q.title, q.doIt) ? null : <T>{q.doIt}</T>}
       <View style={[s.row, { alignItems: 'center' }]}>
-        <Btn label={done ? 'Log it again' : 'Do it'} kind={done ? 'light' : 'primary'} small onPress={() => onOpenMove(q.id)} />
-        <T style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, flex: 1 }}>The bonus only counts today.</T>
+        <Btn label={done ? 'Log it again' : 'Do it'} kind={done ? 'outline' : 'primary'} small onPress={() => onOpenMove(q.id)} />
+        <T v="small" style={{ flex: 1 }}>The bonus only counts today.</T>
       </View>
     </View>
   );
+}
+
+// True when a short line mostly restates the title, so the card doesn't say it twice.
+function echoes(title: string, line: string) {
+  const words = (t: string) => t.toLowerCase().match(/[a-z’']{3,}/g) ?? [];
+  const head = new Set(words(title));
+  const body = words(line);
+  return line.split(/\s+/).length <= 9 && body.filter((w) => head.has(w)).length >= 2;
 }
 
 // Places: poster cards in a swipeable cover-flow. The centred card is where you are tonight.
 const CARD_W = 150;
 const CARD_H = 198;
 const STEP = 126;
-function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
+function Places({ onOpenMove, lens }: { onOpenMove: (id: string) => void; lens: PathKey | null }) {
   const n = useNerve();
   const p = n.progress;
   const [at, setAt] = useState(0);
@@ -241,7 +261,7 @@ function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   const onScroll = useMemo(() => Animated.event([{ nativeEvent: { contentOffset: { x } } }], { useNativeDriver: true }), [x]);
   const open = (k: number) => n.test || p.level >= PLACES[k].lv;
   const pl = PLACES[at];
-  const moves = levelMoves('x', at + 1);
+  const moves = levelMoves('x', at + 1).map((m) => lensed(m, lens)!);
   const reg = p.regulars.includes(at);
   const left = moves.filter((m) => !n.count[m.id]).length;
   const card = placeCard(at);
@@ -319,6 +339,11 @@ function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
         })}
       </Animated.ScrollView>
       {!open(at) ? <T v="small">{`${pl.name} opens at Level ${pl.lv}. You are Level ${p.level}.`}</T> : null}
+      {lens ? (
+        <View style={s.lens}>
+          <T v="small" style={{ color: C.muted }}>{`Tuned for ${BRANCH[lens].name}. Recordings here count toward that path. Pick another path or branch below to change it.`}</T>
+        </View>
+      ) : null}
       {moves.map((m) => {
         const lines = n.count[m.id] ?? 0;
         const isOpen = open(at);
@@ -326,7 +351,7 @@ function Places({ onOpenMove }: { onOpenMove: (id: string) => void }) {
           <Pressable
             key={m.id}
             accessibilityRole="button"
-            onPress={() => onOpenMove(m.id)}
+            onPress={() => onOpenMove(moveKey(m.id, lens))}
             style={({ pressed }) => [s.moveRow, !isOpen && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
             <View style={[s.tile, { backgroundColor: lines > 0 ? PLACE_HUE[pl.id][0] : PLACE_HUE[pl.id][1] }]}>
               {isOpen ? <T style={[s.tileText, { color: lines > 0 ? '#FFFFFF' : PLACE_HUE[pl.id][0] }]}>{m.i}</T> : <Emo e="🔒" size={32} />}
@@ -381,11 +406,11 @@ const s = StyleSheet.create({
   posterArt: { height: 150 },
   fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 40, opacity: 0.55 },
   pill: { position: 'absolute', top: 14, left: 16, maxWidth: '58%', backgroundColor: 'rgba(0,0,0,0.32)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  pillText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: '#FFFFFF' },
-  quest: { borderRadius: 8, padding: 18, gap: 10, backgroundColor: C.ink },
-  questTag: { alignSelf: 'flex-start', backgroundColor: C.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  pillText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: C.ink },
+  quest: { borderRadius: 8, padding: 18, gap: 10, backgroundColor: C.surface, borderWidth: 2, borderColor: C.ink },
+  questTag: { alignSelf: 'flex-start', backgroundColor: C.bgDeep, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   questTagText: { fontFamily: F.semi, fontSize: 13, lineHeight: 17, color: C.ink },
-  questTitle: { fontFamily: F.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.4, color: '#FFFFFF' },
+  questTitle: { fontFamily: F.display, fontSize: 26, lineHeight: 29, letterSpacing: -0.4, color: C.ink },
   pcard: { position: 'absolute', left: -12, top: 0, width: CARD_W, height: CARD_H, borderRadius: 14, overflow: 'hidden', backgroundColor: C.ink },
   pcardOn: { borderWidth: 2.5, borderColor: C.ink },
   pcardRegular: { borderWidth: 2.5, borderColor: '#D9A521' },
@@ -404,6 +429,8 @@ const s = StyleSheet.create({
   view: { padding: 16, gap: 12, paddingBottom: 32 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   invite: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, paddingLeft: 16, borderRadius: 8, backgroundColor: C.accentSoft },
+  mentorIntro: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  lens: { padding: 10, borderRadius: 8, backgroundColor: C.bg, borderLeftWidth: 3, borderLeftColor: C.accent },
   moveRow: {
     flexDirection: 'row',
     alignItems: 'center',

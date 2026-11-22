@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { MENTOR, MentorFace } from '../components/Mentor';
 import { inviteCode, sendInvite } from '../invite';
 import { useAuth } from '../auth';
 import { LineCard, TitleChip } from '../components/LineCard';
@@ -79,7 +80,7 @@ export function You({
             <View style={{ width: `${Math.round((100 * into) / need)}%`, height: '100%', borderRadius: 5, backgroundColor: C.accent, borderRightWidth: 1.5, borderColor: C.ink }} />
           </View>
           <T v="small" style={{ fontFamily: F.semi }}>
-            {p.xp} XP · {need - into} to Level {p.level + 1}
+            {p.xp} XP, {need - into} to Level {p.level + 1}
           </T>
         </View>
         <BaseMountains p={p} onOpen={onOpenBranch} />
@@ -129,9 +130,15 @@ export function You({
               <View style={[s.pathHead, { marginTop: -34 }]}>
                 <T style={s.pathName}>{BRANCH[b].name}</T>
                 <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
-                  {info.open ? `${branchState(b, p)}${info.met ? '' : ' · tester'}` : `${met} of ${info.reqs.length} met`}
+                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : `${met} of ${info.reqs.length} met`}
                 </T>
               </View>
+              {MENTOR[b] ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MentorFace b={b} size={28} />
+                  <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.88)' }}>{`Guide: ${MENTOR[b]!.name}, ${MENTOR[b]!.role}`}</T>
+                </View>
+              ) : null}
               <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
                 {BRANCH[b].tag}
               </T>
@@ -199,7 +206,7 @@ export function You({
 
       <Card>
         <T v="eyebrow">
-          Achievements · {ACH.filter((a) => p.ach[a.k].done).length}/{ACH.length}
+          Achievements, {ACH.filter((a) => p.ach[a.k].done).length}/{ACH.length}
         </T>
         <View style={s.achGrid}>
           {ACH.map((a) => {
@@ -211,7 +218,7 @@ export function You({
                   {a.t}
                 </T>
                 <T v="small" style={{ fontSize: 13, lineHeight: 17 }}>
-                  {st.done ? `Earned · +${ACH_XP} XP` : a.d}
+                  {st.done ? `Earned, +${ACH_XP} XP` : a.d}
                 </T>
                 {st.done ? null : (
                   <T style={{ fontFamily: F.semi, fontSize: 12, color: C.muted }}>
@@ -245,7 +252,7 @@ export function You({
                   <T v="semi">{person.name || 'Someone'}</T>
                   {shared ? (
                     <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>
-                      Together · {BY[shared.move].title}
+                      Together: {BY[shared.move].title}
                     </T>
                   ) : (
                     <T v="small">{last ? `Last line ${stamp(last.created_at).toLowerCase()}` : 'No lines yet'}</T>
@@ -308,22 +315,25 @@ function StatsBlock({ p }: { p: Progress }) {
   const pt = (i: number, f: number) => `${(cx + R * f * Math.cos(ang(i))).toFixed(1)},${(cy + R * f * Math.sin(ang(i))).toFixed(1)}`;
   const ring = (f: number) => `<polygon points="${STATS.map((_, i) => pt(i, f)).join(' ')}" fill="none" stroke="${C.line}" stroke-width="1"/>`;
   const shape = STATS.map((st, i) => pt(i, Math.max(0.06, Math.sqrt(p.stats[st.k] / max)))).join(' ');
+  // Coloured dots mark each axis; the names sit in the list beside the chart, in the app font.
   const labels = STATS.map((st, i) => {
-    const [x, y] = pt(i, 1.22).split(',').map(Number);
-    const anchor = i === 1 ? 'start' : i === 3 ? 'end' : 'middle';
-    return `<text x="${x}" y="${y + (i === 0 ? -2 : i === 2 ? 10 : 4)}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="${st.c}">${st.name}</text>`;
+    const [x, y] = pt(i, 1.12).split(',').map(Number);
+    return `<circle cx="${x}" cy="${y}" r="5" fill="${st.c}" stroke="${C.ink}" stroke-width="1.5"/>`;
   }).join('');
-  const xml = `<svg viewBox="0 0 180 165">${ring(1)}${ring(0.66)}${ring(0.33)}<path d="M${pt(0, 1)} L${pt(2, 1)} M${pt(1, 1)} L${pt(3, 1)}" stroke="${C.line}"/><polygon points="${shape}" fill="rgba(255,106,26,0.22)" stroke="${C.accentText}" stroke-width="2" stroke-linejoin="round"/>${labels}</svg>`;
+  const xml = `<svg viewBox="20 10 140 140">${ring(1)}${ring(0.66)}${ring(0.33)}<path d="M${pt(0, 1)} L${pt(2, 1)} M${pt(1, 1)} L${pt(3, 1)}" stroke="${C.line}"/><polygon points="${shape}" fill="rgba(255,106,26,0.22)" stroke="${C.accentText}" stroke-width="2" stroke-linejoin="round"/>${labels}</svg>`;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <SvgXml xml={xml} width={150} height={138} />
+      <SvgXml xml={xml} width={130} height={130} />
       <View style={{ flex: 1, gap: 8 }}>
         {STATS.map((st) => {
           const v = p.stats[st.k];
           return (
             <View key={st.k} style={{ gap: 3 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <T style={{ fontFamily: F.displayBold, fontSize: 16, color: st.c }}>{st.name}</T>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: st.c, borderWidth: 1.5, borderColor: C.ink }} />
+                  <T style={{ fontFamily: F.displayBold, fontSize: 16, color: st.c }}>{st.name}</T>
+                </View>
                 <T style={{ fontFamily: F.semi, fontSize: 14 }}>Lv {statLevel(v)}</T>
               </View>
               <View style={{ height: 5, borderRadius: 3, backgroundColor: C.bgDeep, overflow: 'hidden' }}>
@@ -340,8 +350,10 @@ function StatsBlock({ p }: { p: Progress }) {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <View style={s.stat}>
-      <T style={s.statNum}>{value}</T>
-      <T v="eyebrow" style={{ fontSize: 12 }}>
+      <T style={s.statNum} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+        {value}
+      </T>
+      <T v="eyebrow" style={{ fontSize: 12 }} numberOfLines={1}>
         {label}
       </T>
     </View>
@@ -426,7 +438,7 @@ const s = StyleSheet.create({
   achGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   ach: { width: '48.5%', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, gap: 2 },
   stats: { flexDirection: 'row', gap: 8 },
-  stat: { flex: 1, padding: 12, borderRadius: 8, backgroundColor: C.bg, gap: 2 },
-  statNum: { fontFamily: F.display, fontSize: 30, lineHeight: 32, color: C.ink },
+  stat: { flex: 1, minWidth: 0, paddingVertical: 12, paddingHorizontal: 10, borderRadius: 8, backgroundColor: C.bg, gap: 2 },
+  statNum: { fontFamily: F.display, fontSize: 26, lineHeight: 30, color: C.ink },
   person: { flexDirection: 'row', alignItems: 'center', gap: 12 },
 });
