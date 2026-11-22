@@ -5,10 +5,10 @@ import { useAuth } from '../auth';
 import { C, F } from '../theme';
 import { Btn, Seg, T } from '../ui';
 
-type Mode = 'in' | 'up';
+type Mode = 'in' | 'up' | 'reset';
 
 export function SignIn() {
-  const { signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword } = useAuth();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('in');
   const [name, setName] = useState('');
@@ -24,6 +24,14 @@ export function SignIn() {
     const address = email.trim();
     if (mode === 'up' && !name.trim()) return setError('Add the name your circle will see.');
     if (!/^\S+@\S+\.\S+$/.test(address)) return setError('Enter your email address.');
+    if (mode === 'reset') {
+      setBusy('email');
+      const problem = await resetPassword(address);
+      setBusy('');
+      if (problem) return setError(problem);
+      setNote(`If ${address} has a Nerve account, a reset link is on its way. Open it on this phone to set a new password.`);
+      return;
+    }
     if (password.length < 8) return setError(mode === 'up' ? 'Pick a password of at least 8 characters.' : 'Enter your password.');
 
     setBusy('email');
@@ -54,6 +62,12 @@ export function SignIn() {
         </View>
 
         <View style={{ gap: 12 }}>
+          {mode === 'reset' ? (
+            <View style={{ gap: 4 }}>
+              <T v="h">Reset your password</T>
+              <T v="sub">Enter your email and we’ll send you a link to set a new one.</T>
+            </View>
+          ) : (
           <Seg
             value={mode}
             onChange={(next) => {
@@ -66,6 +80,7 @@ export function SignIn() {
               { key: 'up', label: 'Create account' },
             ]}
           />
+          )}
           {mode === 'up' ? (
             <TextInput
               accessibilityLabel="Your name"
@@ -91,6 +106,7 @@ export function SignIn() {
             keyboardType="email-address"
             style={s.field}
           />
+          {mode === 'reset' ? null : (
           <TextInput
             accessibilityLabel="Password"
             value={password}
@@ -105,16 +121,43 @@ export function SignIn() {
             returnKeyType="go"
             onSubmitEditing={submit}
           />
+          )}
+          {mode === 'in' ? (
+            <Btn
+              label="Forgot password?"
+              kind="quiet"
+              small
+              style={{ alignSelf: 'flex-start' }}
+              onPress={() => {
+                setMode('reset');
+                setError('');
+                setNote('');
+              }}
+            />
+          ) : null}
           {note ? <T style={s.note}>{note}</T> : null}
           {error ? <T v="error">{error}</T> : null}
           <Btn
-            label={busy === 'email' ? 'One moment…' : mode === 'up' ? 'Create account' : 'Sign in'}
+            label={busy === 'email' ? 'One moment…' : mode === 'up' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Sign in'}
             kind="primary"
             wide
             disabled={busy !== ''}
             onPress={submit}
           />
 
+          {mode === 'reset' ? (
+            <Btn
+              label="Back to sign in"
+              kind="quiet"
+              wide
+              onPress={() => {
+                setMode('in');
+                setError('');
+              }}
+            />
+          ) : null}
+          {mode === 'reset' ? null : (
+          <>
           <View style={s.or}>
             <View style={s.rule} />
             <T v="small">or</T>
@@ -134,6 +177,8 @@ export function SignIn() {
               setError(problem);
             }}
           />
+          </>
+          )}
           <T v="small">Only people signed in to Nerve can see your lines.</T>
         </View>
       </ScrollView>

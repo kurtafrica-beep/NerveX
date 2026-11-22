@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { MENTOR, MentorFace } from '../components/Mentor';
-import { inviteCode, sendInvite } from '../invite';
-import { useAuth } from '../auth';
 import { LineCard, TitleChip } from '../components/LineCard';
 import { BaseMountains, PathMountains } from '../components/Mountains';
 import { BranchBanner, CardSheet, PatchWall } from '../components/Patches';
@@ -16,7 +14,8 @@ import { ALL_KEYS, BRANCH, BY, MOVES, PATH_KEYS, lvTitle, type BranchKey } from 
 import { ACH, ACH_XP, HUE, STATS, TIERS, TIER_EMOJI, TITLES, branchState, statLevel, statProgress, xpAt, type Progress } from '../progress';
 import { Gate } from './Tonight';
 import { C, F } from '../theme';
-import { Avatar, Btn, Card, T } from '../ui';
+import { Avatar, Btn, Card, Seg, T } from '../ui';
+import { Settings } from '../components/Settings';
 
 export function You({
   onOpenMove,
@@ -30,10 +29,11 @@ export function You({
   onError: (message: string) => void;
 }) {
   const n = useNerve();
-  const { signOut } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState('');
   const [card, setCard] = useState<PlayCard | null>(null);
+  const [tab, setTab] = useState<'progress' | 'paths' | 'patches' | 'people' | 'lines'>('progress');
+  const [settings, setSettings] = useState(false);
   const tonight = n.tonight.move;
   const p = n.progress;
   const into = p.xp - xpAt(p.level);
@@ -74,6 +74,9 @@ export function You({
             <T style={s.lvWord}>Level</T>
             <T style={s.lvNum}>{p.level}</T>
           </View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Account settings" onPress={() => setSettings(true)} style={({ pressed }) => [s.gear, pressed && { opacity: 0.7 }]}>
+            <SvgXml xml={GEAR} width={22} height={22} />
+          </Pressable>
         </View>
         <View style={{ gap: 4 }}>
           <View style={s.xpBar} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: need, now: into }}>
@@ -90,79 +93,24 @@ export function You({
           <Stat value={String(n.kudosReceived)} label="Reactions" />
         </View>
       </Card>
-
+      <Seg
+        value={tab}
+        onChange={setTab}
+        options={[
+          { key: 'progress', label: 'Progress' },
+          { key: 'paths', label: 'Paths' },
+          { key: 'patches', label: 'Patches' },
+          { key: 'people', label: 'People' },
+          { key: 'lines', label: 'Lines' },
+        ]}
+      />
+      {tab === 'progress' ? (
+        <>
       <Card>
         <T v="h">Stats</T>
         <StatsBlock p={p} />
         <T v="small">Every move trains one or two of these. Confidence builds Courage, Talk builds Warmth, Cues and Voice build Presence, Sell builds Persuasion.</T>
       </Card>
-
-      <Card>
-        <View style={{ gap: 4 }}>
-          <T v="h">Patches</T>
-          <T v="sub">
-            Each patch is a playbook for a real situation: how to open, what to do if it goes flat or goes well, and how to leave. Finish a branch level or
-            become a regular to earn one. Use it in three real conversations and it turns gold.
-          </T>
-        </View>
-        <PatchWall onOpen={setCard} />
-      </Card>
-
-      <Card>
-        <View style={{ gap: 4 }}>
-          <T v="h">Paths</T>
-          <T v="small">
-            Harder routes above base camp. A path opens when the branches it builds on are high enough and you have recordings to show for it. Each
-            ends in a capstone that only counts with proof.
-          </T>
-        </View>
-        <PathMountains p={p} onOpen={onOpenBranch} />
-        {PATH_KEYS.map((b) => {
-          const info = p.paths[b];
-          const met = info.reqs.filter((r) => r.ok).length;
-          return (
-            <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
-              <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
-                {/* Paths without cel-shaded art yet show their drawn glyph instead. */}
-                <BranchBanner b={b} height={96} glyphX={BRANCH_ICON[b] ? 900 : 262} />
-                {BRANCH_ICON[b] ? <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} /> : null}
-              </View>
-              <View style={[s.pathHead, { marginTop: -34 }]}>
-                <T style={s.pathName}>{BRANCH[b].name}</T>
-                <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
-                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : `${met} of ${info.reqs.length} met`}
-                </T>
-              </View>
-              {MENTOR[b] ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <MentorFace b={b} size={28} />
-                  <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.88)' }}>{`Guide: ${MENTOR[b]!.name}, ${MENTOR[b]!.role}`}</T>
-                </View>
-              ) : null}
-              <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
-                {BRANCH[b].tag}
-              </T>
-              {info.open ? null : <Gate reqs={info.reqs} light />}
-              <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
-            </View>
-          );
-        })}
-        <View style={s.testRow}>
-          <Switch
-            value={n.test}
-            accessibilityLabel="Tester switch"
-            onValueChange={(on) => {
-              n.setTest(on);
-              const first = PATH_KEYS.find((b) => !p.paths[b].met);
-              if (on && first) onPreview({ levels: [], level: 0, ach: [], gained: 0, paths: [first], preview: true });
-            }}
-          />
-          <T v="small" style={{ flex: 1 }}>
-            Tester mode opens every path, place and patch so you can try them. It comes off before launch.
-          </T>
-        </View>
-      </Card>
-
       <Card>
         <View style={{ gap: 4 }}>
           <T v="eyebrow">Rewards</T>
@@ -203,7 +151,6 @@ export function You({
           </View>
         ))}
       </Card>
-
       <Card>
         <T v="eyebrow">
           Achievements, {ACH.filter((a) => p.ach[a.k].done).length}/{ACH.length}
@@ -230,7 +177,68 @@ export function You({
           })}
         </View>
       </Card>
-
+        </>
+      ) : null}
+      {tab === 'paths' ? (
+        <>
+      <Card>
+        <View style={{ gap: 4 }}>
+          <T v="h">Paths</T>
+          <T v="small">
+            Harder routes above base camp. A path opens when the branches it builds on are high enough and you have recordings to show for it. Each
+            ends in a capstone that only counts with proof.
+          </T>
+        </View>
+        <PathMountains p={p} onOpen={onOpenBranch} />
+        {PATH_KEYS.map((b) => {
+          const info = p.paths[b];
+          const met = info.reqs.filter((r) => r.ok).length;
+          return (
+            <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
+              <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
+                {/* Paths without cel-shaded art yet show their drawn glyph instead. */}
+                <BranchBanner b={b} height={96} glyphX={BRANCH_ICON[b] ? 900 : 262} />
+                {BRANCH_ICON[b] ? <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} /> : null}
+              </View>
+              <View style={[s.pathHead, { marginTop: -34 }]}>
+                <T style={s.pathName}>{BRANCH[b].name}</T>
+                <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
+                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : `${met} of ${info.reqs.length} met`}
+                </T>
+              </View>
+              {MENTOR[b] ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MentorFace b={b} size={28} />
+                  <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.88)' }}>{`Guide: ${MENTOR[b]!.name}, ${MENTOR[b]!.role}`}</T>
+                </View>
+              ) : null}
+              <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                {BRANCH[b].tag}
+              </T>
+              {info.open ? null : <Gate reqs={info.reqs} light />}
+              <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
+            </View>
+          );
+        })}
+      </Card>
+        </>
+      ) : null}
+      {tab === 'patches' ? (
+        <>
+      <Card>
+        <View style={{ gap: 4 }}>
+          <T v="h">Patches</T>
+          <T v="sub">
+            Each patch is a playbook for a real situation: how to open, what to do if it goes flat or goes well, and how to leave. Finish a branch level or
+            become a regular to earn one. Use it in three real conversations and it turns gold.
+          </T>
+        </View>
+        <PatchWall onOpen={setCard} />
+      </Card>
+        </>
+      ) : null}
+      {tab === 'people' ? (
+        <>
       <Card>
         <View style={s.pathHead}>
           <T v="h">Your circle</T>
@@ -239,7 +247,7 @@ export function You({
           </T>
         </View>
         {n.circle.length === 0 ? (
-          <T v="sub">Nobody yet. Invite a friend below, or tap Follow on someone’s line in the feed.</T>
+          <T v="sub">Nobody yet. Invite a friend from Account settings (the gear above), or tap Follow on someone’s line in the feed.</T>
         ) : (
           n.circle.map((person, i) => {
             const shared = n.challengeWith(person.id);
@@ -287,9 +295,11 @@ export function You({
           })
         )}
         {n.circle.length > 0 ? <T v="small">Challenge sends them tonight’s move ({tonight.title}) until midnight.</T> : null}
-        <Invite onError={onError} />
       </Card>
-
+        </>
+      ) : null}
+      {tab === 'lines' ? (
+        <>
       {n.mine.some((x) => x.posted !== false) ? (
         <T v="eyebrow" style={{ paddingTop: 6, paddingHorizontal: 2 }}>
           Your lines
@@ -299,7 +309,10 @@ export function You({
         <LineCard key={line.id} line={line} onOpenMove={onOpenMove} onError={onError} />
       ))}
 
-      <Btn label="Sign out" kind="quiet" onPress={signOut} style={{ alignSelf: 'center', marginTop: 8 }} />
+      {n.mine.some((x) => x.posted !== false) ? null : <T v="sub">No lines yet. Drop one tonight and it shows up here.</T>}
+        </>
+      ) : null}
+      {settings ? <Settings onClose={() => setSettings(false)} onError={onError} onPreview={onPreview} /> : null}
       {card ? <CardSheet card={card} onClose={() => setCard(null)} onPractise={onOpenMove} onError={onError} /> : null}
     </ScrollView>
   );
@@ -360,59 +373,10 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-function Invite({ onError }: { onError: (message: string) => void }) {
-  const n = useNerve();
-  const mine = inviteCode(n.uid);
-  const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [joined, setJoined] = useState('');
-  const send = async () => {
-    const how = await sendInvite(mine);
-    if (how === 'copied') setJoined('');
-    setCopied(how === 'copied');
-    if (how === 'failed') onError('Sharing didn’t open. Send your code instead: ' + mine);
-  };
-  const [copied, setCopied] = useState(false);
-  const redeem = async () => {
-    setBusy(true);
-    const r = await n.redeemInvite(code);
-    setBusy(false);
-    if (r.problem) return onError(r.problem);
-    setCode('');
-    setJoined(r.who ?? 'your friend');
-  };
-  return (
-    <View style={s.invite}>
-      <View style={s.person}>
-        <View style={{ flex: 1 }}>
-          <T v="semi">Bring a friend</T>
-          <T v="small">
-            Your code is <T v="small" style={{ fontFamily: F.displayBold, color: C.ink, letterSpacing: 1 }}>{mine}</T>
-          </T>
-        </View>
-        <Btn label="Invite friends" small onPress={send} />
-      </View>
-      <View style={s.person}>
-        <TextInput
-          accessibilityLabel="Friend's invite code"
-          value={code}
-          onChangeText={(t) => setCode(t.toUpperCase().slice(0, 8))}
-          placeholder="Got a code?"
-          placeholderTextColor={C.muted}
-          autoCapitalize="characters"
-          autoCorrect={false}
-          maxLength={8}
-          style={s.codeField}
-        />
-        <Btn label="Join" kind="outline" small disabled={busy || code.length !== 8} onPress={redeem} />
-      </View>
-      {copied ? <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>Invite copied. Paste it to a friend.</T> : null}
-      {joined ? <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>You and {joined} are in each other’s circle now.</T> : null}
-    </View>
-  );
-}
+const GEAR = `<svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="${C.ink}" stroke-width="2"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4 1 2-3.4Z" fill="none" stroke="${C.ink}" stroke-width="2" stroke-linejoin="round"/></svg>`;
 
 const s = StyleSheet.create({
+  gear: { width: 40, height: 40, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center', borderRadius: 8, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
   invite: { gap: 10, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, marginTop: 4 },
   codeField: {
     flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,

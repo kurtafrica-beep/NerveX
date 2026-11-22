@@ -270,7 +270,7 @@ ${climbers}</svg>`;
                   </View>
                 )}
               </View>
-              {m.status === 'in' && !me && c < ROPE_MIN ? (
+              {m.status === 'in' && !me && c < ROPE_MIN && n.profiles[m.member]?.allow_nudges !== false ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={nudged ? `Nudged ${nameOf(m.member)} today` : `Nudge ${nameOf(m.member)}`}

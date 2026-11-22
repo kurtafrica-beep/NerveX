@@ -11,6 +11,7 @@ import { DataProvider, useNerve } from './src/data';
 import { RopeProvider, useRope } from './src/rope';
 import { Feed } from './src/screens/Feed';
 import { MoveScreen } from './src/screens/MoveScreen';
+import { NewPassword } from './src/screens/NewPassword';
 import { SignIn } from './src/screens/SignIn';
 import { Tonight } from './src/screens/Tonight';
 import { You } from './src/screens/You';
@@ -43,9 +44,10 @@ export default function App() {
 }
 
 function Root() {
-  const { session, ready } = useAuth();
+  const { session, ready, recovering } = useAuth();
   if (!ready) return <View style={s.blank} />;
   if (!session) return <SignIn />;
+  if (recovering) return <NewPassword />;
   return (
     <DataProvider key={session.user.id} uid={session.user.id}>
       <RopeProvider>

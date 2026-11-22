@@ -13,6 +13,11 @@ type AuthApi = {
   signInWithEmail: (email: string, password: string) => Promise<string>;
   signUpWithEmail: (name: string, email: string, password: string) => Promise<{ error: string; confirm: boolean }>;
   signOut: () => Promise<void>;
+  // Forgot password: send a reset link, then set a new password once the link opens the app.
+  resetPassword: (email: string) => Promise<string>;
+  recovering: boolean;
+  setNewPassword: (password: string) => Promise<string>;
+  cancelRecovery: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthApi | null>(null);
@@ -83,6 +88,15 @@ function emailProblem(error: { code?: string; message?: string } | null): string
   }
 }
 
+async function resetPassword(email: string): Promise<string> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: Platform.OS === 'web' ? webHome() : Linking.createURL('auth'),
+  });
+  if (!error) return '';
+  if (error.code === 'over_email_send_rate_limit' || error.code === 'over_request_rate_limit') return 'Too many attempts. Wait a minute and try again.';
+  return 'The reset email didn’t send. Check the address and your connection, then try again.';
+}
+
 async function signInWithEmail(email: string, password: string): Promise<string> {
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   return emailProblem(error);
@@ -124,6 +138,7 @@ function webHome() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -132,9 +147,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(data.session);
       setReady(true);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
       setReady(true);
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
+      if (event === 'SIGNED_OUT') setRecovering(false);
     });
     captureInvite().then(() => Linking.getInitialURL()).then(finishFromLink);
     const link = Linking.addEventListener('url', (event) => finishFromLink(event.url));
@@ -155,8 +172,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut: async () => {
         await supabase.auth.signOut();
       },
+      resetPassword,
+      recovering,
+      setNewPassword: async (password: string) => {
+        const { error } = await supabase.auth.updateUser({ password });
+        if (error) return error.code === 'same_password' ? 'Pick a password you haven’t used here before.' : emailProblem(error);
+        setRecovering(false);
+        return '';
+      },
+      cancelRecovery: async () => {
+        setRecovering(false);
+        await supabase.auth.signOut();
+      },
     }),
-    [session, ready],
+    [session, ready, recovering],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

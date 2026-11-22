@@ -8,7 +8,7 @@ import { computeProgress, type Progress } from './progress';
 import type { ReactionKey } from './reactions';
 import { supabase } from './supabase';
 
-export type Profile = { id: string; name: string; avatar_url: string | null; title: string | null };
+export type Profile = { id: string; name: string; avatar_url: string | null; title: string | null; allow_nudges?: boolean };
 export type MediaKind = 'voice' | 'video';
 export type Line = {
   id: string;
@@ -62,6 +62,9 @@ type Api = Store & {
   test: boolean;
   setTest: (on: boolean) => void;
   wearTitle: (key: string) => Promise<string>;
+  setName: (name: string) => Promise<string>;
+  setAllowNudges: (on: boolean) => Promise<string>;
+  deleteAccount: () => Promise<string>;
   doneCount: number;
   streak: number;
   kudosReceived: number;
@@ -150,7 +153,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
   const reload = useCallback(async () => {
     const since = new Date(Date.now() - 7 * 86400000).toISOString();
     const [p, l, c, k, ch, fo, cu] = await Promise.all([
-      supabase.from('profiles').select('id,name,avatar_url,title'),
+      supabase.from('profiles').select('id,name,avatar_url,title,allow_nudges'),
       supabase.from('lines').select('*').order('created_at', { ascending: false }).limit(300),
       supabase.from('comments').select('*').order('created_at', { ascending: true }).limit(3000),
       supabase.from('kudos').select('line_id,author,kind').limit(10000),
@@ -436,6 +439,35 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       await reload();
       return '';
     };
+    const setName: Api['setName'] = async (name) => {
+      const v = name.trim().replace(/\s+/g, ' ').slice(0, 40);
+      if (!v) return 'Your name can’t be empty.';
+      const { error } = await supabase.from('profiles').update({ name: v }).eq('id', uid);
+      if (error) return SAVE_FAILED;
+      await reload();
+      return '';
+    };
+    const setAllowNudges: Api['setAllowNudges'] = async (on) => {
+      const { error } = await supabase.from('profiles').update({ allow_nudges: on }).eq('id', uid);
+      if (error) return SAVE_FAILED;
+      await reload();
+      return '';
+    };
+    // Recordings live in storage, which the database can't cascade into, so remove them first.
+    const deleteAccount: Api['deleteAccount'] = async () => {
+      for (let round = 0; round < 20; round++) {
+        const { data, error } = await supabase.storage.from(BUCKET).list(uid, { limit: 100 });
+        if (error) return 'Couldn’t delete your recordings. Check your connection and try again.';
+        if (!data?.length) break;
+        const { error: rmError } = await supabase.storage.from(BUCKET).remove(data.map((f) => `${uid}/${f.name}`));
+        if (rmError) return 'Couldn’t delete your recordings. Check your connection and try again.';
+      }
+      const { error } = await supabase.rpc('delete_my_account');
+      if (error) return 'Your account wasn’t deleted. Check your connection and try again.';
+      await AsyncStorage.multiRemove(['nerve.branch', 'nerve.test', 'nerve.rope.seen']).catch(() => {});
+      await supabase.auth.signOut();
+      return '';
+    };
 
     return {
       ...store,
@@ -448,6 +480,9 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       test,
       setTest,
       wearTitle,
+      setName,
+      setAllowNudges,
+      deleteAccount,
       doneCount: progress.done,
       streak,
       kudosReceived,
