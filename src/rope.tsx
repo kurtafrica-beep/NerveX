@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useNerve } from './data';
+import type { MountainKey } from './mountains';
 import { supabase } from './supabase';
 
 // Rope team: up to four friends who follow each other share one mountain for the week.
@@ -16,6 +17,9 @@ export type RopeMember = { team: string; member: string; status: 'invited' | 'in
 export type RopeEvent = { id: number; team: string; actor: string; kind: string; target: string | null; note: string | null; created_at: string };
 export type RopeMeet = { id: string; team: string; created_by: string; place: number; day: string; at_time: string; week_start: string; cancelled: boolean };
 export type RopeRsvp = { meet: string; member: string; going: boolean };
+export type RopeTeamRow = { id: string; created_by: string | null; peak: number; streak: number; patches: number };
+export type RopeRescue = { team: string; week_start: string; a: string; b: string; move: string };
+export type Expedition = { this_month: number; last_month: number; mine: number; my_team: number; active: number };
 
 type State = {
   members: RopeMember[];
@@ -23,15 +27,28 @@ type State = {
   meets: RopeMeet[];
   rsvps: RopeRsvp[];
   counts: Record<string, number>;
+  teams: RopeTeamRow[];
+  weeks: { team: string; week_start: string; mountain: MountainKey; picked_by: string | null }[];
+  rescues: RopeRescue[];
+  checkins: { meet: string; member: string }[];
+  expedition: Expedition | null;
   loaded: boolean;
 };
-const EMPTY: State = { members: [], events: [], meets: [], rsvps: [], counts: {}, loaded: false };
+const EMPTY: State = { members: [], events: [], meets: [], rsvps: [], counts: {}, teams: [], weeks: [], rescues: [], checkins: [], expedition: null, loaded: false };
 
 type Api = State & {
   team: string | null; // the team you're in
   invites: { team: string; from: string; others: string[] }[];
   roster: RopeMember[]; // your team's members who are in or invited
   meet: RopeMeet | null; // this week's meet-up
+  info: RopeTeamRow | null; // your team: owner and ladder
+  mountain: MountainKey | null; // this week's pick, if any
+  rescueWith: (who: string) => RopeRescue | null;
+  checkedIn: (who: string) => boolean;
+  pick: (mountain: MountainKey) => Promise<string>;
+  rescue: (who: string, move: string) => Promise<string>;
+  checkIn: () => Promise<string>;
+  invite: (who: string) => Promise<string>;
   mutuals: string[];
   unseen: number; // events for you since you last looked
   markSeen: () => void;
@@ -69,7 +86,7 @@ function problem(error: { message?: string } | null): string {
   if (!error) return '';
   const m = error.message ?? '';
   // Server checks raise plain sentences; pass those through, hide anything technical.
-  return /^[A-Z][^{}<>]{3,80}$/.test(m) ? m : 'That didn’t go through. Check your connection and try again.';
+  return /^[A-Z][^{}<>]{3,120}$/.test(m) ? m : 'That didn’t go through. Check your connection and try again.';
 }
 
 export function RopeProvider({ children }: { children: React.ReactNode }) {
@@ -84,11 +101,20 @@ export function RopeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const reload = useCallback(async () => {
-    const [m, e, mt, r] = await Promise.all([
+    const first = await supabase.from('rope_members').select('team,member,status,invited_by,created_at');
+    const mineFirst = ((first.data ?? []) as RopeMember[]).find((x) => x.member === uid && x.status === 'in');
+    // Close out finished weeks first, so the ladder and the activity are current.
+    if (mineFirst) await supabase.rpc('rope_settle', { t: mineFirst.team });
+    const [m, e, mt, r, tm, wk, rs, ci, ex] = await Promise.all([
       supabase.from('rope_members').select('team,member,status,invited_by,created_at'),
       supabase.from('rope_events').select('id,team,actor,kind,target,note,created_at').order('created_at', { ascending: false }).limit(60),
       supabase.from('rope_meets').select('id,team,created_by,place,day,at_time,week_start,cancelled'),
       supabase.from('rope_rsvps').select('meet,member,going'),
+      supabase.from('rope_teams').select('id,created_by,peak,streak,patches'),
+      supabase.from('rope_weeks').select('team,week_start,mountain,picked_by').eq('week_start', weekStartIso()),
+      supabase.from('rope_rescues').select('team,week_start,a,b,move').eq('week_start', weekStartIso()),
+      supabase.from('rope_checkins').select('meet,member'),
+      supabase.rpc('rope_expedition'),
     ]);
     const members = (m.data ?? []) as RopeMember[];
     const mine = members.find((x) => x.member === uid && x.status === 'in');
@@ -97,7 +123,19 @@ export function RopeProvider({ children }: { children: React.ReactNode }) {
       const c = await supabase.rpc('rope_counts', { t: mine.team });
       counts = Object.fromEntries(((c.data ?? []) as { member: string; moves: number }[]).map((x) => [x.member, x.moves]));
     }
-    setS({ members, events: (e.data ?? []) as RopeEvent[], meets: (mt.data ?? []) as RopeMeet[], rsvps: (r.data ?? []) as RopeRsvp[], counts, loaded: true });
+    setS({
+      members,
+      events: (e.data ?? []) as RopeEvent[],
+      meets: (mt.data ?? []) as RopeMeet[],
+      rsvps: (r.data ?? []) as RopeRsvp[],
+      counts,
+      teams: (tm.data ?? []) as RopeTeamRow[],
+      weeks: (wk.data ?? []) as State['weeks'],
+      rescues: (rs.data ?? []) as RopeRescue[],
+      checkins: (ci.data ?? []) as State['checkins'],
+      expedition: ((ex.data ?? []) as Expedition[])[0] ?? null,
+      loaded: true,
+    });
   }, [uid]);
 
   useEffect(() => {
@@ -112,6 +150,9 @@ export function RopeProvider({ children }: { children: React.ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rope_events' }, () => soon())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rope_meets' }, () => soon())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'rope_rsvps' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rope_weeks' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rope_rescues' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rope_checkins' }, () => soon())
       .subscribe();
     const app = AppState.addEventListener('change', (st) => {
       if (st === 'active') reload();
@@ -163,12 +204,22 @@ export function RopeProvider({ children }: { children: React.ReactNode }) {
       return problem(error);
     };
 
+    const info = team ? s.teams.find((x) => x.id === team) ?? null : null;
+    const mountain = team ? s.weeks.find((x) => x.team === team)?.mountain ?? null : null;
     return {
       ...s,
       team,
       invites,
       roster,
       meet,
+      info,
+      mountain,
+      rescueWith: (who) => s.rescues.find((x) => x.team === team && ((x.a === uid && x.b === who) || (x.b === uid && x.a === who))) ?? null,
+      checkedIn: (who) => !!meet && s.checkins.some((x) => x.meet === meet.id && x.member === who),
+      pick: (mountain) => (team ? call('rope_pick', { t: team, mountain }) : Promise.resolve('')),
+      rescue: (who, move) => (team ? call('rope_rescue', { t: team, who, move }) : Promise.resolve('')),
+      checkIn: () => (meet ? call('rope_check_in', { m: meet.id }) : Promise.resolve('')),
+      invite: (who) => (team ? call('rope_invite', { t: team, who }) : Promise.resolve('')),
       mutuals,
       unseen,
       markSeen,

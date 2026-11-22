@@ -253,6 +253,7 @@ function NavItem({ icon, label, on, onPress, dot }: { icon: IconName; label: str
         {dot ? <View style={s.dot} /> : null}
       </View>
       <T style={{ fontFamily: F.semi, fontSize: 13, lineHeight: 16, color }}>{label}</T>
+      <View style={[s.tabLine, on && s.tabLineOn]} />
     </Pressable>
   );
 }
@@ -290,6 +291,8 @@ const s = StyleSheet.create({
     borderTopColor: C.line,
     backgroundColor: C.surface,
   },
+  tabLine: { width: 32, height: 4, marginTop: 2, borderRadius: 2, borderWidth: 1.5, borderColor: 'transparent' },
+  tabLineOn: { backgroundColor: C.accent, borderColor: C.ink },
   dot: { position: 'absolute', top: -2, right: -6, width: 10, height: 10, borderRadius: 5, backgroundColor: C.accent, borderWidth: 1.5, borderColor: C.ink },
   navSlot: { flex: 1, minHeight: 54, alignItems: 'center', justifyContent: 'center', gap: 2 },
   // The You button sits fully inside the bar: Android ignores taps on anything drawn outside its parent.

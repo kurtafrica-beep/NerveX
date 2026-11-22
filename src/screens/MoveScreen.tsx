@@ -5,6 +5,8 @@ import { ExampleCard } from '../components/Example';
 import { RemoteMedia } from '../components/Media';
 import { HandsFreePanel, useHandsFree } from '../components/HandsFree';
 import { ON_WEB } from '../platform';
+import { MOUNTAINS, countsFor } from '../mountains';
+import { useRope } from '../rope';
 import { RecordingBar, useVoiceRecorder, VideoRecorder } from '../components/Recorders';
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
@@ -173,6 +175,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             />
             <T style={{ fontSize: 20, lineHeight: 27 }}>{version === 'up' ? move.up : move.doIt}</T>
             <T v="sub">{version === 'up' ? 'Same move, one notch harder. Your line gets tagged as an upgrade.' : move.rep}</T>
+            {version !== 'up' ? <CountsFor id={move.id} /> : null}
           </View>
 
           {GUIDE[move.id] && !via ? (
@@ -476,3 +479,18 @@ const s = StyleSheet.create({
   count: { fontFamily: F.display, fontSize: 34, lineHeight: 34, color: C.accentText },
   logItem: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });
+
+// Tells you when a move also moves your rope team's mountain or this month's expedition.
+function CountsFor({ id }: { id: string }) {
+  const r = useRope();
+  const tags: string[] = [];
+  if (r.team && r.mountain && countsFor(r.mountain, id)) tags.push(`your rope team (${MOUNTAINS[r.mountain].name})`);
+  if (countsFor('strangers', id)) tags.push('this month’s expedition');
+  if (!tags.length) return null;
+  const hue = r.team && r.mountain && countsFor(r.mountain, id) ? MOUNTAINS[r.mountain].hue : C.accent;
+  return (
+    <View style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: C.bg, borderLeftWidth: 4, borderLeftColor: hue }}>
+      <T v="semi" style={{ fontSize: 14, lineHeight: 19 }}>{`Counts for ${tags.join(' and ')}.`}</T>
+    </View>
+  );
+}

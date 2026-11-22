@@ -87,9 +87,9 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "Add a real reference point that supports it."
     ],
     [
-      "Plan your offers in shrinking steps",
-      "Before a negotiation, plan your offers as steps that get smaller, ending on a precise number.",
-      "One plan made and used.",
+      "Plan your offers, then use them",
+      "Before a real negotiation, plan your offers in shrinking steps ending on a precise number, then use the plan with the other person.",
+      "One plan made and used on someone.",
       "Add a non-money extra to the final offer."
     ],
     [
@@ -156,19 +156,19 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
     ],
     [
       "Name what they would do without you",
-      "Say out loud what a customer would use if you did not exist, including “do nothing”.",
+      "Tell a real person what a customer would use if you did not exist, including “do nothing”.",
       "Three alternatives named to a real person.",
       "Ask a customer what they would do, and compare."
     ],
     [
       "Say your “only we”",
-      "State one thing you have that the alternatives do not, and what it does for the customer.",
+      "Tell three people one thing you have that the alternatives do not, and what it does for the customer.",
       "Said to three people.",
       "Back it with proof: a number or a customer story."
     ],
     [
       "Say who it is not for",
-      "Describe your best-fit customer in one sentence, and say who should not buy.",
+      "Tell a prospect who your best-fit customer is in one sentence, and who should not buy.",
       "Said to one prospect.",
       "Turn away someone who is a bad fit."
     ],
@@ -345,10 +345,10 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "Three walk-ins in an afternoon."
     ],
     [
-      "Build your target list",
-      "Write a list of twenty businesses or people you want as customers, with a reason for each.",
-      "Twenty names, each with a reason.",
-      "Rank them and contact the top five this week."
+      "Build your list, then call the top three",
+      "Write a list of twenty businesses or people you want as customers, each with a reason, then contact the top three the same day.",
+      "Twenty names, three contacted.",
+      "Contact the top ten this week."
     ],
     [
       "Give the ten-second intro",
@@ -405,10 +405,10 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "Get a yes."
     ],
     [
-      "Track your numbers for a week",
-      "For one week, track every contact, conversation, meeting and yes. Share the numbers.",
-      "One week tracked.",
-      "Set next week’s target from it."
+      "Go through your numbers with someone",
+      "For one week, track every contact, conversation, meeting and yes, then go through the numbers with a friend or mentor and set next week’s target together.",
+      "One week tracked and reviewed with someone.",
+      "Ask them to check in on next week’s number."
     ],
     [
       "Ten approaches in one day",
@@ -425,10 +425,10 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "Do it in front of one person."
     ],
     [
-      "Warm up your voice",
-      "Do a three-minute vocal warm-up before you speak, then record the talk.",
-      "One warm-up and one talk.",
-      "Make it a habit before every recording this week."
+      "Warm up, then speak",
+      "Do a three-minute vocal warm-up, then give a short talk or announcement to at least one person.",
+      "One warm-up, then one talk to someone.",
+      "Make it a habit before every talk this week."
     ],
     [
       "Hold eye contact with the room",
@@ -444,9 +444,9 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
     ],
     [
       "Find your through-line",
-      "Sum up a talk you would give in one sentence of fifteen words or fewer.",
-      "One sentence.",
-      "Test it on three people and refine it."
+      "Sum up a talk you would give in one sentence of fifteen words or fewer, then say it to three people and ask them to say it back.",
+      "One sentence, tested on three people.",
+      "Rewrite it until all three say it back the same way."
     ],
     [
       "Open without “Hi, my name is”",
@@ -456,15 +456,15 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
     ],
     [
       "Build a five-minute talk",
-      "Outline a five-minute talk: opening, three points that build, and a close that returns to the opening.",
-      "One outline, then a full run.",
-      "Deliver it to one person."
+      "Outline a five-minute talk (an opening, three points that build, a close that returns to the opening) and give it to one person.",
+      "One outline, delivered to one person.",
+      "Deliver it to a small group."
     ],
     [
-      "Rehearse it ten times",
-      "Rehearse the same five-minute talk ten times out loud, recording the first and the last.",
-      "Ten run-throughs.",
-      "Rehearse in front of someone at least twice."
+      "Rehearse it in front of people",
+      "Run the same five-minute talk ten times out loud, with at least three of those in front of a real person.",
+      "Ten run-throughs, three with a listener.",
+      "Make the last run for a group of three or more."
     ],
     [
       "Find your five-second moment",
@@ -651,27 +651,27 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "Tell a joke you suspect will flop, on purpose, and enjoy the recovery."
     ],
     [
-      "Write ten jokes on one thing",
-      "Pick one topic and write ten jokes about it. Record the best three.",
-      "Ten written, three recorded.",
-      "Twenty written."
+      "Write ten, test three",
+      "Pick one topic, write ten jokes about it, then try your best three on someone and note which got a laugh.",
+      "Ten written, three tried on a person.",
+      "Try them on three different people."
     ],
     [
       "Find your angle",
-      "Write down something that annoys or confuses you, then say in one line what is ridiculous about it.",
-      "One premise with a clear angle.",
-      "Three premises on three topics."
+      "Write down something that annoys or confuses you, find what’s ridiculous about it, and bring it up with someone to see if they laugh.",
+      "One angle tried on a person.",
+      "Three angles on three topics, each tried out."
     ],
     [
       "Add tags",
-      "Take one joke that works and write three more punchlines that come right after it.",
-      "One joke with three tags.",
-      "Five tags, and keep the best two."
+      "Take a joke that works, write three more punchlines that come right after it, and tell the whole run to someone.",
+      "One joke and three tags, told to someone.",
+      "Five tags, keeping the two that get laughs."
     ],
     [
       "Cut it in half",
-      "Rewrite one joke with half the words, and put the funny word at the very end.",
-      "Two versions recorded, long and short.",
+      "Rewrite one joke with half the words and the funny word at the very end, then tell both versions to someone and see which gets the bigger laugh.",
+      "Long and short versions, both told to someone.",
       "Get it under fifteen words."
     ],
     [
@@ -694,9 +694,9 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
     ],
     [
       "Roast yourself",
-      "Write and record a one-minute roast of yourself. Be specific.",
-      "One minute of self-roast.",
-      "Perform it for friends."
+      "Write a one-minute roast of yourself and perform it for at least one friend. Be specific.",
+      "One minute of self-roast, performed for someone.",
+      "Perform it for a group."
     ],
     [
       "Tell your best story to a group",
@@ -732,31 +732,31 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
   "w": [
     [
       "Tell your origin story",
-      "Tell a two-minute true story from growing up that still makes you laugh.",
+      "Tell someone a two-minute true story from growing up that still makes you laugh.",
       "One story, two minutes.",
       "Tell it to someone who knew you then."
     ],
     [
       "Start in the scene",
-      "Tell a story that opens in the middle of the moment, with no setup.",
+      "Tell someone a story that opens in the middle of the moment, with no setup.",
       "One story with no setup.",
       "Open on a line of dialogue."
     ],
     [
       "Find the turn",
-      "Tell a story where the ending changes how you see the beginning.",
+      "Tell a friend a story where the ending changes how you see the beginning.",
       "One story with a turn.",
       "Hide the turn until the last line."
     ],
     [
       "Act it out",
-      "Retell a story and show the key moment with your body and face instead of describing it.",
+      "Retell a story to someone and show the key moment with your body and face instead of describing it.",
       "One story, acted out.",
       "Do it standing up, with room to move."
     ],
     [
       "Do the voices",
-      "Tell a story with two people in it and give each one a distinct voice.",
+      "Tell someone a story with two people in it and give each one a distinct voice.",
       "Two voices in one story.",
       "Three characters, each clear without names."
     ],
@@ -780,25 +780,25 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
     ],
     [
       "Find the light in a hard moment",
-      "Tell a story about a hard time in your own life with some lightness in it.",
+      "Tell someone you trust a story about a hard time in your own life, with some lightness in it.",
       "One story about a hard moment.",
       "End it with what it taught you."
     ],
     [
       "Explain your world",
-      "Describe a custom from your family, culture or job as if to someone who has never seen it.",
+      "Describe a custom from your family, culture or job to someone who has never seen it.",
       "One custom, explained for laughs.",
       "Tell it to someone from outside that world."
     ],
     [
       "Flip the point of view",
-      "Tell the same story twice: once as you, once as the other person in it.",
+      "Tell the same story to a friend twice: once as you, once as the other person in it.",
       "Two versions of one story.",
       "Make the other person the hero."
     ],
     [
       "Land a point",
-      "End a funny story with one honest line about what it meant to you.",
+      "Tell someone a funny story that ends with one honest line about what it meant to you.",
       "One story with a point at the end.",
       "Keep the point under ten words."
     ],
@@ -1091,10 +1091,10 @@ export const PATH_SOURCE: Record<'n' | 'f' | 'm' | 'p' | 'k' | 'b' | 'h' | 'w' |
       "Get a laugh in the first minute."
     ],
     [
-      "Write a rhyme",
-      "Write a four-line rhyme about yourself or a friend, playful and bold.",
-      "Four lines, recorded.",
-      "Perform it for someone."
+      "Rhyme for someone",
+      "Write a four-line rhyme about yourself or a friend, playful and bold, and perform it for someone.",
+      "Four lines, performed for someone.",
+      "Perform it for a group."
     ],
     [
       "Banter, never bully",
@@ -1628,12 +1628,12 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
     "steps": [
       "Set your target. Plan a first offer at about 65% of it.",
       "Plan the next steps at about 85%, 95% and 100%, so each raise is smaller than the last.",
-      "Make the final number precise, like $1,037, so it sounds worked out."
+      "Go into the conversation and use it, ending on a precise number like $1,037."
     ],
     "say": "“The most I can do is $1,037.”",
     "why": "Shrinking steps signal that you are near your limit, and a precise number sounds calculated.",
     "watch": "Jumping straight to your final number when they push.",
-    "record": "Record yourself reading the plan out loud before you go in."
+    "record": "Record a voice note after: each offer you made and where you landed."
   },
   "n16": {
     "steps": [
@@ -2088,14 +2088,14 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "p6": {
     "steps": [
-      "Describe your ideal customer in one sentence.",
-      "Find twenty who fit, and write why each one does.",
-      "Pick your top five."
+      "Write twenty names, each with one reason they’d want what you do.",
+      "Rank them and pick the top three.",
+      "Call, message or walk in to all three before the day ends."
     ],
-    "say": "“They run weekly events and post about them, so they need people to show up.”",
-    "why": "A clear list turns “I should prospect” into who you call tomorrow.",
-    "watch": "Adding names just to hit twenty.",
-    "record": "Record yourself talking through your top five and why."
+    "say": "“I put together a list of places I’d love to work with, and you were near the top.”",
+    "why": "A list only helps once you use it. Contacting the top three the same day stops the list from becoming the work.",
+    "watch": "Spending the whole session perfecting the list.",
+    "record": "Record a voice note after: who you reached and what they said."
   },
   "p7": {
     "steps": [
@@ -2198,14 +2198,14 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "p16": {
     "steps": [
-      "Use a note or a sheet with four columns.",
-      "Update it after every session.",
-      "At the end of the week, work out your ratios."
+      "Keep a tally of every contact, conversation, meeting and yes.",
+      "At the end of the week, sit down with someone and walk them through it.",
+      "Agree on one number to beat next week, out loud."
     ],
-    "say": "“40 contacts, 9 conversations, 3 meetings, 1 yes.”",
-    "why": "Knowing your ratios turns rejection into maths: every no gets you closer.",
-    "watch": "Only tracking the wins.",
-    "record": "Record a voice note reading out your numbers."
+    "say": "“Here’s my week. Where do you think I’m losing people?”",
+    "why": "Saying your numbers to someone makes them real, and an outside eye spots the leak you can’t.",
+    "watch": "Only sharing the good weeks.",
+    "record": "Record a voice note of the review."
   },
   "p17": {
     "steps": [
@@ -2231,14 +2231,14 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "k2": {
     "steps": [
-      "Hum, lip trill and stretch your jaw for a minute each.",
-      "Say a tongue twister slowly, then fast.",
-      "Record your talk straight after."
+      "Hum, lip trill and run a tongue twister for three minutes.",
+      "Find someone to listen: a friend, a coworker, a small group.",
+      "Give a two-minute talk or announcement straight after."
     ],
-    "say": "“Red leather, yellow leather.”",
-    "why": "A warm voice is richer and steadier, and the warm-up calms nerves too.",
-    "watch": "Skipping it because it feels silly.",
-    "record": "Record the warm-up and the talk."
+    "say": "“Give me two minutes, I want to try something.”",
+    "why": "A warm-up only matters if you use the voice on someone. Pairing them builds the habit.",
+    "watch": "Warming up, then saving the talk for later.",
+    "record": "Record the talk, with their okay."
   },
   "k3": {
     "steps": [
@@ -2264,14 +2264,14 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "k5": {
     "steps": [
-      "Pick a topic you could talk about.",
-      "Write the one idea you want people to leave with.",
-      "Cut it to fifteen words or fewer."
+      "Write the one idea your talk is about, in fifteen words or fewer.",
+      "Say it to someone and ask: “What would you say my talk is about?”",
+      "If their version is different, rewrite it and try the next person."
     ],
-    "say": "“Confidence is a skill you train in small reps, not a trait you’re born with.”",
-    "why": "Every great talk carries one idea. If you can’t say it in a sentence, the audience can’t either.",
-    "watch": "A topic instead of an idea.",
-    "record": "Record yourself saying it, then explaining it in a minute."
+    "say": "“If you remember one thing from this, it’s…”",
+    "why": "If a listener can’t repeat your point, the talk doesn’t have one yet.",
+    "watch": "Explaining the sentence after you say it. Let it stand alone.",
+    "record": "Record a voice note with the sentence and what each person said back."
   },
   "k6": {
     "steps": [
@@ -2286,25 +2286,25 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "k7": {
     "steps": [
-      "Start with your through-line.",
-      "Choose three points that each build on the last.",
-      "Write a close that echoes your opening."
+      "Outline it: opening, three points that build, a close that comes back to the opening.",
+      "Ask one person for five minutes of their time.",
+      "Give the talk, then ask which point they remember."
     ],
-    "say": "Open, three points, close.",
-    "why": "Structure lets you relax: you always know where you are.",
-    "watch": "Five points. Three is enough.",
-    "record": "Record one full run-through."
+    "say": "“Can I try a five-minute talk on you? I want to know what sticks.”",
+    "why": "An outline is only a guess until someone hears it. The person in front of you shows you where it drags.",
+    "watch": "Reading from your notes. Glance down, then look at them.",
+    "record": "Record the talk, with their okay."
   },
   "k8": {
     "steps": [
-      "Say the talk out loud every time, not in your head.",
-      "Record the first and the tenth.",
-      "Compare them."
+      "Do the early run-throughs out loud, not in your head.",
+      "Give it to a friend, a partner or a coworker at least three times.",
+      "After each one, ask what they’d cut and what they’d keep."
     ],
-    "say": "Same talk, tenth time.",
-    "why": "TED speakers rehearse dozens of times. Rehearsal is what makes it look easy.",
+    "say": "“Same talk, round three. Tell me where you drifted.”",
+    "why": "Rehearsal makes it look easy, and a listener makes rehearsal honest. You find the flat parts by watching a face.",
     "watch": "Memorising it word for word. Know the points, not the script.",
-    "record": "Record the first and last run-throughs."
+    "record": "Record the first run and the last one with a listener."
   },
   "k9": {
     "steps": [
@@ -2640,45 +2640,45 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
     "steps": [
       "Pick a topic you have opinions about.",
       "Write ten jokes fast. Don’t judge them yet.",
-      "Record the three you’d actually say out loud."
+      "Work your best three into a conversation and watch which one lands."
     ],
-    "say": "Quantity first, quality second.",
-    "why": "Most jokes don’t work. Writing ten is how you find the one that does.",
-    "watch": "Stopping at three because the first one was good.",
-    "record": "Record your best three."
+    "say": "Quantity on paper, judgement from a person.",
+    "why": "Most jokes don’t work, and only an audience tells you which. Writing ten gives you enough to test.",
+    "watch": "Announcing that you’re testing jokes. Just say them.",
+    "record": "Record a voice note after: which joke got the laugh."
   },
   "h6": {
     "steps": [
       "Write down something that bugs you.",
-      "Ask why it bugs you, then why again.",
-      "Say the angle in one line: what is actually ridiculous here."
+      "Ask why it bugs you, then why again, until you find the ridiculous part.",
+      "Bring it up in a chat and say the angle in one line."
     ],
     "say": "“Self-checkout means I now work at the grocery store, unpaid.”",
-    "why": "A joke needs an angle, an attitude about a thing. Without one it’s just an observation.",
+    "why": "A joke needs an angle, an attitude about a thing. Saying it to someone tells you if the angle is funny or just a complaint.",
     "watch": "Complaining without a twist.",
-    "record": "Record yourself saying the premise and one joke from it."
+    "record": "Record a voice note after with the line and how it went."
   },
   "h7": {
     "steps": [
-      "Take a joke that gets a laugh.",
+      "Take a joke that already gets a laugh.",
       "Write three more lines that build on the same idea.",
-      "Say all four in a row."
+      "Tell all four in a row to someone and note which tag got the biggest laugh."
     ],
     "say": "Joke, then tag, tag, tag.",
-    "why": "Tags squeeze more laughs out of the same setup. Pros stack them.",
+    "why": "Tags squeeze more laughs out of one setup, and a listener tells you which ones earn their place.",
     "watch": "Starting a new topic instead of building on the joke.",
-    "record": "Record the joke with its tags."
+    "record": "Record the run, with their okay."
   },
   "h8": {
     "steps": [
       "Write the joke as you’d say it.",
-      "Cut every word that isn’t doing work.",
-      "Move the funniest word to the very end."
+      "Cut every word that isn’t doing work, and end on the funny word.",
+      "Tell both versions to a friend and ask which hit harder."
     ],
-    "say": "Same joke, half the words.",
-    "why": "The shorter the setup, the bigger the laugh. The surprise has to come last.",
-    "watch": "Cutting the part that makes it make sense.",
-    "record": "Record both versions back to back."
+    "say": "“Okay, quick one. Two versions.”",
+    "why": "Shorter jokes usually hit harder, and saying both out loud to someone shows you why.",
+    "watch": "Cutting the setup so far it no longer makes sense.",
+    "record": "Record both versions as you tell them."
   },
   "h9": {
     "steps": [
@@ -2715,14 +2715,14 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "h12": {
     "steps": [
-      "List the things people tease you about.",
-      "Exaggerate each one.",
-      "Put the best one last."
+      "List the things your friends already tease you about.",
+      "Write one minute of jokes on them, with specific details.",
+      "Perform it for a friend, or open with it at a get-together."
     ],
-    "say": "“I dress like a substitute teacher who is about to tell you he also DJs.”",
-    "why": "If you can roast yourself, nobody else’s jokes can land as hard. It also shows you can take it.",
-    "watch": "Being cruel to yourself. Funny, not harsh.",
-    "record": "Record your roast."
+    "say": "“Let me save you the trouble and roast myself.”",
+    "why": "Roasting yourself in front of people shows you can take it, and it gives everyone permission to relax.",
+    "watch": "Being so harsh it stops being funny.",
+    "record": "Record it, with their okay."
   },
   "h13": {
     "steps": [
@@ -3430,14 +3430,14 @@ export const PATH_GUIDE: Record<string, { steps: string[]; say: string; why: str
   },
   "a9": {
     "steps": [
-      "Pick a subject: you, a friend, something you’re about to do.",
-      "Write four lines that rhyme.",
-      "Make it playful and bold."
+      "Pick a subject: you, or a friend who can take it.",
+      "Write four lines with a rhythm you can clap to.",
+      "Say it to someone with full energy, no apologising."
     ],
-    "say": "Your own four lines, not anyone else’s.",
-    "why": "Ali’s rhymes made people grin and remember him. Wordplay is a charisma trick anyone can learn.",
-    "watch": "Copying someone else’s lines.",
-    "record": "Record yourself saying it."
+    "say": "“Okay, hear me out. Four lines.”",
+    "why": "Ali’s rhymes worked because he said them with total belief, in front of people. Performing is the point.",
+    "watch": "Mumbling it, or laughing before the last line.",
+    "record": "Record it as you perform it, with their okay."
   },
   "a10": {
     "steps": [

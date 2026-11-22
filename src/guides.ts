@@ -590,14 +590,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "c14": {
     "steps": [
-      "Choose a place with tables near other people.",
-      "Put your phone in your bag before you sit down.",
-      "Look around, enjoy the food, and make eye contact with staff and people nearby."
+      "Pick a place with a counter or tables close together.",
+      "Put your phone in your bag before you sit.",
+      "Make one comment: ask your server what they’d order, or ask the next table about their dish."
     ],
-    "say": "",
-    "why": "Being comfortable alone in public is the base that makes approaching people easier. You stop needing a shield.",
-    "watch": "Bringing a book to hide behind. Let yourself be seen.",
-    "record": "Record a voice note before you go in and one after. Compare how you felt."
+    "say": "“That looks amazing. What did you get?”",
+    "why": "Being alone in public without a phone to hide behind is a big exposure. One small exchange turns it from sitting through a meal into talking to people.",
+    "watch": "Reading the menu for twenty minutes to have something to do.",
+    "record": "Record a voice note after: who you talked to and what was said."
   },
   "c15": {
     "steps": [
@@ -865,14 +865,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "t19": {
     "steps": [
-      "Write a one-line summary of each story.",
-      "Practise each out loud until it flows.",
-      "Trim anything that does not move it forward."
+      "Jot down three moments: one funny, one surprising, one that shows what you care about.",
+      "Tell the first one the next time a chat has a pause.",
+      "Notice where they laughed or leaned in, and tell it tighter next time."
     ],
-    "say": "",
-    "why": "Having stories ready means you never freeze when someone says “tell me about yourself”.",
-    "watch": "Memorising word for word. Know the beats, not the script.",
-    "record": "Record all three to camera and post your favourite."
+    "say": "“That reminds me of the time…”",
+    "why": "Stories only get good in front of people. A listener shows you which part is the story.",
+    "watch": "Rehearsing them alone until they sound recited.",
+    "record": "Record a voice note after each one: who heard it and what landed."
   },
   "t20": {
     "steps": [
@@ -1085,14 +1085,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "q19": {
     "steps": [
-      "Stop just outside the door.",
-      "Roll your shoulders back, lift your chin to level, and breathe.",
-      "Walk in at a calm pace."
+      "Stop outside the door for five seconds.",
+      "Shoulders back, chin level, feet planted, one slow breath.",
+      "Walk in and greet the first person you make eye contact with."
     ],
-    "say": "",
-    "why": "How you enter shapes how people read you in the first seconds.",
-    "watch": "Rushing in looking at your phone.",
-    "record": "Film yourself walking into a room twice: normal, then set. Compare."
+    "say": "“Hey, how’s it going?”",
+    "why": "A strong stance before you enter changes how you carry yourself, and greeting someone straight away locks it in before nerves creep back.",
+    "watch": "Holding the pose stiffly once you’re talking. Relax into it.",
+    "record": "Record a voice note after: who you greeted and how it felt."
   },
   "q20": {
     "steps": [
@@ -1217,36 +1217,36 @@ export const GUIDE: Record<string, Guide> = {
   },
   "v11": {
     "steps": [
-      "Hum for thirty seconds, low to high.",
-      "Do lip trills (a horse-like brr) for thirty seconds.",
-      "Say a tongue twister three times, getting faster."
+      "Hum for thirty seconds, low to high, then do thirty seconds of lip trills.",
+      "Say a tongue twister three times, getting faster.",
+      "Within ten minutes, start a conversation and notice how your voice sounds."
     ],
     "say": "Red leather, yellow leather.",
-    "why": "A warmed-up voice is clearer, steadier and less likely to crack when you are nervous.",
+    "why": "A warmed-up voice is clearer and steadier, and you only feel the difference when you use it on someone.",
     "watch": "Skipping it because it feels silly. Do it in the car.",
-    "record": "Record yourself reading the same paragraph before and after the warm-up."
+    "record": "Record a voice note after: how your voice felt in the conversation."
   },
   "v12": {
     "steps": [
       "Pick a paragraph from anything.",
-      "Read it slowly, exaggerating every consonant.",
-      "Read it again at normal speed. It will sound sharper."
+      "Read it slowly on your own, exaggerating every consonant.",
+      "Read it again at normal speed to someone and ask what they noticed."
     ],
-    "say": "",
-    "why": "Exaggerating clarity in practice makes your normal speech crisper without effort.",
+    "say": "“Can I read you something? Tell me if it’s clear.”",
+    "why": "Exaggerating clarity in practice makes your normal speech crisper, and a listener confirms it.",
     "watch": "Rushing the exaggerated read. Go slowly.",
-    "record": "Record both reads and post them back to back."
+    "record": "Record both reads."
   },
   "v13": {
     "steps": [
-      "Put a hand on your stomach.",
-      "Breathe in so your hand moves out, not your shoulders up.",
-      "Speak on that breath and notice how much steadier it sounds."
+      "Hand on your stomach: breathe in so your hand moves, not your shoulders.",
+      "Take five slow breaths like that before you start talking.",
+      "In the conversation, take a belly breath before each longer answer."
     ],
     "say": "",
-    "why": "Belly breathing gives your voice support, so it sounds fuller and calmer.",
-    "watch": "Gulping air. Breathe in slowly.",
-    "record": "Record yourself reading with chest breaths, then belly breaths."
+    "why": "Breathing from the belly steadies your voice and slows your heart rate, right when nerves want to speed you up.",
+    "watch": "Big gasps. Breathe quietly, low and slow.",
+    "record": "Record a voice note after: did your voice stay steady?"
   },
   "v14": {
     "steps": [
@@ -1272,14 +1272,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "v16": {
     "steps": [
-      "Pick a neutral sentence, like “I didn’t expect to see you here.”",
-      "Say it in each emotion, really committing.",
-      "Listen back and notice what changed."
+      "Pick a neutral sentence, like “The bus is late again.”",
+      "Say it to a friend in one emotion at a time, in random order.",
+      "Ask them to guess. Redo any they miss, bigger."
     ],
-    "say": "I didn’t expect to see you here.",
-    "why": "Most people use a tiny part of their vocal range. Stretching it makes your everyday voice more alive.",
-    "watch": "Holding back because it feels silly.",
-    "record": "Post all five versions."
+    "say": "“The bus is late again.”",
+    "why": "Most people use a tiny slice of their range. A listener guessing shows you whether the emotion is actually coming through.",
+    "watch": "Changing the words. Only the voice should change.",
+    "record": "Record all five."
   },
   "v17": {
     "steps": [
@@ -1316,14 +1316,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "v20": {
     "steps": [
-      "Pick a short children’s book.",
-      "Give each character a voice, and change pace for the exciting parts.",
-      "Read it like you are performing it."
+      "Pick a short picture book or children’s story.",
+      "Find a listener: a child, a niece or nephew, a friend who’ll play along.",
+      "Read it with a voice for each character, slowing down for the big moments."
     ],
-    "say": "",
-    "why": "Children’s stories give you permission to be expressive. That range carries into your normal speech.",
-    "watch": "Reading flat because no one is watching.",
-    "record": "Record the whole reading."
+    "say": "“Once upon a time…”",
+    "why": "Children’s stories give you permission to go big. A listener’s face shows you when you’ve got them.",
+    "watch": "Reading flat because it feels silly. Go further than feels normal.",
+    "record": "Record it, with their okay."
   },
   "v21": {
     "steps": [
@@ -1459,14 +1459,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "s13": {
     "steps": [
-      "Write who you help and what problem they have.",
-      "Write the result you give them.",
-      "Record it until it sounds natural, not memorised."
+      "Write three lines: who you help, the problem you solve, the result.",
+      "Practise it out loud until it fits in thirty seconds.",
+      "The next three times someone asks what you do, use it, and watch their face."
     ],
-    "say": "I help small gyms get more members without spending more on ads.",
-    "why": "Being able to say what you do clearly and quickly opens doors in every conversation.",
-    "watch": "Describing your process instead of the result.",
-    "record": "Post the recording."
+    "say": "“I help small cafés fill their quiet nights.”",
+    "why": "A pitch only works if a stranger gets it. People asking what you do are your test audience.",
+    "watch": "Sounding rehearsed. Say it like an answer, not a speech.",
+    "record": "Record a voice note after each one: what they asked next."
   },
   "s14": {
     "steps": [
@@ -1558,14 +1558,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "s22": {
     "steps": [
-      "Write the result they want, as big and specific as honestly possible.",
-      "Add things that make success more likely, like a guarantee or support.",
-      "Cut the time and effort it takes."
+      "Write the result they want, and what makes them doubt they’ll get it.",
+      "Add what makes it faster, easier and more certain.",
+      "Present it to a friend or a real prospect and ask what’s missing."
     ],
-    "say": "",
-    "why": "People say yes when the value clearly outweighs the price. Building the offer is selling before you speak.",
-    "watch": "Promising results you cannot deliver.",
-    "record": "Record yourself presenting the offer to camera."
+    "say": "“Here’s what you’d get, how fast, and what happens if it doesn’t work.”",
+    "why": "An offer on paper always looks good to the person who wrote it. Saying it to someone shows you where it falls flat.",
+    "watch": "Piling on extras instead of making the main result clearer.",
+    "record": "Record a voice note after with their reaction."
   },
   "s23": {
     "steps": [
@@ -1712,14 +1712,14 @@ export const GUIDE: Record<string, Guide> = {
   },
   "q32": {
     "steps": [
-      "Pick a busy hallway, mall or street.",
-      "Lift your chin to level, roll your shoulders back, slow your pace slightly.",
-      "Keep your phone in your pocket the whole way."
+      "Put your phone away and slow to a calm pace.",
+      "Head up, shoulders back, eyes forward, not down.",
+      "Catch three people’s eyes and nod or say hi."
     ],
-    "say": "",
-    "why": "How you move is the first cue people read, before you say a word. A calm walk reads as confident.",
-    "watch": "Marching stiffly. Calm and loose, not rigid.",
-    "record": "Ask a friend to film you walking, before and after."
+    "say": "“Morning.”",
+    "why": "Walking tall changes how people see you, and greeting people while you do it ties the posture to talking to people.",
+    "watch": "Speeding up when someone looks at you.",
+    "record": "Record a voice note after: who you greeted."
   },
   "v31": {
     "steps": [

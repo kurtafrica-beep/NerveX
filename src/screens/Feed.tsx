@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { LineCard, TitleChip } from '../components/LineCard';
-import { RopeTeam } from '../components/RopeTeam';
+import { ExpeditionCard, RopeTeam } from '../components/RopeTeam';
 import { useNerve } from '../data';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, Seg, T } from '../ui';
@@ -37,7 +37,8 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
       }
       ListHeaderComponent={
         <View style={{ gap: 12, marginBottom: 12 }}>
-          <RopeTeam onError={onError} />
+          <ExpeditionCard />
+          <RopeTeam onError={onError} onOpenMove={onOpenMove} />
           <T v="sub">Lines from your circle. React or say something.</T>
           <Seg
             tall
