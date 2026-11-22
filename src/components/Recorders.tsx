@@ -25,7 +25,9 @@ const VOICE: RecordingOptions = {
   bitRate: 32000,
   android: { outputFormat: 'mpeg4', audioEncoder: 'aac' },
   ios: { outputFormat: IOSOutputFormat.MPEG4AAC, audioQuality: AudioQuality.MEDIUM },
-  web: { mimeType: 'audio/webm', bitsPerSecond: 32000 },
+  // bitRate above becomes the audio bitrate. bitsPerSecond here would be split
+  // with a video track the browser assumes, leaving voice at about 5 kbps.
+  web: { mimeType: 'audio/webm' },
 };
 
 // Voice recording that starts on the same tap that asks for it.

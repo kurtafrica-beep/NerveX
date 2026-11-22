@@ -8,6 +8,7 @@ import { PATH_KEYS } from '../moves';
 import type { Reward } from './Reward';
 import { C, F } from '../theme';
 import { Btn, T } from '../ui';
+import { VoiceSetup, VoiceSettings } from './Redact';
 
 // Account settings: a sheet from the gear on the You screen.
 export function Settings({ onClose, onError, onPreview }: { onClose: () => void; onError: (message: string) => void; onPreview: (r: Reward) => void }) {
@@ -20,6 +21,7 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
   const [busy, setBusy] = useState('');
   const [note, setNote] = useState('');
   const nudges = me?.allow_nudges !== false;
+  const [voiceSetup, setVoiceSetup] = useState(false);
 
   const run = async (key: string, fn: () => Promise<string>, done: string) => {
     setBusy(key);
@@ -64,6 +66,11 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
               onPress={() => run('name', () => n.setName(name), 'Name saved.')}
               style={{ alignSelf: 'flex-start' }}
             />
+          </View>
+
+          <View style={s.group}>
+            <T style={s.h3}>Your voice</T>
+            <VoiceSettings onSetup={() => setVoiceSetup(true)} />
           </View>
 
           <View style={s.group}>
@@ -150,6 +157,7 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
           </View>
         </ScrollView>
       </View>
+      {voiceSetup ? <VoiceSetup onClose={() => setVoiceSetup(false)} /> : null}
     </Modal>
   );
 }
