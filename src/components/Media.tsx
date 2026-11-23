@@ -12,13 +12,34 @@ export function VoicePlayer({ uri, autoPlay, redaction }: { uri: string; autoPla
   const player = useAudioPlayer(uri);
   const status = useAudioPlayerStatus(player);
   const started = React.useRef(false);
+  // Say so when a tap on play doesn't start anything, instead of sitting at 0:00.
+  const [stuck, setStuck] = useState(false);
+  const check = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const play = React.useCallback(() => {
+    setStuck(false);
+    player.play();
+    if (check.current) clearTimeout(check.current);
+    check.current = setTimeout(() => {
+      try {
+        if (!player.playing && player.currentTime < 0.05) setStuck(true);
+      } catch {
+        // the player is gone
+      }
+    }, 2500);
+  }, [player]);
+  React.useEffect(
+    () => () => {
+      if (check.current) clearTimeout(check.current);
+    },
+    [],
+  );
 
   React.useEffect(() => {
     if (autoPlay && status.isLoaded && !started.current) {
       started.current = true;
-      player.play();
+      play();
     }
-  }, [autoPlay, status.isLoaded, player]);
+  }, [autoPlay, status.isLoaded, play]);
 
   const toggle = () => {
     if (status.playing) {
@@ -26,7 +47,7 @@ export function VoicePlayer({ uri, autoPlay, redaction }: { uri: string; autoPla
       return;
     }
     if (status.duration > 0 && status.currentTime >= status.duration - 0.25) player.seekTo(0);
-    player.play();
+    play();
   };
   const fraction = status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0;
   const gap = redaction?.them.find((g) => status.currentTime >= g.s && status.currentTime < g.e);
@@ -49,6 +70,9 @@ export function VoicePlayer({ uri, autoPlay, redaction }: { uri: string; autoPla
           {clockText(status.currentTime)} / {status.duration > 0 ? clockText(status.duration) : '--:--'}
           {redaction ? '   Other voices muted' : ''}
         </T>
+        {stuck && !status.playing ? (
+          <T v="error">This didn’t start playing. Turn up the media volume and close anything else using sound, then tap play again.</T>
+        ) : null}
         {gap && status.playing ? (
           <View style={s.gap} accessibilityLiveRegion="polite">
             <T v="small" style={{ color: C.ink }}>

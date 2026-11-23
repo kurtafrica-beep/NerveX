@@ -25,7 +25,7 @@ import { VideoRecorder } from './Recorders';
 import { RedactReview } from './Redact';
 import { useVoice } from '../redact/voice';
 import type { Recording } from '../data';
-import { AFTER_BEEP_MS, beep, wait } from '../beep';
+import { AFTER_BEEP_MS, beep, playbackMode, wait } from '../beep';
 
 // Quick takes: record now, decide later which move it belongs to.
 // Takes stay on this device until they're moved to a move.
@@ -59,16 +59,29 @@ export function useTakes() {
 }
 
 // Takes saved in the browser need a fresh playable URL each visit.
-function TakePlayer({ uri }: { uri: string }) {
-  const [src, setSrc] = useState(uri.startsWith('idb:') ? '' : uri);
+// A take only gets a player when you tap it, and only one take has one at a
+// time: a long list of open players can use up the phone's audio decoders.
+function TakePlayer({ uri, seconds, open, onOpen }: { uri: string; seconds: number; open: boolean; onOpen: () => void }) {
+  const [src, setSrc] = useState('');
   useEffect(() => {
+    if (!open) return;
     let live = true;
     playable(uri).then((u) => live && setSrc(u)).catch(() => {});
     return () => {
       live = false;
     };
-  }, [uri]);
-  return src ? <VoicePlayer uri={src} /> : <T v="small">Loading take…</T>;
+  }, [uri, open]);
+  if (!open) {
+    return (
+      <Pressable accessibilityRole="button" accessibilityLabel="Play this take" onPress={onOpen} style={s.closedPlayer}>
+        <View style={s.closedRound}>
+          <Icon name="play" size={22} color={C.surface} />
+        </View>
+        <T v="small">0:00 / {clockText(seconds)}</T>
+      </Pressable>
+    );
+  }
+  return src ? <VoicePlayer uri={src} autoPlay /> : <T v="small">Loading take…</T>;
 }
 
 export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: boolean; onClose: () => void; onError: (m: string) => void; onMode?: (m: 'idle' | 'manual' | 'auto') => void }) {
@@ -112,6 +125,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
     [hf, onMode],
   );
   const [picking, setPicking] = useState<Take | null>(null);
+  const [playing, setPlaying] = useState('');
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState('');
   const seg = useRef({ start: 0, firstLoud: 0, lastLoud: 0, last: 0 });
@@ -169,11 +183,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
     setMode('idle');
     await finish(true, false);
     beep('stop');
-    try {
-      await setAudioModeAsync({ allowsRecording: false });
-    } catch {
-      // nothing to undo
-    }
+    await playbackMode();
   }, [finish, setMode]);
 
   // Manual takes stop at the limit.
@@ -299,7 +309,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                         </T>
                         <T v="small">{clockText(t.seconds)}</T>
                       </View>
-                      {t.kind === 'video' ? <TakeVideo uri={t.uri} /> : <TakePlayer uri={t.uri} />}
+                      {t.kind === 'video' ? <TakeVideo uri={t.uri} /> : <TakePlayer uri={t.uri} seconds={t.seconds} open={playing === t.id && !busyMic} onOpen={() => setPlaying(t.id)} />}
                       <View style={s.row}>
                         <Btn label="Add to a move" kind="primary" small disabled={busyMic} onPress={() => setPicking(t)} />
                         <Btn
@@ -410,6 +420,8 @@ function MovePicker({ take, busy, onPick, onBack }: { take: Take; busy: boolean;
 }
 
 const s = StyleSheet.create({
+  closedPlayer: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 8, backgroundColor: C.bg },
+  closedRound: { width: 46, height: 46, borderRadius: 23, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' },
   scrim: { flex: 1, backgroundColor: 'rgba(20,32,27,0.5)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.surface, borderTopLeftRadius: 14, borderTopRightRadius: 14, padding: 16, paddingBottom: 30, gap: 14 },
   grab: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.line },

@@ -1,4 +1,16 @@
-import { createAudioPlayer, type AudioPlayer, type AudioStatus } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer, type AudioStatus } from 'expo-audio';
+
+// Back to playing after a recording. playsInSilentMode must be spelled out
+// every time: on Android, leaving it out switches it off, and then a phone on
+// vibrate or silent won't play anything, with no error.
+export async function playbackMode() {
+  try {
+    await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true });
+  } catch {
+    // nothing to undo
+  }
+}
+playbackMode();
 
 // One beep when a recording starts, two when it stops.
 // Each sound file opens with a short stretch of silence: Android drops the first
