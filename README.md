@@ -16,18 +16,8 @@ Android app built with Expo (React Native). The backend is a Supabase project: G
 | `src/auth.tsx` | Google sign-in through the system browser |
 | `src/screens/` | Sign-in, Feed, Tonight, You, and the move sheet |
 | `src/components/Recorders.tsx` | Voice recording (starts on the tap, up to 30 minutes) and the selfie video recorder (up to 1 minute) |
-| `src/redact/` | Mute other voices: the on-device engine (`engine.src.js`), its Android WebView and web hosts, and your saved voice |
-| `src/components/Redact.tsx` | Voice setup, the review sheet after a take, and the Mute other voices switch |
 | `src/config.ts` | Supabase URL and publishable key, recording limits |
 | `.github/workflows/android-apk.yml` | Builds an installable APK on every push to `main` |
-
-## Mute other voices
-
-Set up once in Account, Your voice: read a short passage aloud. Nerve keeps a description of your voice (numbers, not audio) on that device only.
-
-With Mute other voices on, every voice take opens a review before anything is saved or uploaded. The engine finds speech, groups it by voice (pitch, voice colour, loudness), keeps the group that matches you, and mutes everything else, including anything it is unsure of. You can mute more, but never unmute someone else. You can add a short line for each muted gap. The saved file is a WAV with only your side; the original is deleted.
-
-It runs on the device: in a hidden WebView on Android, in the page on the web. The engine is `src/redact/engine.src.js`; after editing it run `node scripts/build-engine.mjs` (CI checks this). Hands-free takes and quick takes go through the same review. Video is not redacted, so film yourself, not them.
 
 ## Sign-in: email and password
 

@@ -68,7 +68,7 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
 
       {line.line ? <T>{line.line}</T> : null}
       {line.media_path && line.media_kind ? (
-        <RemoteMedia path={line.media_path} kind={line.media_kind} seconds={line.media_seconds} redaction={line.redaction} />
+        <RemoteMedia path={line.media_path} kind={line.media_kind} seconds={line.media_seconds} />
       ) : null}
       {mates.length ? <T v="small">Together with {mates.map(n.nameOf).join(', ')}</T> : null}
 

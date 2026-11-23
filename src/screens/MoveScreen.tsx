@@ -12,8 +12,6 @@ import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
 import { GUIDE } from '../guides';
 import { MentorLine, MENTOR } from '../components/Mentor';
-import { MuteOthersRow, RedactReview, VoiceSetup } from '../components/Redact';
-import { useVoice } from '../redact/voice';
 import { parseMoveKey } from '../placePaths';
 import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
 import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
@@ -38,10 +36,6 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState('');
-  // voice takes waiting for you to review your side before they save
-  const [review, setReview] = useState<Recording[]>([]);
-  const [voiceSetup, setVoiceSetup] = useState(false);
-  const { muteOthers } = useVoice();
 
   const locked = !unlocked(move, n.count, n.progress.open, n.progress.level, n.test);
   const pathShut = isPath(move.b) && !n.progress.open[move.b];
@@ -94,31 +88,13 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
         return false;
       }
       setFailed(null);
-      setSaved(
-        take.redaction
-          ? 'Your side saved to your log, other voices muted. Only you can see it until you post it.'
-          : `${take.kind === 'voice' ? 'Voice note' : 'Video'} saved to your log. Only you can see it until you post it.`,
-      );
+      setSaved(`${take.kind === 'voice' ? 'Voice note' : 'Video'} saved to your log. Only you can see it until you post it.`);
       return true;
     },
     [dropLine, locked, move.id, version, via],
   );
-  // With Mute other voices on, a voice take goes to review first and nothing
-  // is uploaded until you save your side.
-  const takeIn = useCallback(
-    async (take: Recording): Promise<boolean> => {
-      if (take.kind === 'voice' && muteOthers && !take.redaction) {
-        setError('');
-        setSaved('');
-        setReview((q) => [...q, take]);
-        return true;
-      }
-      return saveTake(take);
-    },
-    [muteOthers, saveTake],
-  );
-  const voice = useVoiceRecorder(takeIn);
-  const handsFree = useHandsFree(takeIn);
+  const voice = useVoiceRecorder(saveTake);
+  const handsFree = useHandsFree(saveTake);
 
   // Android back: close the camera first, then the sheet.
   useEffect(() => {
@@ -262,7 +238,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             {handsFree.on ? (
               <HandsFreePanel hf={handsFree} />
             ) : voice.active ? (
-              <RecordingBar seconds={voice.seconds} limit={MAX_AUDIO_SECONDS} onStop={voice.stop} />
+              <RecordingBar seconds={voice.seconds} limit={MAX_AUDIO_SECONDS} mic={ON_WEB ? undefined : voice.mic} onStop={voice.stop} />
             ) : saving ? (
               <View style={s.status}>
                 <T v="semi" style={{ fontSize: 16 }}>
@@ -298,7 +274,6 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                 )}
               </View>
             )}
-            {!voice.active && !saving && !handsFree.on ? <MuteOthersRow onSetup={() => setVoiceSetup(true)} /> : null}
             {!ON_WEB && !handsFree.on && !voice.active && !saving ? (
               <Btn
                 label="Hands-free: say start and stop"
@@ -385,16 +360,6 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {review[0] ? (
-        <RedactReview
-          key={review[0].uri}
-          take={review[0]}
-          onSave={saveTake}
-          onDiscard={() => setReview((q) => q.slice(1))}
-        />
-      ) : null}
-      {voiceSetup ? <VoiceSetup onClose={() => setVoiceSetup(false)} /> : null}
-
       {camera ? (
         <VideoRecorder
           onCancel={() => setCamera(false)}
@@ -427,7 +392,7 @@ function LogItem({ line, onError }: { line: Line; onError: (message: string) => 
         <T style={[s.badge, isPrivate ? s.badgePrivate : s.badgePosted]}>{isPrivate ? 'Private' : 'Posted'}</T>
       </View>
       {line.line ? <T>{line.line}</T> : null}
-      {line.media_path && line.media_kind ? <RemoteMedia path={line.media_path} kind={line.media_kind} seconds={line.media_seconds} redaction={line.redaction} /> : null}
+      {line.media_path && line.media_kind ? <RemoteMedia path={line.media_path} kind={line.media_kind} seconds={line.media_seconds} /> : null}
       {isPrivate ? (
         <View style={{ gap: 8 }}>
           <TextInput

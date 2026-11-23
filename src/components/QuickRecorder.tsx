@@ -22,10 +22,8 @@ import { Btn, Icon, T } from '../ui';
 import { HandsFreePanel, useHandsFree } from './HandsFree';
 import { VideoPlayer, VoicePlayer } from './Media';
 import { VideoRecorder } from './Recorders';
-import { RedactReview } from './Redact';
-import { useVoice } from '../redact/voice';
-import type { Recording } from '../data';
 import { AFTER_BEEP_MS, beep, playbackMode, wait } from '../beep';
+import { MIC_LABEL, pickHeadsetMic, releaseHeadsetMic, type Mic } from '../mic';
 
 // Quick takes: record now, decide later which move it belongs to.
 // Takes stay on this device until they're moved to a move.
@@ -126,6 +124,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   );
   const [picking, setPicking] = useState<Take | null>(null);
   const [playing, setPlaying] = useState('');
+  const [mic, setMic] = useState<Mic>('phone');
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState('');
   const seg = useRef({ start: 0, firstLoud: 0, lastLoud: 0, last: 0 });
@@ -139,6 +138,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
 
   const begin = useCallback(async () => {
     await recorder.prepareToRecordAsync();
+    setMic(await pickHeadsetMic(recorder));
     await beep('start');
     await wait(AFTER_BEEP_MS);
     recorder.record();
@@ -152,6 +152,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
       } catch {
         // the file is still there
       }
+      releaseHeadsetMic(recorder);
       const uri = recorder.uri;
       const seconds = (Date.now() - seg.current.start) / 1000;
       if (!uri) return;
@@ -198,27 +199,17 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   const voiceOn = hf.on;
   const busyMic = recording || voiceOn;
 
-  const { muteOthers } = useVoice();
-  const [reviewing, setReviewing] = useState<{ take: Take; move: Move } | null>(null);
-
-  const moveTo = async (take: Take, move: Move, redacted?: Recording) => {
-    // With Mute other voices on, check your side before it goes anywhere.
-    if (!redacted && muteOthers && (take.kind ?? 'voice') === 'voice') {
-      setReviewing({ take, move });
-      return false;
-    }
+  const moveTo = async (take: Take, move: Move) => {
     setBusy(take.id);
-    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: redacted ?? { kind: take.kind ?? 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
+    const problem = await n.dropLine({ move: move.id, line: '', upgrade: false, recording: { kind: take.kind ?? 'voice', uri: take.uri, seconds: take.seconds, wav: take.wav }, posted: false });
     setBusy('');
     if (problem) {
       onError(problem);
-      return false;
+      return;
     }
     remove(take.uri);
-    if (redacted) remove(redacted.uri);
     save(takesRef.current.filter((t) => t.id !== take.id));
     setPicking(null);
-    return true;
   };
 
   return (
@@ -260,7 +251,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                 <View style={{ flex: 1, gap: 6 }}>
                   <T style={s.clock}>{recording ? clockText(state.durationMillis / 1000) : '0:00'}</T>
                   <T v="small" style={{ color: C.ink }}>
-                    {mode === 'manual' ? 'Recording. Tap to stop.' : voiceOn ? 'Voice commands are on. Use them below.' : ON_WEB ? 'Tap to record. It goes to your takes below.' : 'Voice or video, up to 90 seconds on video. It goes to your takes below.'}
+                    {mode === 'manual' ? (ON_WEB ? 'Recording. Tap to stop.' : `Recording on the ${MIC_LABEL[mic].toLowerCase()}. Tap to stop.`) : voiceOn ? 'Voice commands are on. Use them below.' : ON_WEB ? 'Tap to record. It goes to your takes below.' : 'Voice or video, up to 90 seconds on video. It goes to your takes below.'}
                   </T>
                   <View style={s.meter}>
                     <View style={[s.meterFill, { width: `${Math.round(level * 100)}%` }]} />
@@ -340,15 +331,6 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
             }}
           />
         </Modal>
-      ) : null}
-      {reviewing ? (
-        <RedactReview
-          key={reviewing.take.id}
-          take={{ kind: 'voice', uri: reviewing.take.uri, seconds: reviewing.take.seconds, wav: reviewing.take.wav }}
-          keepOnCancel
-          onSave={(rec) => moveTo(reviewing.take, reviewing.move, rec)}
-          onDiscard={() => setReviewing(null)}
-        />
       ) : null}
     </Modal>
   );

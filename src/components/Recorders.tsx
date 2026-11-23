@@ -16,6 +16,7 @@ import { clockText, type Recording } from '../data';
 import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
 import { AFTER_BEEP_MS, beep, playbackMode, wait } from '../beep';
+import { MIC_LABEL, pickHeadsetMic, releaseHeadsetMic, type Mic } from '../mic';
 
 // Speech-quality mono AAC: about 7 MB for a full 30 minutes.
 const VOICE: RecordingOptions = {
@@ -35,6 +36,7 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
   const recorder = useAudioRecorder(VOICE);
   const state = useAudioRecorderState(recorder, 500);
   const [active, setActive] = useState(false);
+  const [mic, setMic] = useState<Mic>('phone');
   const last = useRef(0);
   const stopping = useRef(false);
 
@@ -49,6 +51,7 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
     try {
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
+      setMic(await pickHeadsetMic(recorder));
       await beep('start');
       await wait(AFTER_BEEP_MS);
       last.current = 0;
@@ -66,10 +69,11 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
     stopping.current = true;
     try {
       await recorder.stop();
-      await playbackMode();
     } catch {
       // The file is still there if the recorder stopped on its own.
     }
+    releaseHeadsetMic(recorder);
+    await playbackMode();
     beep('stop');
     setActive(false);
     const uri = recorder.uri;
@@ -81,16 +85,18 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
     if (active && state.durationMillis >= MAX_AUDIO_SECONDS * 1000) stop();
   }, [active, state.durationMillis, stop]);
 
-  return { active, seconds: (active ? state.durationMillis : 0) / 1000, start, stop };
+  return { active, seconds: (active ? state.durationMillis : 0) / 1000, mic, start, stop };
 }
 
-export function RecordingBar({ seconds, limit, onStop }: { seconds: number; limit: number; onStop: () => void }) {
+export function RecordingBar({ seconds, limit, mic, onStop }: { seconds: number; limit: number; mic?: Mic; onStop: () => void }) {
   return (
     <View style={s.bar}>
       <View style={s.dot} />
       <View style={{ flex: 1 }}>
         <T v="semi">Recording {clockText(seconds)}</T>
-        <T v="small">Stops by itself at {clockText(limit)}</T>
+        <T v="small">
+          {mic ? `${MIC_LABEL[mic]}. ` : ''}Stops by itself at {clockText(limit)}
+        </T>
       </View>
       <Btn label="Stop" icon="stop" kind="dark" small onPress={onStop} />
     </View>

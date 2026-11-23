@@ -7,7 +7,6 @@ import { BRANCH, BY, MOVES, ORDER, isPath, unlocked, type BranchKey, type Move }
 import { computeProgress, type Progress } from './progress';
 import type { ReactionKey } from './reactions';
 import { supabase } from './supabase';
-import type { Redaction } from './redact/types';
 
 export type Profile = { id: string; name: string; avatar_url: string | null; title: string | null; allow_nudges?: boolean };
 export type MediaKind = 'voice' | 'video';
@@ -24,8 +23,6 @@ export type Line = {
   posted: boolean;
   // place lines done in a path's version: which path
   via?: string | null;
-  // set when other voices were muted out of the recording
-  redaction?: Redaction | null;
   created_at: string;
 };
 export type Comment = { id: string; line_id: string; author: string; body: string; created_at: string };
@@ -34,8 +31,7 @@ export type Follow = { follower: string; followee: string };
 export type BoardRow = { uid: string; pts: number; lines: number; reacts: number };
 export type Challenge = { id: string; author: string; target: string; move: string; until: string; created_at: string };
 // wav marks a hands-free take: the speech recognizer saves raw WAV audio.
-// redaction marks a take with other voices muted out (see src/redact).
-export type Recording = { kind: MediaKind; uri: string; seconds: number; wav?: boolean; redaction?: Redaction };
+export type Recording = { kind: MediaKind; uri: string; seconds: number; wav?: boolean };
 
 type Store = {
   profiles: Record<string, Profile>;
@@ -307,7 +303,6 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
         media_seconds: recording ? Math.min(1830, Math.round(recording.seconds)) : null,
         posted,
         via: via && move.startsWith('x') ? via : null,
-        ...(recording?.redaction ? { redaction: recording.redaction } : {}),
       });
       if (error) {
         if (path) supabase.storage.from(BUCKET).remove([path]);
