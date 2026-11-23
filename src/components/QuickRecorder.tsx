@@ -23,7 +23,7 @@ import { HandsFreePanel, useHandsFree } from './HandsFree';
 import { VideoPlayer, VoicePlayer } from './Media';
 import { VideoRecorder } from './Recorders';
 import { AFTER_BEEP_MS, beep, playbackMode, wait } from '../beep';
-import { MIC_LABEL, pickHeadsetMic, releaseHeadsetMic, type Mic } from '../mic';
+import { closeHeadsetMic, MIC_LABEL, micInUse, openHeadsetMic, type Mic } from '../mic';
 
 // Quick takes: record now, decide later which move it belongs to.
 // Takes stay on this device until they're moved to a move.
@@ -125,6 +125,8 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
   const [picking, setPicking] = useState<Take | null>(null);
   const [playing, setPlaying] = useState('');
   const [mic, setMic] = useState<Mic>('phone');
+  const [starting, setStarting] = useState(false);
+  const micCheck = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState('');
   const seg = useRef({ start: 0, firstLoud: 0, lastLoud: 0, last: 0 });
@@ -138,11 +140,14 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
 
   const begin = useCallback(async () => {
     await recorder.prepareToRecordAsync();
-    setMic(await pickHeadsetMic(recorder));
+    const picked = await openHeadsetMic();
+    setMic(picked);
     await beep('start');
     await wait(AFTER_BEEP_MS);
     recorder.record();
     seg.current = { start: Date.now(), firstLoud: 0, lastLoud: 0, last: 0 };
+    // Then check where the sound is really coming from, and say so.
+    micCheck.current = setTimeout(() => setMic(micInUse(picked)), 1500);
   }, [recorder]);
 
   const finish = useCallback(
@@ -152,7 +157,8 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
       } catch {
         // the file is still there
       }
-      releaseHeadsetMic(recorder);
+      if (micCheck.current) clearTimeout(micCheck.current);
+      closeHeadsetMic();
       const uri = recorder.uri;
       const seconds = (Date.now() - seg.current.start) / 1000;
       if (!uri) return;
@@ -169,13 +175,17 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
         onError('Nerve needs the microphone to record. Allow it in your phone settings.');
         return;
       }
+      // A Bluetooth mic takes a second or two to open.
+      setStarting(true);
       try {
         await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
         await begin();
         setMode(next);
       } catch {
+        closeHeadsetMic();
         onError('Recording could not start. Close other apps using the microphone and try again.');
       }
+      setStarting(false);
     },
     [begin, onError, setMode],
   );
@@ -233,7 +243,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={recording ? 'Stop recording' : 'Start recording'}
-                  disabled={voiceOn}
+                  disabled={voiceOn || starting}
                   onPress={() => (recording ? stopAll() : startMode('manual'))}
                   style={({ pressed }) => [s.big, recording && s.bigOn, voiceOn && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.96 }] }]}>
                   <Icon name={recording ? 'stop' : 'mic'} size={36} color={recording ? '#FFFFFF' : C.ink} width={2.4} />
@@ -251,7 +261,7 @@ export function QuickRecorder({ visible, onClose, onError, onMode }: { visible: 
                 <View style={{ flex: 1, gap: 6 }}>
                   <T style={s.clock}>{recording ? clockText(state.durationMillis / 1000) : '0:00'}</T>
                   <T v="small" style={{ color: C.ink }}>
-                    {mode === 'manual' ? (ON_WEB ? 'Recording. Tap to stop.' : `Recording on the ${MIC_LABEL[mic].toLowerCase()}. Tap to stop.`) : voiceOn ? 'Voice commands are on. Use them below.' : ON_WEB ? 'Tap to record. It goes to your takes below.' : 'Voice or video, up to 90 seconds on video. It goes to your takes below.'}
+                    {starting ? 'Getting the mic ready…' : mode === 'manual' ? (ON_WEB ? 'Recording. Tap to stop.' : `Recording. ${MIC_LABEL[mic]}. Tap to stop.`) : voiceOn ? 'Voice commands are on. Use them below.' : ON_WEB ? 'Tap to record. It goes to your takes below.' : 'Voice or video, up to 90 seconds on video. It goes to your takes below.'}
                   </T>
                   <View style={s.meter}>
                     <View style={[s.meterFill, { width: `${Math.round(level * 100)}%` }]} />

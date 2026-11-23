@@ -248,9 +248,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
             ) : (
               <View style={s.recRow}>
                 <Btn
-                  label={n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another audio' : 'Record audio'}
+                  label={voice.opening ? 'Getting the mic ready…' : n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another audio' : 'Record audio'}
                   icon="mic"
-                  disabled={locked}
+                  disabled={locked || voice.opening}
                   style={{ flex: 1, paddingHorizontal: 10 }}
                   onPress={async () => {
                     setError('');

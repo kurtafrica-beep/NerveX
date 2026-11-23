@@ -16,7 +16,7 @@ import { clockText, type Recording } from '../data';
 import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
 import { AFTER_BEEP_MS, beep, playbackMode, wait } from '../beep';
-import { MIC_LABEL, pickHeadsetMic, releaseHeadsetMic, type Mic } from '../mic';
+import { closeHeadsetMic, MIC_LABEL, micInUse, openHeadsetMic, type Mic } from '../mic';
 
 // Speech-quality mono AAC: about 7 MB for a full 30 minutes.
 const VOICE: RecordingOptions = {
@@ -39,6 +39,9 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
   const [mic, setMic] = useState<Mic>('phone');
   const last = useRef(0);
   const stopping = useRef(false);
+  const starting = useRef(false);
+  const [opening, setOpening] = useState(false);
+  const micCheck = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Remember the running length: the recorder reports zero once it stops.
   useEffect(() => {
@@ -46,21 +49,32 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
   }, [state.isRecording, state.durationMillis]);
 
   const start = useCallback(async (): Promise<string> => {
-    const permission = await requestRecordingPermissionsAsync();
-    if (!permission.granted) return 'Nerve needs the microphone to record. Allow it in your phone settings.';
+    // A Bluetooth mic takes a second or two to open; ignore taps while it does.
+    if (starting.current) return '';
+    starting.current = true;
+    setOpening(true);
     try {
+      const permission = await requestRecordingPermissionsAsync();
+      if (!permission.granted) return 'Nerve needs the microphone to record. Allow it in your phone settings.';
       await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
       await recorder.prepareToRecordAsync();
-      setMic(await pickHeadsetMic(recorder));
+      const picked = await openHeadsetMic();
+      setMic(picked);
       await beep('start');
       await wait(AFTER_BEEP_MS);
       last.current = 0;
       stopping.current = false;
       recorder.record();
       setActive(true);
+      // Then check where the sound is really coming from, and say so.
+      micCheck.current = setTimeout(() => setMic(micInUse(picked)), 1500);
       return '';
     } catch {
+      closeHeadsetMic();
       return 'Recording could not start. Close other apps using the microphone and try again.';
+    } finally {
+      starting.current = false;
+      setOpening(false);
     }
   }, [recorder]);
 
@@ -72,7 +86,8 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
     } catch {
       // The file is still there if the recorder stopped on its own.
     }
-    releaseHeadsetMic(recorder);
+    if (micCheck.current) clearTimeout(micCheck.current);
+    closeHeadsetMic();
     await playbackMode();
     beep('stop');
     setActive(false);
@@ -85,7 +100,7 @@ export function useVoiceRecorder(onDone: (rec: Recording) => void) {
     if (active && state.durationMillis >= MAX_AUDIO_SECONDS * 1000) stop();
   }, [active, state.durationMillis, stop]);
 
-  return { active, seconds: (active ? state.durationMillis : 0) / 1000, mic, start, stop };
+  return { active, seconds: (active ? state.durationMillis : 0) / 1000, mic, opening, start, stop };
 }
 
 export function RecordingBar({ seconds, limit, mic, onStop }: { seconds: number; limit: number; mic?: Mic; onStop: () => void }) {

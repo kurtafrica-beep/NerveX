@@ -5,6 +5,8 @@ import { useAuth } from '../auth';
 import { useNerve } from '../data';
 import { inviteCode, sendInvite } from '../invite';
 import { PATH_KEYS } from '../moves';
+import { lastMic, micsSeen } from '../mic';
+import { ON_WEB } from '../platform';
 import type { Reward } from './Reward';
 import { C, F } from '../theme';
 import { Btn, T } from '../ui';
@@ -19,6 +21,7 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
   const [word, setWord] = useState('');
   const [busy, setBusy] = useState('');
   const [note, setNote] = useState('');
+  const [mics] = useState(() => micsSeen());
   const nudges = me?.allow_nudges !== false;
 
   const run = async (key: string, fn: () => Promise<string>, done: string) => {
@@ -65,6 +68,17 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
               style={{ alignSelf: 'flex-start' }}
             />
           </View>
+
+          {ON_WEB ? null : (
+            <View style={s.group}>
+              <T style={s.h3}>Microphone</T>
+              <T v="small">Voice takes record from a headset’s mic when one is connected, and from the phone when not. A Bluetooth mic takes a second or two to open, and sounds like a phone call.</T>
+              <T v="semi" style={{ fontSize: 15 }}>
+                Connected now: {mics.length ? mics.join(', ') : 'Phone mic'}
+              </T>
+              {lastMic() ? <T v="small">Last take: {lastMic()}</T> : null}
+            </View>
+          )}
 
           <View style={s.group}>
             <T style={s.h3}>Friends</T>

@@ -16,6 +16,7 @@ Android app built with Expo (React Native). The backend is a Supabase project: G
 | `src/auth.tsx` | Google sign-in through the system browser |
 | `src/screens/` | Sign-in, Feed, Tonight, You, and the move sheet |
 | `src/components/Recorders.tsx` | Voice recording (starts on the tap, up to 30 minutes) and the selfie video recorder (up to 1 minute) |
+| `src/mic.ts`, `modules/nerve-mic/` | Records from a connected headset's mic on Android. The module is native Kotlin: it opens the headset's call link before a take and closes it after |
 | `src/config.ts` | Supabase URL and publishable key, recording limits |
 | `.github/workflows/android-apk.yml` | Builds an installable APK on every push to `main` |
 
