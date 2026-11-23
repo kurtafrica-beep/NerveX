@@ -302,10 +302,19 @@
       return NR.decodeBuffer(bytes.buffer);
     },
     decodeBuffer: function (buf) {
-      var Ctx = root.AudioContext || root.webkitAudioContext;
-      var ctx = new Ctx();
+      // An offline context never opens the speaker, so it can't take audio
+      // focus from the player (a live AudioContext in the Android WebView did,
+      // and previews wouldn't play). It also resamples straight to 16 kHz.
+      var Off = root.OfflineAudioContext || root.webkitOfflineAudioContext;
+      var ctx;
+      try {
+        ctx = new Off(1, 1, SR);
+      } catch (e) {
+        ctx = new Off(1, 1, 44100);
+      }
       return new Promise(function (resolve, reject) {
-        ctx.decodeAudioData(buf, resolve, reject);
+        var p = ctx.decodeAudioData(buf, resolve, reject);
+        if (p && p.then) p.then(resolve, reject);
       }).then(function (ab) {
         var ch = ab.getChannelData(0), mono = ch;
         if (ab.numberOfChannels > 1) {
@@ -314,7 +323,6 @@
           for (var i = 0; i < ch.length; i++) mono[i] = (ch[i] + ch2[i]) / 2;
         }
         NR.pcm = resample(mono, ab.sampleRate);
-        if (ctx.close) ctx.close();
         return { seconds: NR.pcm.length / SR };
       });
     },
