@@ -17,6 +17,7 @@ import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
 import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
 import { useStage } from '../stage';
+import { REACT } from '../reactions';
 import { FEARED, NERVE_WORDS, WENT, addReflection, analyse, freshFlow, loadFlow, myReflections, saveFlow, type Flow, type Reflection, type Step } from '../reflect';
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Fold, Icon, Pill, Seg, T } from '../ui';
@@ -516,7 +517,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               ) : (
                 <View style={{ gap: 10 }}>
                   {(open.log ? mineHere : mineHere.slice(0, 1)).map((x) => (
-                    <LogItem key={x.id} line={x} onError={setError} />
+                    <LogItem key={x.id} line={x} reflection={reflectionFor(x, history)} onError={setError} />
                   ))}
                   {mineHere.length > 1 ? (
                     <Pressable accessibilityRole="button" accessibilityState={{ expanded: !!open.log }} onPress={() => toggle('log')} hitSlop={8} style={{ alignSelf: 'flex-start', paddingVertical: 4 }}>
@@ -647,24 +648,102 @@ function ResultCard({ r, history, xp, hasUpgrade, onUpgrade, onFeed, onDone }: {
 }
 
 // One entry in your log. Private takes can be played back and posted with an optional caption.
-function LogItem({ line, onError }: { line: Line; onError: (message: string) => void }) {
+// The reflection saved with a line: same move, within a few minutes of it.
+function reflectionFor(line: Line, history: Reflection[]): Reflection | null {
+  const at = new Date(line.created_at).getTime();
+  let best: Reflection | null = null;
+  let gap = 10 * 60000;
+  for (const r of history) {
+    if (r.move !== line.move) continue;
+    const d = Math.abs(new Date(r.created_at).getTime() - at);
+    if (d <= gap) {
+      gap = d;
+      best = r;
+    }
+  }
+  return best;
+}
+
+const WENT_WORD = { well: 'Went well', mixed: 'Mixed', rough: 'Rough' };
+const FEARED_WORD = { no: 'It didn’t happen.', partly: 'It partly happened.', yes: 'It happened, and you still did it.' };
+
+function LogItem({ line, reflection, onError }: { line: Line; reflection: Reflection | null; onError: (message: string) => void }) {
   const n = useNerve();
   const [caption, setCaption] = useState('');
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
   const isPrivate = line.posted === false;
   const kind = line.media_kind === 'voice' ? 'Voice note' : line.media_kind === 'video' ? 'Video' : '';
+  const kudos = n.kudosFor(line.id);
+  const comments = n.commentsFor(line.id);
+  const counts: Record<string, number> = {};
+  for (const k of kudos) counts[k.kind] = (counts[k.kind] ?? 0) + 1;
+  const r = reflection;
+  const hasDetail = !!r || !isPrivate;
+  const summary = [r?.nerve_before && r?.nerve_after ? `Nerves ${r.nerve_before} → ${r.nerve_after}` : '', kudos.length ? `${kudos.length} ${kudos.length === 1 ? 'reaction' : 'reactions'}` : '', comments.length ? `${comments.length} ${comments.length === 1 ? 'comment' : 'comments'}` : '']
+    .filter(Boolean)
+    .join(', ');
   return (
     <View style={s.logItem}>
-      <View style={s.logMeta}>
-        <T v="small" style={{ flex: 1 }}>
-          {stamp(line.created_at)}
-          {line.upgrade ? ' · Upgrade' : ''}
-          {kind ? ` · ${kind}` : ''}
-          {line.media_seconds ? ` · ${clockText(line.media_seconds)}` : ''}
-        </T>
-        <T style={[s.badge, isPrivate ? s.badgePrivate : s.badgePosted]}>{isPrivate ? 'Private' : 'Posted'}</T>
-      </View>
-      {line.line ? <T>{line.line}</T> : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`${stamp(line.created_at)}. ${line.line || kind}. ${open ? 'Hide details' : 'Show details'}`}
+        disabled={!hasDetail}
+        onPress={() => setOpen((o) => !o)}
+        style={{ gap: 8 }}>
+        <View style={s.logMeta}>
+          <T v="small" style={{ flex: 1 }}>
+            {stamp(line.created_at)}
+            {line.upgrade ? ' · Upgrade' : ''}
+            {kind ? ` · ${kind}` : ''}
+            {line.media_seconds ? ` · ${clockText(line.media_seconds)}` : ''}
+          </T>
+          <T style={[s.badge, isPrivate ? s.badgePrivate : s.badgePosted]}>{isPrivate ? 'Private' : 'Posted'}</T>
+        </View>
+        {line.line ? <T>{line.line}</T> : null}
+        {hasDetail ? (
+          <View style={s.logMore}>
+            <T v="small" style={{ flex: 1 }}>{open ? 'Hide details' : summary || 'Details'}</T>
+            <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}>
+              <Icon name="chevron" size={16} color={C.muted} />
+            </View>
+          </View>
+        ) : null}
+      </Pressable>
+      {open ? (
+        <View style={s.logDetail}>
+          {r ? (
+            <View style={{ gap: 4 }}>
+              <T v="small" style={{ fontFamily: F.semi }}>How it went</T>
+              <T>
+                {[r.went ? WENT_WORD[r.went] : '', r.nerve_before && r.nerve_after ? `nerves ${r.nerve_before} before, ${r.nerve_after} during` : r.nerve_before ? `nerves ${r.nerve_before} before` : '']
+                  .filter(Boolean)
+                  .join(', ')
+                  .replace(/^n/, 'N') || 'Logged'}
+              </T>
+              {r.fear ? <T v="sub">{`You expected “${r.fear}”.${r.feared ? ` ${FEARED_WORD[r.feared]}` : ''}`}</T> : null}
+            </View>
+          ) : (
+            <T v="small">No reflection saved with this one.</T>
+          )}
+          {isPrivate ? null : (
+            <View style={{ gap: 6 }}>
+              <T v="small" style={{ fontFamily: F.semi }}>On the feed</T>
+              {kudos.length ? (
+                <T>{Object.entries(counts).map(([k, c]) => `${REACT[k]?.e ?? ''} ${c}`).join('   ')}</T>
+              ) : (
+                <T v="sub">No reactions yet.</T>
+              )}
+              {comments.map((c) => (
+                <T key={c.id} style={{ fontSize: 15, lineHeight: 21 }}>
+                  <T v="semi" style={{ fontSize: 15 }}>{n.nameOf(c.author)}</T> {c.body}
+                </T>
+              ))}
+            </View>
+          )}
+        </View>
+      ) : null}
       {line.media_path && line.media_kind ? <RemoteMedia path={line.media_path} kind={line.media_kind} seconds={line.media_seconds} /> : null}
       {isPrivate ? (
         <View style={{ gap: 8 }}>
@@ -777,6 +856,8 @@ const s = StyleSheet.create({
   barNow: { backgroundColor: C.accent },
   logWrap: { gap: 10, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line },
   logTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logMore: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 2 },
+  logDetail: { gap: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line },
   logItem: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });
 
