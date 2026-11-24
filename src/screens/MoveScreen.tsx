@@ -503,17 +503,31 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                 </View>
               )}
             </Fold>
-            <Fold title="Your log" count={mineHere.length} open={!!open.log} onToggle={() => toggle('log')} rule>
+            {/* Your log: the latest entry shows, the rest open with one tap. */}
+            <View style={s.logWrap}>
+              <View style={s.logTop}>
+                <T v="semi" style={{ fontSize: 17, flex: 1 }}>
+                  Your log
+                </T>
+                <T v="semi">{mineHere.length}</T>
+              </View>
               {mineHere.length === 0 ? (
                 <T v="sub">Nothing here yet. Your first take or line starts the log.</T>
               ) : (
                 <View style={{ gap: 10 }}>
-                  {mineHere.map((x) => (
+                  {(open.log ? mineHere : mineHere.slice(0, 1)).map((x) => (
                     <LogItem key={x.id} line={x} onError={setError} />
                   ))}
+                  {mineHere.length > 1 ? (
+                    <Pressable accessibilityRole="button" accessibilityState={{ expanded: !!open.log }} onPress={() => toggle('log')} hitSlop={8} style={{ alignSelf: 'flex-start', paddingVertical: 4 }}>
+                      <T style={{ fontFamily: F.semi, fontSize: 15, color: C.ink, textDecorationLine: 'underline' }}>
+                        {open.log ? 'Show only the latest' : `Show ${mineHere.length - 1} more`}
+                      </T>
+                    </Pressable>
+                  ) : null}
                 </View>
               )}
-            </Fold>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -761,6 +775,8 @@ const s = StyleSheet.create({
   barCol: { alignItems: 'center', gap: 4 },
   bar1: { width: 44, borderTopLeftRadius: 6, borderTopRightRadius: 6, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.bgDeep },
   barNow: { backgroundColor: C.accent },
+  logWrap: { gap: 10, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line },
+  logTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logItem: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });
 
