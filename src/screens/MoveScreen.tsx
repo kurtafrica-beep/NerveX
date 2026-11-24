@@ -358,7 +358,10 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                       </T>
                     </View>
                   ) : (
-                    <Fold title="Record it" hint="Optional" open={!!open.rec} onToggle={() => toggle('rec')}>
+                    <View style={{ gap: 10, marginTop: 4 }}>
+                      <T v="semi" style={s.q}>
+                        Record it <T v="small">Optional</T>
+                      </T>
                       <View style={{ gap: 10 }}>
                         <View style={s.recRow}>
                           <Btn
@@ -400,7 +403,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                         ) : null}
                         <T v="small">{ON_WEB ? 'Takes save privately to your log. Video and hands-free are in the Android app.' : 'Takes save privately to your log. Film yourself, not them.'}</T>
                       </View>
-                    </Fold>
+                    </View>
                   )}
                   {handsFree.error ? <T v="error">{handsFree.error}</T> : null}
                   {saved ? (
