@@ -3,11 +3,13 @@ import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'r
 import { LineCard, TitleChip } from '../components/LineCard';
 import { ExpeditionCard, RopeTeam } from '../components/RopeTeam';
 import { useNerve } from '../data';
+import { useStage } from '../stage';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, Seg, T } from '../ui';
 
 export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void; onError: (message: string) => void }) {
   const n = useNerve();
+  const { stage, roped } = useStage();
   const [refreshing, setRefreshing] = useState(false);
   const [scope, setScope] = useState<'all' | 'circle'>('all');
   const [period, setPeriod] = useState<'week' | 'all'>('week');
@@ -37,8 +39,9 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
       }
       ListHeaderComponent={
         <View style={{ gap: 12, marginBottom: 12 }}>
-          <ExpeditionCard />
-          <RopeTeam onError={onError} onOpenMove={onOpenMove} />
+          {/* The expedition, rope team and leaderboard show after three moves, so a first visit is just people's lines. */}
+          {stage >= 2 ? <ExpeditionCard /> : null}
+          {stage >= 2 || roped ? <RopeTeam onError={onError} onOpenMove={onOpenMove} /> : null}
           <T v="sub">Lines from your circle. React or say something.</T>
           <Seg
             tall
@@ -49,6 +52,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
               { key: 'circle', label: 'Your circle' },
             ]}
           />
+          {stage < 2 ? null : (
           <Card style={{ gap: 10 }}>
             <View style={s.boardHead}>
               <T v="h" style={{ fontSize: 24, lineHeight: 28 }}>
@@ -91,6 +95,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
               {period === 'week' ? ' Resets every Monday.' : ''}
             </T>
           </Card>
+          )}
           {n.error ? (
             <View style={s.notice}>
               <T v="small">{n.error}</T>

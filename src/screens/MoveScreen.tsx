@@ -16,9 +16,10 @@ import { parseMoveKey } from '../placePaths';
 import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
 import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
+import { useStage } from '../stage';
 import { FEARED, NERVE_WORDS, WENT, addReflection, analyse, freshFlow, loadFlow, myReflections, saveFlow, type Flow, type Reflection, type Step } from '../reflect';
 import { C, F } from '../theme';
-import { Btn, ConfirmLink, Icon, Pill, Seg, T } from '../ui';
+import { Btn, ConfirmLink, Fold, Icon, Pill, Seg, T } from '../ui';
 
 type Props = { moveId: string; onClose: () => void; onPosted: () => void };
 
@@ -59,7 +60,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
     : pathShut
     ? `Locked. This move is on the ${BRANCH[bk].name} path. The You tab shows what opens it.`
     : locked
-      ? `Locked. Drop a line on every ${BRANCH[bk].name} ${lvWord(bk)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(bk)} ${move.lv}`}.`
+      ? `Locked. Do every ${BRANCH[bk].name} ${lvWord(bk)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(bk)} ${move.lv}`}.`
       : !move.cap
         ? ''
         : n.count[move.id]
@@ -326,10 +327,15 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                     {version === 'up' ? 'Upgrade: same move, one notch harder.' : `Done when: ${move.rep.charAt(0).toLowerCase()}${move.rep.slice(1)}`}
                   </T>
                   {guide?.say ? (
-                    <View style={s.say}>
-                      <T v="semi" style={{ fontSize: 19, lineHeight: 26 }}>
-                        {guide.say}
+                    <View style={{ gap: 4 }}>
+                      <T v="small" style={s.resK}>
+                        What to say
                       </T>
+                      <View style={s.say}>
+                        <T v="semi" style={{ fontSize: 19, lineHeight: 26 }}>
+                          {guide.say}
+                        </T>
+                      </View>
                     </View>
                   ) : null}
                   <T v="semi" style={s.q}>How nervous are you right now?</T>
@@ -455,7 +461,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                     style={s.area}
                   />
                   {error ? <T v="error">{error}</T> : null}
-                  <Btn label={busy ? 'Dropping…' : 'Drop the line'} kind="primary" wide disabled={busy || locked} onPress={drop} />
+                  <Btn label={busy ? 'Posting…' : 'Post what happened'} kind="primary" wide disabled={busy || locked} onPress={drop} />
                 </View>
               )}
             </>
@@ -489,7 +495,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                   </View>
                   <T v="sub">
                     {doneToday.length
-                      ? `Line dropped today: ${doneToday.map(n.nameOf).join(', ')}.`
+                      ? `Posted today: ${doneToday.map(n.nameOf).join(', ')}.`
                       : partners.length
                         ? 'Same window, until midnight. A line each is enough.'
                         : 'Tap a name to challenge them. Same window, until midnight.'}
@@ -521,25 +527,6 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           }}
         />
       ) : null}
-    </View>
-  );
-}
-
-// A folded panel: the title row opens and closes it.
-function Fold({ title, hint, count, open, onToggle, rule, children }: { title: string; hint?: string; count?: number; open: boolean; onToggle: () => void; rule?: boolean; children: React.ReactNode }) {
-  return (
-    <View style={[s.fold, rule && s.foldRule]}>
-      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={s.foldHead}>
-        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
-          <Icon name="chevron" size={18} />
-        </View>
-        <T v="semi" style={{ fontSize: 17, flex: 1 }}>
-          {title}
-          {hint ? <T v="small">{`  ${hint}`}</T> : null}
-        </T>
-        {count != null ? <T v="semi">{count}</T> : null}
-      </Pressable>
-      {open ? <View style={{ paddingBottom: 14 }}>{children}</View> : null}
     </View>
   );
 }
@@ -578,12 +565,17 @@ function Choice<K extends string>({ options, value, onPick }: { options: [K, str
   );
 }
 
-// What you get after dropping the line: nerves before and during, the fear against what happened, your pattern, what next.
+// What you get after posting: nerves before and during, the fear against what happened, your pattern, what next.
 function ResultCard({ r, history, xp, hasUpgrade, onUpgrade, onFeed, onDone }: { r: Reflection; history: Reflection[]; xp: number; hasUpgrade: boolean; onUpgrade: () => void; onFeed: () => void; onDone: () => void }) {
   const a = analyse(r, history, hasUpgrade);
+  // What this move just opened. Said once: it is marked as seen when you leave the result.
+  const { news, markNewsSeen } = useStage();
+  const [said, setSaid] = useState('');
+  if (news && news !== said) setSaid(news);
+  useEffect(() => () => markNewsSeen(), [markNewsSeen]);
   return (
     <View style={[s.card, s.result]}>
-      <T v="accent">{`Line dropped, +${xp} XP`}</T>
+      <T v="accent">{`Posted, +${xp} XP`}</T>
       {a.nerves ? (
         <View style={s.resPart}>
           <T style={s.resBig}>{`Nerves ${a.nerves.b} → ${a.nerves.a}`}</T>
@@ -619,6 +611,12 @@ function ResultCard({ r, history, xp, hasUpgrade, onUpgrade, onFeed, onDone }: {
         <View style={[s.resPart, s.resRule]}>
           <T v="small" style={s.resK}>Last time on this move</T>
           <T>{a.last}</T>
+        </View>
+      ) : null}
+      {said ? (
+        <View style={[s.resPart, s.resRule]}>
+          <T v="small" style={s.resK}>New for you</T>
+          <T>{said}</T>
         </View>
       ) : null}
       <View style={[s.resPart, s.resRule]}>
@@ -754,9 +752,6 @@ const s = StyleSheet.create({
   choice: { flexDirection: 'row', gap: 6 },
   choiceBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 8, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.bg },
   on: { backgroundColor: C.ink, borderColor: C.ink },
-  fold: {},
-  foldRule: { borderTopWidth: 1, borderTopColor: C.line },
-  foldHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52 },
   result: { borderTopWidth: 6, borderTopColor: C.accent, gap: 16 },
   resPart: { gap: 6 },
   resRule: { paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line },
@@ -772,7 +767,9 @@ const s = StyleSheet.create({
 // Tells you when a move also moves your rope team's mountain or this month's expedition.
 function CountsFor({ id }: { id: string }) {
   const r = useRope();
+  const { stage, roped } = useStage();
   const tags: string[] = [];
+  if (stage < 2 && !roped) return null;
   if (r.team && r.mountain && countsFor(r.mountain, id)) tags.push(`your rope team (${MOUNTAINS[r.mountain].name})`);
   if (countsFor('strangers', id)) tags.push('this month’s expedition');
   if (!tags.length) return null;

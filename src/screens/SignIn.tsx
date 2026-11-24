@@ -57,8 +57,8 @@ export function SignIn() {
         contentContainerStyle={[s.wrap, { paddingTop: insets.top + 40, paddingBottom: insets.bottom + 32 }]}>
         <View style={{ gap: 10 }}>
           <T style={s.wordmark}>NERVE</T>
-          <T style={s.tagline}>Do the move. Drop the line.</T>
-          <T v="sub">125 moves for talking to people, in five branches of five levels, plus harder paths once you are ready. Pick one tonight, do it, and tell your circle what happened.</T>
+          <T style={s.tagline}>Get braver with people.</T>
+          <T v="sub">Practice for being less nervous around people. One small, real move a day: do it, say how it felt, and tell your circle what happened.</T>
         </View>
 
         <View style={{ gap: 12 }}>

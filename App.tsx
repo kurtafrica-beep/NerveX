@@ -8,7 +8,9 @@ import { AuthProvider, useAuth } from './src/auth';
 import { VideoHost } from './src/components/VideoSheet';
 import { RewardSheet, XpToast, diff, isBig, snap, type Reward, type Snap } from './src/components/Reward';
 import { DataProvider, useNerve } from './src/data';
+import { Intro } from './src/components/Intro';
 import { RopeProvider, useRope } from './src/rope';
+import { StageProvider, useStage } from './src/stage';
 import { Feed } from './src/screens/Feed';
 import { MoveScreen } from './src/screens/MoveScreen';
 import { NewPassword } from './src/screens/NewPassword';
@@ -51,7 +53,9 @@ function Root() {
   return (
     <DataProvider key={session.user.id} uid={session.user.id}>
       <RopeProvider>
-        <Shell />
+        <StageProvider>
+          <Shell />
+        </StageProvider>
       </RopeProvider>
     </DataProvider>
   );
@@ -60,6 +64,7 @@ function Root() {
 function Shell() {
   const n = useNerve();
   const rope = useRope();
+  const stage = useStage();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('tonight');
   const [recOpen, setRecOpen] = useState(false);
@@ -151,7 +156,9 @@ function Shell() {
             </Pressable>
           ) : null}
           <View style={s.chip}>
-            <T style={s.chipText}>{`Lv ${n.progress.level}, ${n.progress.xp} XP`}</T>
+            <T style={s.chipText} numberOfLines={1}>
+              {!n.mine.length ? 'Day one' : `Lv ${n.progress.level}, ${n.streak ? `${n.streak}-day streak` : `${n.progress.xp} XP`}`}
+            </T>
           </View>
           {recMode === 'idle' ? (
             <Pressable
@@ -204,7 +211,7 @@ function Shell() {
             onPress={() => setTab('you')}
             style={({ pressed }) => [s.you, tab === 'you' && s.youOn, pressed && { opacity: 0.85 }]}>
             <Icon name="you" size={26} color={C.surface} width={2.2} />
-            <T style={s.youLv}>{`Lv ${n.progress.level}`}</T>
+            <T style={s.youLv}>You</T>
           </Pressable>
         </View>
         <NavItem icon="feed" label="Feed" on={tab === 'feed'} dot={rope.unseen > 0} onPress={() => setTab('feed')} />
@@ -220,6 +227,17 @@ function Shell() {
             setReward(null);
             const problem = await n.wearTitle(key);
             if (problem) showError(problem);
+          }}
+        />
+      ) : null}
+
+      {stage.intro && !moveId ? (
+        <Intro
+          onSkip={stage.closeIntro}
+          onStart={() => {
+            stage.closeIntro();
+            setTab('tonight');
+            setMoveId(n.tonight.move.id);
           }}
         />
       ) : null}

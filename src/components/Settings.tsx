@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth';
 import { useNerve } from '../data';
+import { useStage } from '../stage';
 import { inviteCode, sendInvite } from '../invite';
 import { PATH_KEYS } from '../moves';
 import { lastMic, micsSeen } from '../mic';
@@ -14,6 +15,7 @@ import { Btn, T } from '../ui';
 // Account settings: a sheet from the gear on the You screen.
 export function Settings({ onClose, onError, onPreview }: { onClose: () => void; onError: (message: string) => void; onPreview: (r: Reward) => void }) {
   const n = useNerve();
+  const stage = useStage();
   const { session, signOut, resetPassword } = useAuth();
   const insets = useSafeAreaInsets();
   const me = n.profiles[n.uid];
@@ -118,6 +120,22 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
                 }}
               />
             </View>
+            <View style={s.toggle}>
+              <View style={{ flex: 1 }}>
+                <T v="semi">See it as a new user</T>
+                <T v="small">Shows the first-day version of every tab until you turn this off or close the app.</T>
+              </View>
+              <Switch accessibilityLabel="See it as a new user" value={stage.fresh} onValueChange={stage.setFresh} />
+            </View>
+            <Btn
+              label="Replay the intro"
+              small
+              style={{ alignSelf: 'flex-start' }}
+              onPress={() => {
+                onClose();
+                stage.replayIntro();
+              }}
+            />
           </View>
 
           <View style={s.group}>

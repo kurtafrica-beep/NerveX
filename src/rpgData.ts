@@ -399,8 +399,8 @@ export const QUEST_SOURCE: [string, string, string, string][] = [
   "Do it in writing too."
  ],
  [
-  "Speak first in a lift or line",
-  "Be the first to say something in a lift or a line.",
+  "Speak first in a lift or a queue",
+  "Be the first to say something in a lift or a queue.",
   "One line.",
   "Turn it into a chat."
  ],
@@ -1029,7 +1029,7 @@ export const RPG_GUIDE: Record<string, { steps: string[]; say?: string; why?: st
  },
  "z13": {
   "steps": [
-   "Get into a lift or a line.",
+   "Get into a lift or a queue.",
    "Say one light thing.",
    "Smile."
   ],

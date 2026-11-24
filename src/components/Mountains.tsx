@@ -1,6 +1,6 @@
 import React from 'react';
 import Svg, { Circle, G, Line as SvgLine, Path, Text as SvgText } from 'react-native-svg';
-import { BRANCH, BRANCH_KEYS, PATH_KEYS, isPath, levelMoves, lvTitle, type BranchKey } from '../moves';
+import { BRANCH, BRANCH_KEYS, SOCIAL_PATHS, WORK_PATHS, isPath, levelMoves, lvTitle, type BranchKey } from '../moves';
 import { GREY, HUE, TITLES, branchState, type Progress } from '../progress';
 import { C, F } from '../theme';
 
@@ -139,12 +139,7 @@ function Range({ keys, geo, p, onOpen }: { keys: BranchKey[]; geo: Geo; p: Progr
 export function BaseMountains({ p, onOpen }: { p: Progress; onOpen: (b: BranchKey) => void }) {
   return <Range keys={BRANCH_KEYS} geo={BASE_RANGE} p={p} onOpen={onOpen} />;
 }
-export function PathMountains({ p, onOpen }: { p: Progress; onOpen: (b: BranchKey) => void }) {
-  // Six then five mountains so they still fit on a phone.
-  return (
-    <>
-      <Range keys={PATH_KEYS.slice(0, 6)} geo={PATH_ROW6} p={p} onOpen={onOpen} />
-      <Range keys={PATH_KEYS.slice(6)} geo={PATH_RANGE} p={p} onOpen={onOpen} />
-    </>
-  );
+// Six social paths in one range, five work paths in the other, so each still fits on a phone.
+export function PathMountains({ p, onOpen, group }: { p: Progress; onOpen: (b: BranchKey) => void; group: 'social' | 'work' }) {
+  return group === 'social' ? <Range keys={SOCIAL_PATHS} geo={PATH_ROW6} p={p} onOpen={onOpen} /> : <Range keys={WORK_PATHS} geo={PATH_RANGE} p={p} onOpen={onOpen} />;
 }

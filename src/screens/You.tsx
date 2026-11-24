@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { MENTOR, MentorFace } from '../components/Mentor';
 import { LineCard, TitleChip } from '../components/LineCard';
@@ -10,11 +10,13 @@ import { SvgXml } from 'react-native-svg';
 import type { Card as PlayCard } from '../rpgData';
 import type { Reward } from '../components/Reward';
 import { stamp, useNerve } from '../data';
-import { ALL_KEYS, BRANCH, BY, MOVES, PATH_KEYS, lvTitle, type BranchKey } from '../moves';
+import { ALL_KEYS, BRANCH, BY, MOVES, SOCIAL_PATHS, WORK_PATHS, isPath, lvTitle, type BranchKey, type PathKey } from '../moves';
+import { myReflections, type Reflection } from '../reflect';
+import { useStage } from '../stage';
 import { ACH, ACH_XP, HUE, STATS, TIERS, TIER_EMOJI, TITLES, branchState, statLevel, statProgress, xpAt, type Progress } from '../progress';
 import { Gate } from './Tonight';
 import { C, F } from '../theme';
-import { Avatar, Btn, Card, Seg, T } from '../ui';
+import { Avatar, Btn, Card, Fold, Seg, T } from '../ui';
 import { Settings } from '../components/Settings';
 
 export function You({
@@ -32,7 +34,11 @@ export function You({
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState('');
   const [card, setCard] = useState<PlayCard | null>(null);
-  const [tab, setTab] = useState<'progress' | 'paths' | 'patches' | 'people' | 'lines'>('progress');
+  const { stage } = useStage();
+  const [picked, setTab] = useState<'progress' | 'paths' | 'patches' | 'people' | 'lines'>('progress');
+  // Paths and patches show after three moves.
+  const tab = stage < 2 && (picked === 'paths' || picked === 'patches') ? 'progress' : picked;
+  const [workOpen, setWorkOpen] = useState(false);
   const [settings, setSettings] = useState(false);
   const tonight = n.tonight.move;
   const p = n.progress;
@@ -43,6 +49,42 @@ export function You({
   const wear = async (key: string) => {
     const problem = await n.wearTitle(key);
     if (problem) onError(problem);
+  };
+
+  const workOn = WORK_PATHS.some((b) => p.paths[b].met || n.branch === b);
+  // Titles only for what you have started, so the list stays about where you are.
+  const started = (b: BranchKey) => b === n.branch || MOVES.some((m) => m.b === b && n.count[m.id]);
+  const picked0 = ALL_KEYS.filter((b) => n.test || (started(b) && (!isPath(b) || p.paths[b as PathKey].open)));
+  const rewardKeys: BranchKey[] = picked0.length ? picked0 : ['c'];
+  const pathCard = (b: PathKey) => {
+    const info = p.paths[b];
+    const met = info.reqs.filter((r) => r.ok).length;
+    return (
+            <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
+              <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
+                {/* Paths without cel-shaded art yet show their drawn glyph instead. */}
+                <BranchBanner b={b} height={96} glyphX={BRANCH_ICON[b] ? 900 : 262} />
+                {BRANCH_ICON[b] ? <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} /> : null}
+              </View>
+              <View style={[s.pathHead, { marginTop: -34 }]}>
+                <T style={s.pathName}>{BRANCH[b].name}</T>
+                <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
+                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : `${met} of ${info.reqs.length} met`}
+                </T>
+              </View>
+              {MENTOR[b] ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MentorFace b={b} size={28} />
+                  <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.88)' }}>{`Guide: ${MENTOR[b]!.name}, ${MENTOR[b]!.role}`}</T>
+                </View>
+              ) : null}
+              <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
+                {BRANCH[b].tag}
+              </T>
+              {info.open ? null : <Gate reqs={info.reqs} light />}
+              <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
+            </View>
+    );
   };
 
   return (
@@ -78,6 +120,7 @@ export function You({
             <SvgXml xml={GEAR} width={22} height={22} />
           </Pressable>
         </View>
+        <Nerves logs={n.mine.length} />
         <View style={{ gap: 4 }}>
           <View style={s.xpBar} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: need, now: into }}>
             <View style={{ width: `${Math.round((100 * into) / need)}%`, height: '100%', borderRadius: 5, backgroundColor: C.accent, borderRightWidth: 1.5, borderColor: C.ink }} />
@@ -88,7 +131,7 @@ export function You({
         </View>
         <BaseMountains p={p} onOpen={onOpenBranch} />
         <View style={s.stats}>
-          <Stat value={`${n.doneCount}/${MOVES.length}`} label="Moves" />
+          <Stat value={String(n.doneCount)} label="Moves done" />
           <Stat value={String(n.streak)} label="Streak" />
           <Stat value={String(n.kudosReceived)} label="Reactions" />
         </View>
@@ -96,15 +139,30 @@ export function You({
       <Seg
         value={tab}
         onChange={setTab}
-        options={[
-          { key: 'progress', label: 'Progress' },
-          { key: 'paths', label: 'Paths' },
-          { key: 'patches', label: 'Patches' },
-          { key: 'people', label: 'People' },
-          { key: 'lines', label: 'Lines' },
-        ]}
+        options={
+          stage < 2
+            ? [
+                { key: 'progress', label: 'Progress' },
+                { key: 'people', label: 'People' },
+                { key: 'lines', label: 'Lines' },
+              ]
+            : [
+                { key: 'progress', label: 'Progress' },
+                { key: 'paths', label: 'Paths' },
+                { key: 'patches', label: 'Patches' },
+                { key: 'people', label: 'People' },
+                { key: 'lines', label: 'Lines' },
+              ]
+        }
       />
-      {tab === 'progress' ? (
+      {tab === 'progress' && stage === 0 ? (
+        <View style={s.later}>
+          <T v="sub" style={{ fontSize: 15, lineHeight: 21 }}>
+            Your stats, titles and achievements show here after your first move.
+          </T>
+        </View>
+      ) : null}
+      {tab === 'progress' && stage > 0 ? (
         <>
       <Card>
         <T v="h">Stats</T>
@@ -116,7 +174,7 @@ export function You({
           <T v="eyebrow">Rewards</T>
           <T v="small">Finish a level to earn its title, badge and bonus XP. Tap an earned title to wear it next to your name.</T>
         </View>
-        {ALL_KEYS.map((b) => (
+        {rewardKeys.map((b) => (
           <View key={b} style={{ gap: 6 }}>
             <View style={s.pathHead}>
               <T style={[s.rwName, { color: HUE[b][0] }]}>{BRANCH[b].name}</T>
@@ -150,6 +208,7 @@ export function You({
             </View>
           </View>
         ))}
+        {rewardKeys.length < ALL_KEYS.length ? <T v="small">Titles for other branches and paths show here once you start them.</T> : null}
       </Card>
       <Card>
         <T v="eyebrow">
@@ -189,40 +248,19 @@ export function You({
             ends in a capstone that only counts with proof.
           </T>
         </View>
-        <PathMountains p={p} onOpen={onOpenBranch} />
-        {PATH_KEYS.map((b) => {
-          const info = p.paths[b];
-          const met = info.reqs.filter((r) => r.ok).length;
-          return (
-            <View key={b} style={[s.pathCard, { backgroundColor: info.open ? HUE[b][0] : '#3A423E' }]}>
-              <View style={[s.pathArt, !info.open && { opacity: 0.35 }]}>
-                {/* Paths without cel-shaded art yet show their drawn glyph instead. */}
-                <BranchBanner b={b} height={96} glyphX={BRANCH_ICON[b] ? 900 : 262} />
-                {BRANCH_ICON[b] ? <ArtImage src={BRANCH_ICON[b]} size={72} style={s.artTile} /> : null}
-              </View>
-              <View style={[s.pathHead, { marginTop: -34 }]}>
-                <T style={s.pathName}>{BRANCH[b].name}</T>
-                <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
-                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : `${met} of ${info.reqs.length} met`}
-                </T>
-              </View>
-              {MENTOR[b] ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <MentorFace b={b} size={28} />
-                  <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.88)' }}>{`Guide: ${MENTOR[b]!.name}, ${MENTOR[b]!.role}`}</T>
-                </View>
-              ) : null}
-              <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
-                {BRANCH[b].tag}
-              </T>
-              {info.open ? null : <Gate reqs={info.reqs} light />}
-              <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
-            </View>
-          );
-        })}
+        <PathMountains p={p} onOpen={onOpenBranch} group="social" />
+        {SOCIAL_PATHS.map(pathCard)}
+        <Fold title="Paths for work and an audience" rule open={workOpen || workOn} onToggle={() => setWorkOpen((o) => !o)}>
+          <View style={{ gap: 12 }}>
+            <T v="small">Selling, negotiating and growing an audience. Same skills, pointed at work.</T>
+            <PathMountains p={p} onOpen={onOpenBranch} group="work" />
+            {WORK_PATHS.map(pathCard)}
+          </View>
+        </Fold>
       </Card>
         </>
       ) : null}
+
       {tab === 'patches' ? (
         <>
       <Card>
@@ -309,12 +347,68 @@ export function You({
         <LineCard key={line.id} line={line} onOpenMove={onOpenMove} onError={onError} />
       ))}
 
-      {n.mine.some((x) => x.posted !== false) ? null : <T v="sub">No lines yet. Drop one tonight and it shows up here.</T>}
+      {n.mine.some((x) => x.posted !== false) ? null : <T v="sub">No lines yet. Do tonight’s move, post what happened, and it shows up here.</T>}
         </>
       ) : null}
       {settings ? <Settings onClose={() => setSettings(false)} onError={onError} onPreview={onPreview} /> : null}
       {card ? <CardSheet card={card} onClose={() => setCard(null)} onPractise={onOpenMove} onError={onError} /> : null}
     </ScrollView>
+  );
+}
+
+// How nervous you expected to be against how it felt, across every move you reflected on.
+function Nerves({ logs }: { logs: number }) {
+  const [list, setList] = useState<Reflection[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    myReflections().then((rows) => {
+      if (live) setList(rows);
+    });
+    return () => {
+      live = false;
+    };
+  }, [logs]);
+  const both = (list ?? []).filter((x) => x.nerve_before && x.nerve_after);
+  const fears = (list ?? []).filter((x) => x.fear && x.feared);
+  if (!both.length) {
+    return (
+      <View style={s.nerves}>
+        <T v="small" style={{ fontFamily: F.semi }}>
+          Your nerves
+        </T>
+        <T v="sub">After your first move, this shows how nervous you expected to be next to how it really felt.</T>
+      </View>
+    );
+  }
+  const avg = (k: 'nerve_before' | 'nerve_after') => both.reduce((t, x) => t + (x[k] ?? 0), 0) / both.length;
+  const b = avg('nerve_before');
+  const a = avg('nerve_after');
+  const one = both.length === 1;
+  const fmt = (v: number) => (one ? String(v) : v.toFixed(1));
+  const hit = fears.filter((x) => x.feared === 'yes').length;
+  return (
+    <View style={s.nerves}>
+      <T v="small" style={{ fontFamily: F.semi }}>
+        Your nerves
+      </T>
+      <View style={s.nervesRow}>
+        <View style={s.bars} accessible accessibilityLabel={`Nerves out of 5: ${fmt(b)} before, ${fmt(a)} during`}>
+          <View style={s.barCol}>
+            <View style={[s.bar, { height: Math.round(b * 15) }]} />
+            <T v="small">Before</T>
+          </View>
+          <View style={s.barCol}>
+            <View style={[s.bar, s.barNow, { height: Math.round(a * 15) }]} />
+            <T v="small">During</T>
+          </View>
+        </View>
+        <T style={s.nervesBig} numberOfLines={1} adjustsFontSizeToFit>{`${fmt(b)} → ${fmt(a)}`}</T>
+      </View>
+      <T>
+        {`${one ? 'One move in: you' : `Across ${both.length} moves you`} braced for ${fmt(b)} and felt ${fmt(a)}.${b - a > 0.05 ? ' The dread keeps being bigger than the thing.' : ''}`}
+      </T>
+      {fears.length ? <T v="small">{`What you feared fully happened ${hit} of ${fears.length} ${fears.length === 1 ? 'time' : 'times'}.`}</T> : null}
+    </View>
   );
 }
 
@@ -383,6 +477,14 @@ const s = StyleSheet.create({
     fontFamily: F.displayBold, fontSize: 15, letterSpacing: 2, color: C.ink, backgroundColor: C.bg,
   },
   view: { padding: 16, gap: 12, paddingBottom: 32 },
+  later: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line },
+  nerves: { gap: 6, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line },
+  nervesRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 18 },
+  nervesBig: { fontFamily: F.display, fontSize: 42, lineHeight: 46, color: C.ink, marginBottom: 20 },
+  bars: { flexDirection: 'row', gap: 12, alignItems: 'flex-end', height: 100 },
+  barCol: { alignItems: 'center', gap: 4 },
+  bar: { width: 40, borderTopLeftRadius: 6, borderTopRightRadius: 6, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.bgDeep },
+  barNow: { backgroundColor: C.accent },
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   name: { fontFamily: F.display, fontSize: 28, lineHeight: 30, color: C.ink },
   lvBadge: { width: 68, paddingVertical: 6, borderRadius: 8, backgroundColor: C.ink, alignItems: 'center' },

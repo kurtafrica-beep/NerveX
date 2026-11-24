@@ -7,18 +7,21 @@ import { BRANCH_ICON, PLACE_ICON, PLACE_POSTER } from '../artImages';
 import { PLACES } from '../rpgData';
 import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, REP_BONUS, dayNum, placeCard, todaysQuest } from '../progress';
 import { useNerve } from '../data';
-import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, MOVES, PATH, PATH_KEYS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey, type PathKey } from '../moves';
+import { STAGE_NOTE, useStage } from '../stage';
+import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, MOVES, PATH, PATH_KEYS, SOCIAL_PATHS, WORK_PATHS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey, type PathKey } from '../moves';
 import { lensed, moveKey } from '../placePaths';
 import { MENTOR, MentorFace } from '../components/Mentor';
 import { levelVideo } from '../videos';
 import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type Req } from '../progress';
 import { C, F } from '../theme';
-import { Btn, Card, Seg, T } from '../ui';
+import { Btn, Card, Fold, Seg, T } from '../ui';
 
 export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   const n = useNerve();
+  const { stage } = useStage();
   const branch = n.branch;
   const [picking, setPicking] = useState(false);
+  const [workOpen, setWorkOpen] = useState(false);
   const [stagePick, setStagePick] = useState<Partial<Record<BranchKey, number>>>({});
   const scroller = useRef<{ scrollTo: (o: { y: number; animated: boolean }) => void } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,9 +60,16 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
           }}
         />
       }>
-      <View style={s.topRow}>
-        <PathBar key={branch} b={branch} open={pOpen} onPress={() => setPicking(true)} />
-      </View>
+      {stage === 0 ? (
+        <View style={s.firstDay}>
+          <T v="h">Your first move</T>
+          <T style={{ fontSize: 18, lineHeight: 25 }}>Nerve is practice for being less nervous around people. One small move a day.</T>
+        </View>
+      ) : (
+        <View style={s.topRow}>
+          <PathBar key={branch} b={branch} open={pOpen} onPress={() => setPicking(true)} />
+        </View>
+      )}
 
       {n.incoming.map((c) => (
         <View key={c.id} style={s.invite}>
@@ -74,9 +84,15 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
       ))}
 
       <TonightPoster onOpenMove={onOpenMove} mates={mates.map(n.nameOf)} />
-      <QuestCard onOpenMove={onOpenMove} />
-      {path && pOpen ? <BaseRep onOpenMove={onOpenMove} /> : null}
-      <Places onOpenMove={onOpenMove} lens={path ? (branch as PathKey) : null} />
+      {/* Day one is the move and your branch. The rest arrives as you use it. */}
+      {stage === 0 ? (
+        <View style={s.topRow}>
+          <PathBar key={branch} b={branch} open={pOpen} first onPress={() => setPicking(true)} />
+        </View>
+      ) : null}
+      {stage >= 1 ? <QuestCard onOpenMove={onOpenMove} /> : null}
+      {stage >= 1 && path && pOpen ? <BaseRep onOpenMove={onOpenMove} /> : null}
+      {stage >= 2 ? <Places onOpenMove={onOpenMove} lens={path ? (branch as PathKey) : null} /> : null}
 
       <Modal visible={picking} transparent animationType="slide" onRequestClose={() => setPicking(false)}>
         <Pressable style={s.sheetShade} accessibilityLabel="Close" onPress={() => setPicking(false)} />
@@ -86,15 +102,25 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
               <T v="h">What to train</T>
               <Btn label="Close" kind="quiet" small onPress={() => setPicking(false)} />
             </View>
-            <T v="sub">Five branches with five levels each. Paths open once your base is strong enough.</T>
+            <T v="sub">
+              {stage < 2 ? 'Five branches with five levels each. Pick the one that feels most like you.' : 'Five branches with five levels each. Paths open once your base is strong enough.'}
+            </T>
             <T v="eyebrow">Branches</T>
             <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} options={BRANCH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
-            <T v="eyebrow">Paths</T>
-            <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={PATH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+            {stage < 2 ? null : (
+              <>
+                <T v="eyebrow">Paths</T>
+                <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={SOCIAL_PATHS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+                <Fold title="Paths for work and an audience" rule open={workOpen || (WORK_PATHS as BranchKey[]).includes(branch)} onToggle={() => setWorkOpen((o) => !o)}>
+                  <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={WORK_PATHS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+                </Fold>
+              </>
+            )}
           </ScrollView>
         </View>
       </Modal>
 
+      {stage === 0 ? null : (
       <Card>
         <View style={s.movesHead}>
           <T v="h" style={{ flex: 1 }}>
@@ -162,7 +188,7 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
               {open && levelVideo(branch, k) ? <LevelVideoRow v={levelVideo(branch, k)!} /> : null}
               {!open && pOpen ? (
                 <T v="small">
-                  Drop a line on every {lvWord(branch)} {k - 1} move to open {moves.length === 1 ? 'the capstone' : `these ${moves.length}`}.
+                  Do every {lvWord(branch)} {k - 1} move to open {moves.length === 1 ? 'the capstone' : `these ${moves.length}`}.
                 </T>
               ) : null}
               {open && path && k === 5 ? (
@@ -218,19 +244,27 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
           );
         })}
       </Card>
+      )}
+      {stage < 2 ? (
+        <View style={s.later}>
+          <T v="sub" style={{ fontSize: 15, lineHeight: 21 }}>
+            {STAGE_NOTE[stage]}
+          </T>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }
 
 // The bar at the top of Tonight: what you're training, so a switch never goes unnoticed.
-function PathBar({ b, open, onPress }: { b: BranchKey; open: boolean; onPress: () => void }) {
+function PathBar({ b, open, first, onPress }: { b: BranchKey; open: boolean; first?: boolean; onPress: () => void }) {
   const [glow] = useState(() => new Animated.Value(1));
   useEffect(() => {
     Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: false }).start();
   }, [glow]);
   const [bc] = HUE[b];
   const mentor = MENTOR[b];
-  const sub = `${mentor ? `Guide: ${mentor.name}. ` : ''}${isPath(b) ? (open ? 'Tonight’s move and places follow it.' : 'Locked for now, so tonight is a base move.') : 'Tonight’s move comes from it.'}`;
+  const sub = `${mentor ? `Guide: ${mentor.name}. ` : ''}${isPath(b) ? (open ? 'Tonight’s move and places follow it.' : 'Locked for now, so tonight is a base move.') : first ? 'Where you start. Change it any time.' : 'Tonight’s move comes from it.'}`;
   return (
     <Pressable
       accessibilityRole="button"
@@ -332,7 +366,7 @@ function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void
         <T style={{ color: 'rgba(255,255,255,0.88)' }}>{move.doIt}</T>
         {mates.length ? <T style={{ color: 'rgba(255,255,255,0.8)', fontSize: 15 }}>With {mates.join(', ')}. Until midnight.</T> : null}
         <View style={s.row}>
-          <Btn label="Drop the line" kind="primary" onPress={() => onOpenMove(move.id)} />
+          <Btn label="Start" kind="primary" onPress={() => onOpenMove(move.id)} />
           {!n.tonight.together ? <Btn label="Another one" kind="light" onPress={n.skipTonight} /> : null}
         </View>
       </View>
@@ -523,6 +557,8 @@ export function Gate({ reqs, light }: { reqs: Req[]; light?: boolean }) {
 
 const s = StyleSheet.create({
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  firstDay: { gap: 6, paddingHorizontal: 2, paddingTop: 4 },
+  later: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line },
   pathBar: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingRight: 12, paddingLeft: 10, borderRadius: 8, borderLeftWidth: 6, backgroundColor: C.surface },
   pathDot: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: C.ink },
   pathKicker: { fontFamily: F.semi, fontSize: 12, lineHeight: 15, color: C.muted },

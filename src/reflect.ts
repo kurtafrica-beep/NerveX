@@ -82,7 +82,7 @@ export async function addReflection(move: string, upgrade: boolean, f: Flow): Pr
 
 const WORD = ['', 'One', 'Two', 'Three', 'Four'];
 
-// The analysis after you drop the line: this time, against what you expected, against your history.
+// The analysis after you post: this time, against what you expected, against your history.
 export function analyse(r: Reflection, history: Reflection[], hasUpgrade: boolean) {
   const out: { nerves?: { b: number; a: number; text: string }; fear?: { said: string; text: string }; pattern?: string; last?: string; next: string; upgrade: boolean } = {
     next: '',

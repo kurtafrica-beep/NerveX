@@ -49,7 +49,10 @@ export const BRANCH: Record<BranchKey, { name: string; tag: string; path?: boole
   a: { name: "Charisma", path: true, tag: "Presence people remember. Built on how Muhammad Ali carried himself: say it before you’ve earned it, play with words, own the room, and stay kind." },
 };
 export const BRANCH_KEYS: BaseKey[] = ['c', 't', 'q', 'v', 's'];
-export const PATH_KEYS: PathKey[] = ['n', 'f', 'm', 'p', 'k', 'b', 'h', 'w', 'g', 'y', 'a'];
+// Social paths first; the ones for work and an audience sit in their own group.
+export const SOCIAL_PATHS: PathKey[] = ['y', 'a', 'g', 'h', 'w', 'k'];
+export const WORK_PATHS: PathKey[] = ['n', 'f', 'p', 'm', 'b'];
+export const PATH_KEYS: PathKey[] = [...SOCIAL_PATHS, ...WORK_PATHS];
 export const ALL_KEYS: BranchKey[] = [...BRANCH_KEYS, ...PATH_KEYS];
 // What each path needs: the level reached in each base branch, and recordings across those branches.
 // after: a path that has to be finished first, capstone included.

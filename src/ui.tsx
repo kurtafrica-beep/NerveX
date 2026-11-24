@@ -113,6 +113,29 @@ const btn = StyleSheet.create({
   onDark: { borderColor: 'rgba(255,255,255,0.7)' },
 });
 
+// A folded panel: the title row opens and closes it.
+export function Fold({ title, hint, count, open, onToggle, rule, children }: { title: string; hint?: string; count?: number; open: boolean; onToggle: () => void; rule?: boolean; children: React.ReactNode }) {
+  return (
+    <View style={rule ? fold.rule : undefined}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={fold.head}>
+        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
+          <Icon name="chevron" size={18} />
+        </View>
+        <T v="semi" style={{ fontSize: 17, flex: 1 }}>
+          {title}
+          {hint ? <T v="small">{`  ${hint}`}</T> : null}
+        </T>
+        {count != null ? <T v="semi">{count}</T> : null}
+      </Pressable>
+      {open ? <View style={{ paddingBottom: 14 }}>{children}</View> : null}
+    </View>
+  );
+}
+const fold = StyleSheet.create({
+  rule: { borderTopWidth: 1, borderTopColor: C.line },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52 },
+});
+
 export function Card({ children, strong, style }: { children: React.ReactNode; strong?: boolean; style?: StyleProp<ViewStyle> }) {
   return <View style={[card.base, strong && card.strong, style]}>{children}</View>;
 }
