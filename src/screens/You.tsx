@@ -18,6 +18,7 @@ import { Gate } from './Tonight';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, Fold, Seg, T } from '../ui';
 import { Settings } from '../components/Settings';
+import { Profile } from '../components/Profile';
 
 export function You({
   onOpenMove,
@@ -40,6 +41,7 @@ export function You({
   const tab = stage < 2 && (picked === 'paths' || picked === 'patches') ? 'progress' : picked;
   const [workOpen, setWorkOpen] = useState(false);
   const [settings, setSettings] = useState(false);
+  const [profile, setProfile] = useState('');
   const tonight = n.tonight.move;
   const p = n.progress;
   const into = p.xp - xpAt(p.level);
@@ -293,9 +295,14 @@ export function You({
             const last = n.lines.find((x) => x.author === person.id);
             return (
               <View key={person.id} style={[s.person, i > 0 && { borderTopWidth: 1, borderTopColor: C.line, paddingTop: 10 }]}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${person.name || 'Someone'}. Open profile`}
+                  onPress={() => setProfile(person.id)}
+                  style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }, pressed && { opacity: 0.7 }]}>
                 <Avatar name={person.name || 'Someone'} url={person.avatar_url} />
                 <View style={{ flex: 1 }}>
-                  <T v="semi">{person.name || 'Someone'}</T>
+                  <T v="semi" style={{ textDecorationLine: 'underline' }}>{person.name || 'Someone'}</T>
                   {shared ? (
                     <T v="small" style={{ color: C.accentText, fontFamily: F.semi }}>
                       Together: {BY[shared.move].title}
@@ -304,6 +311,7 @@ export function You({
                     <T v="small">{last ? `Last line ${stamp(last.created_at).toLowerCase()}` : 'No lines yet'}</T>
                   )}
                 </View>
+                </Pressable>
                 <Btn
                   label="Unfollow"
                   kind="quiet"
@@ -332,7 +340,7 @@ export function You({
             );
           })
         )}
-        {n.circle.length > 0 ? <T v="small">Challenge sends them tonight’s move ({tonight.title}) until midnight.</T> : null}
+        {n.circle.length > 0 ? <T v="small">Tap a name to see their titles, patches and lines. Challenge sends them tonight’s move ({tonight.title}) until midnight.</T> : null}
       </Card>
         </>
       ) : null}
@@ -350,6 +358,7 @@ export function You({
       {n.mine.some((x) => x.posted !== false) ? null : <T v="sub">No lines yet. Do tonight’s move, post what happened, and it shows up here.</T>}
         </>
       ) : null}
+      {profile ? <Profile uid={profile} onClose={() => setProfile('')} onOpenMove={onOpenMove} onError={onError} /> : null}
       {settings ? <Settings onClose={() => setSettings(false)} onError={onError} onPreview={onPreview} /> : null}
       {card ? <CardSheet card={card} onClose={() => setCard(null)} onPractise={onOpenMove} onError={onError} /> : null}
     </ScrollView>

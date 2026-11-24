@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import { LineCard, TitleChip } from '../components/LineCard';
 import { ExpeditionCard, RopeTeam } from '../components/RopeTeam';
 import { useNerve } from '../data';
 import { useStage } from '../stage';
+import { Profile } from '../components/Profile';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, Seg, T } from '../ui';
 
@@ -13,6 +14,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
   const [refreshing, setRefreshing] = useState(false);
   const [scope, setScope] = useState<'all' | 'circle'>('all');
   const [period, setPeriod] = useState<'week' | 'all'>('week');
+  const [profile, setProfile] = useState('');
   const lines = scope === 'circle' ? n.lines.filter((x) => x.author === n.uid || n.isFollowing(x.author)) : n.lines;
   const rows = n.board(period, scope === 'circle');
   const meAt = rows.findIndex((r) => r.uid === n.uid);
@@ -71,7 +73,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
               const rank = rows.indexOf(r) + 1;
               const me = r.uid === n.uid;
               return (
-                <View key={r.uid} style={[s.boardRow, me && s.boardMe, rank > 10 && { marginTop: 6 }]}>
+                <Pressable key={r.uid} accessibilityRole="button" accessibilityLabel={`${rank}. ${n.nameOf(r.uid)}, ${r.pts} points. Open profile`} onPress={() => setProfile(r.uid)} style={[s.boardRow, me && s.boardMe, rank > 10 && { marginTop: 6 }]}>
                   <T style={s.rank}>{r.pts && rank <= 3 ? ['🥇', '🥈', '🥉'][rank - 1] : String(rank)}</T>
                   <Avatar name={n.nameOf(r.uid)} url={n.profiles[r.uid]?.avatar_url} size={36} />
                   <View style={{ flex: 1 }}>
@@ -86,7 +88,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
                     </T>
                   </View>
                   <T style={s.pts}>{r.pts} pts</T>
-                </View>
+                </Pressable>
               );
             })}
             <T v="small">
@@ -96,6 +98,7 @@ export function Feed({ onOpenMove, onError }: { onOpenMove: (id: string) => void
             </T>
           </Card>
           )}
+          {profile ? <Profile uid={profile} onClose={() => setProfile('')} onOpenMove={onOpenMove} onError={onError} /> : null}
           {n.error ? (
             <View style={s.notice}>
               <T v="small">{n.error}</T>

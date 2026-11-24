@@ -6,6 +6,7 @@ import { lensed, moveKey } from '../placePaths';
 import { HUE, titleInfo } from '../progress';
 import { REACT, REACTIONS } from '../reactions';
 import { Emo } from './ArtIcon';
+import { Profile } from './Profile';
 import { C, F } from '../theme';
 import { Avatar, Card, ConfirmLink, Pill, T } from '../ui';
 import { RemoteMedia } from './Media';
@@ -16,6 +17,7 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
   const [picking, setPicking] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [profile, setProfile] = useState(false);
 
   // A place line done in a path's version shows that version.
   const move = lensed(BY[line.move], line.via)!;
@@ -39,14 +41,20 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
   return (
     <Card style={{ padding: 16, gap: 10 }}>
       <View style={s.who}>
-        <Avatar name={n.nameOf(line.author)} url={author?.avatar_url} />
-        <View style={{ flex: 1 }}>
-          <View style={s.nameRow}>
-            <T v="semi">{n.nameOf(line.author)}</T>
-            <TitleChip uid={line.author} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${n.nameOf(line.author)}. Open profile`}
+          onPress={() => setProfile(true)}
+          style={({ pressed }) => [{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 }, pressed && { opacity: 0.7 }]}>
+          <Avatar name={n.nameOf(line.author)} url={author?.avatar_url} />
+          <View style={{ flex: 1 }}>
+            <View style={s.nameRow}>
+              <T v="semi">{n.nameOf(line.author)}</T>
+              <TitleChip uid={line.author} />
+            </View>
+            <T v="small">{stamp(line.created_at)}</T>
           </View>
-          <T v="small">{stamp(line.created_at)}</T>
-        </View>
+        </Pressable>
         {line.upgrade ? <T v="accent">Upgrade</T> : null}
         {line.author !== n.uid ? (
           <Pressable
@@ -166,6 +174,7 @@ export function LineCard({ line, onOpenMove, onError }: { line: Line; onOpenMove
           </Pressable>
         </View>
       ) : null}
+      {profile ? <Profile uid={line.author} onClose={() => setProfile(false)} onOpenMove={onOpenMove} onError={onError} /> : null}
     </Card>
   );
 }
