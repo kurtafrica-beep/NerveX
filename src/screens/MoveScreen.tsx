@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BackHandler, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ExampleCard } from '../components/Example';
@@ -16,6 +16,7 @@ import { parseMoveKey } from '../placePaths';
 import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
 import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
+import { FEARED, NERVE_WORDS, WENT, addReflection, analyse, freshFlow, loadFlow, myReflections, saveFlow, type Flow, type Reflection, type Step } from '../reflect';
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Icon, Pill, Seg, T } from '../ui';
 
@@ -69,6 +70,45 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
               ? `Saved. Now post it to the feed. It counts once ${CAP_REACTS} people react.`
               : `This is the capstone. It counts once your line is posted to the feed and ${CAP_REACTS} people react.`;
   const { dropLine } = n;
+  const off = locked || !!move.retired;
+
+  // The two steps: do it (with how nervous you are first), then after (how it went).
+  const [flow, setFlowState] = useState<Flow>(() => freshFlow(0));
+  const [history, setHistory] = useState<Reflection[]>([]);
+  const [result, setResult] = useState<Reflection | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const scroller = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const flowKey = `${moveId}:${version}`;
+  useEffect(() => {
+    let live = true;
+    loadFlow(flowKey).then((f) => {
+      if (live) setFlowState(f ?? freshFlow(0));
+    });
+    return () => {
+      live = false;
+    };
+  }, [flowKey]);
+  useEffect(() => {
+    let live = true;
+    myReflections().then((list) => {
+      if (live) setHistory(list);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+  const setFlow = (patch: Partial<Flow>) => {
+    setFlowState((prev) => {
+      const next = { ...prev, ...patch };
+      saveFlow(flowKey, next);
+      return next;
+    });
+  };
+  const goStep = (step: Step) => {
+    setFlow({ step });
+    scroller.current?.scrollTo({ y: 0, animated: true });
+  };
+  const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
 
   // Every finished recording is saved straight to your log as a private take.
   const saveTake = useCallback(
@@ -125,15 +165,74 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       return;
     }
     if (!line) {
-      setError('Write one line about what happened. Recordings save to your log by themselves.');
+      setError('Write one line about what happened.');
       return;
     }
     setBusy(true);
     const problem = await n.dropLine({ move: move.id, line, upgrade: version === 'up', recording: null, via });
+    if (problem) {
+      setBusy(false);
+      setError(problem);
+      return;
+    }
+    // The line is in. The reflection is a bonus: if it fails to save, still show this time's result.
+    const saved = await addReflection(move.id, version === 'up', flow);
+    const r: Reflection = saved ?? {
+      id: 'local',
+      move: move.id,
+      upgrade: version === 'up',
+      nerve_before: flow.before || null,
+      nerve_after: flow.after || null,
+      went: flow.went || null,
+      fear: flow.fear.trim() || null,
+      feared: flow.fear.trim() && flow.feared ? flow.feared : null,
+      created_at: new Date().toISOString(),
+    };
     setBusy(false);
-    if (problem) setError(problem);
-    else onPosted();
+    saveFlow(flowKey, null);
+    setText('');
+    setResult(r);
+    setHistory((h) => [...h, r]);
+    setFlowState(freshFlow(0));
+    scroller.current?.scrollTo({ y: 0, animated: false });
   };
+
+  const fear = flow.fear.trim();
+  const guide = GUIDE[move.id] && !via ? GUIDE[move.id] : null;
+  const hasExample = !move.retired;
+  const how = guide ? (
+    <View style={{ gap: 14 }}>
+      {MENTOR[move.b as 'a'] ? <MentorLine b={move.b as 'a'} text={guide.why} /> : null}
+      <View style={s.part}>
+        {guide.steps.map((step, i) => (
+          <View key={i} style={s.step}>
+            <T style={s.stepNum}>{i + 1}.</T>
+            <T style={{ flex: 1 }}>{step}</T>
+          </View>
+        ))}
+      </View>
+      {MENTOR[move.b as 'a'] ? null : (
+        <View style={s.part}>
+          <T v="eyebrow">Why it works</T>
+          <T>{guide.why}</T>
+        </View>
+      )}
+      <View style={s.part}>
+        <T v="eyebrow">Watch out for</T>
+        <T>{guide.watch}</T>
+      </View>
+    </View>
+  ) : null;
+  const folds = (
+    <>
+      {how ? <Fold title="How to do it" open={!!open.how} onToggle={() => toggle('how')}>{how}</Fold> : null}
+      {hasExample ? (
+        <Fold title="Watch an example" open={!!open.ex} onToggle={() => toggle('ex')}>
+          <ExampleCard move={move} />
+        </Fold>
+      ) : null}
+    </>
+  );
 
   return (
     <View style={s.screen}>
@@ -150,7 +249,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
       </View>
 
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
+        <ScrollView ref={scroller} contentContainerStyle={[s.body, { paddingBottom: insets.bottom + 32 }]} keyboardShouldPersistTaps="handled">
           <View style={s.section}>
             <T v="accent" style={{ color: move.b === 'x' ? PLACE_HUE[PLACES[move.place ?? 0].id][0] : move.b === 'z' ? C.accentText : HUE[bk][0] }}>
               {label(move)}
@@ -165,197 +264,247 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                 </T>
               </View>
             ) : null}
-            <Seg
-              value={version}
-              onChange={setVersion}
-              options={[
-                { key: 'base', label: 'The move' },
-                { key: 'up', label: 'Upgrade' },
-              ]}
-            />
-            <T style={{ fontSize: 20, lineHeight: 27 }}>{version === 'up' ? move.up : move.doIt}</T>
-            <T v="sub">{version === 'up' ? 'Same move, one notch harder. Your line gets tagged as an upgrade.' : move.rep}</T>
-            {version !== 'up' ? <CountsFor id={move.id} /> : null}
-          </View>
-
-          {GUIDE[move.id] && !via ? (
-            <View style={s.guide}>
-              {MENTOR[move.b as 'a'] ? <MentorLine b={move.b as 'a'} text={GUIDE[move.id].why} /> : null}
-              <View style={s.part}>
-                <T v="eyebrow">How to do it</T>
-                {GUIDE[move.id].steps.map((step, i) => (
-                  <View key={i} style={s.step}>
-                    <T style={s.stepNum}>{i + 1}.</T>
-                    <T style={{ flex: 1 }}>{step}</T>
-                  </View>
-                ))}
-              </View>
-              {GUIDE[move.id].say ? (
-                <View style={s.part}>
-                  <T v="eyebrow">Try saying</T>
-                  <View style={s.say}>
-                    <T v="semi" style={{ fontSize: 16, lineHeight: 22 }}>
-                      {GUIDE[move.id].say}
-                    </T>
-                  </View>
-                </View>
-              ) : null}
-              {MENTOR[move.b as 'a'] ? null : (
-                <View style={s.part}>
-                  <T v="eyebrow">Why it works</T>
-                  <T>{GUIDE[move.id].why}</T>
-                </View>
-              )}
-              <View style={s.part}>
-                <T v="eyebrow">Watch out for</T>
-                <T>{GUIDE[move.id].watch}</T>
-              </View>
-              <View style={s.part}>
-                <T v="eyebrow">Record it</T>
-                <View style={s.rec}>
-                  <T>{GUIDE[move.id].record}</T>
-                </View>
-              </View>
-            </View>
-          ) : null}
-
-          <ExampleCard move={move} />
-
-          <View style={s.section}>
-            <T v="eyebrow">The line</T>
-            <TextInput
-              accessibilityLabel="The line"
-              value={text}
-              onChangeText={setText}
-              placeholder="What happened. One line."
-              placeholderTextColor={C.muted}
-              multiline
-              maxLength={400}
-              textAlignVertical="top"
-              style={s.area}
-            />
-
-            {handsFree.on ? (
-              <HandsFreePanel hf={handsFree} />
-            ) : voice.active ? (
-              <RecordingBar seconds={voice.seconds} limit={MAX_AUDIO_SECONDS} mic={ON_WEB ? undefined : voice.mic} onStop={voice.stop} />
-            ) : saving ? (
-              <View style={s.status}>
-                <T v="semi" style={{ fontSize: 16 }}>
-                  Saving your take…
-                </T>
-              </View>
-            ) : (
-              <View style={s.recRow}>
-                <Btn
-                  label={voice.opening ? 'Getting the mic ready…' : n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another audio' : 'Record audio'}
-                  icon="mic"
-                  disabled={locked || voice.opening}
-                  style={{ flex: 1, paddingHorizontal: 10 }}
-                  onPress={async () => {
-                    setError('');
-                    setSaved('');
-                    const problem = await voice.start();
-                    if (problem) setError(problem);
-                  }}
-                />
-                {ON_WEB ? null : (
-                <Btn
-                  label={n.mine.some((x) => x.move === move.id && x.media_path) ? 'Another video' : 'Record video'}
-                  icon="cam"
-                  disabled={locked}
-                  style={{ flex: 1, paddingHorizontal: 10 }}
-                  onPress={() => {
-                    setError('');
-                    setSaved('');
-                    setCamera(true);
-                  }}
-                />
-                )}
-              </View>
-            )}
-            {!ON_WEB && !handsFree.on && !voice.active && !saving ? (
-              <Btn
-                label="Hands-free: say start and stop"
-                icon="mic"
-                kind="quiet"
-                disabled={locked}
-                onPress={() => {
-                  setError('');
-                  setSaved('');
-                  handsFree.turnOn();
-                }}
-              />
-            ) : null}
-            {handsFree.error ? <T v="error">{handsFree.error}</T> : null}
-            {saved ? (
-              <View style={s.saved}>
-                <T v="semi" style={{ fontSize: 15, lineHeight: 21, color: C.accentText }}>
-                  {saved}
-                </T>
-              </View>
-            ) : null}
-            {!voice.active && !saving && !saved && !handsFree.on ? (
-              <T v="small">Recording starts on the tap and saves to your log when you stop. {ON_WEB ? 'Audio up to 30 minutes. Video and hands-free are in the Android app.' : 'Audio up to 30 minutes, video up to 90 seconds. Film yourself, not them.'}</T>
-            ) : null}
-            {failed && !saving ? (
-              <View style={s.recRow}>
-                <Btn label="Try saving again" kind="primary" small onPress={() => saveTake(failed)} />
-                <Btn label="Discard" kind="quiet" small onPress={() => { setFailed(null); setError(''); }} />
-              </View>
-            ) : null}
-
-            {error ? <T v="error">{error}</T> : null}
-            <Btn label={busy ? 'Dropping…' : 'Drop the line'} kind="primary" wide disabled={busy || locked} onPress={drop} />
-          </View>
-
-          <View style={s.section}>
-            <T v="eyebrow">Together</T>
-            {n.circle.length === 0 ? (
-              <T v="sub">Nobody in your circle yet. Anyone who installs Nerve and signs in shows up here.</T>
-            ) : (
+            {result ? null : (
               <>
-                <View style={s.chips}>
-                  {n.circle.map((person) => {
-                    const mine = n.myChallengeTo(person.id, move.id);
-                    const theirs = n.incoming.some((c) => c.author === person.id && c.move === move.id);
-                    return (
-                      <Pill
-                        key={person.id}
-                        label={person.name || 'Someone'}
-                        on={!!mine || theirs}
-                        disabled={pending === person.id || (theirs && !mine)}
-                        onPress={async () => {
-                          setPending(person.id);
-                          const problem = await n.toggleChallenge(person.id, move.id);
-                          setPending('');
-                          if (problem) setError(problem);
-                        }}
-                      />
-                    );
-                  })}
-                </View>
-                <T v="sub">
-                  {doneToday.length
-                    ? `Line dropped today: ${doneToday.map(n.nameOf).join(', ')}.`
-                    : partners.length
-                      ? 'Same window, until midnight. A line each is enough.'
-                      : 'Tap a name to challenge them. Same window, until midnight.'}
-                </T>
+                <Seg
+                  value={version}
+                  onChange={setVersion}
+                  options={[
+                    { key: 'base', label: 'The move' },
+                    { key: 'up', label: 'Upgrade' },
+                  ]}
+                />
+                <T style={{ fontSize: 20, lineHeight: 27 }}>{version === 'up' ? move.up : move.doIt}</T>
+                {version !== 'up' ? <CountsFor id={move.id} /> : null}
               </>
             )}
           </View>
 
-          <View style={s.section}>
-            <View style={s.logHead}>
-              <T v="eyebrow">Your log</T>
-              <T style={s.count}>{mineHere.length}</T>
-            </View>
-            {mineHere.length === 0 ? (
-              <T v="sub">Nothing here yet. Your first take or line starts the log.</T>
-            ) : (
-              mineHere.map((x) => <LogItem key={x.id} line={x} onError={setError} />)
-            )}
+          {result ? (
+            <ResultCard
+              r={result}
+              history={history}
+              xp={moveXp(move)}
+              hasUpgrade={!!move.up}
+              onUpgrade={() => {
+                setResult(null);
+                setVersion('up');
+                scroller.current?.scrollTo({ y: 0, animated: false });
+              }}
+              onFeed={onPosted}
+              onDone={onClose}
+            />
+          ) : off ? (
+            folds
+          ) : (
+            <>
+              <View style={s.steps} accessibilityRole="tablist">
+                {(['do', 'after'] as Step[]).map((k, i) => {
+                  const cur = flow.step === k;
+                  const past = k === 'do' && flow.step === 'after';
+                  return (
+                    <Pressable
+                      key={k}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: cur }}
+                      onPress={() => goStep(k)}
+                      style={[s.stepTab, cur && s.stepTabOn]}>
+                      <View style={[s.stepDot, past && s.stepDotPast]}>
+                        <T style={[s.stepDotText, past && { color: C.surface }]}>{i + 1}</T>
+                      </View>
+                      <T v="semi" style={{ fontSize: 16, color: cur || past ? C.ink : C.muted }}>
+                        {k === 'do' ? 'Do it' : 'After'}
+                      </T>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              {flow.step === 'do' ? (
+                <View style={s.card}>
+                  <T v="semi" style={{ fontSize: 16, lineHeight: 22 }}>
+                    {version === 'up' ? 'Upgrade: same move, one notch harder.' : `Done when: ${move.rep.charAt(0).toLowerCase()}${move.rep.slice(1)}`}
+                  </T>
+                  {guide?.say ? (
+                    <View style={s.say}>
+                      <T v="semi" style={{ fontSize: 19, lineHeight: 26 }}>
+                        {guide.say}
+                      </T>
+                    </View>
+                  ) : null}
+                  <T v="semi" style={s.q}>How nervous are you right now?</T>
+                  <Scale value={flow.before} onPick={(v) => setFlow({ before: v })} />
+                  <T v="semi" style={s.q}>
+                    What do you think will happen? <T v="small">Optional</T>
+                  </T>
+                  <TextInput
+                    accessibilityLabel="What do you think will happen?"
+                    value={flow.fear}
+                    onChangeText={(v) => setFlow({ fear: v })}
+                    placeholder="They’ll think I’m weird"
+                    placeholderTextColor={C.muted}
+                    maxLength={120}
+                    style={s.field}
+                  />
+
+                  {handsFree.on ? (
+                    <HandsFreePanel hf={handsFree} />
+                  ) : voice.active ? (
+                    <RecordingBar seconds={voice.seconds} limit={MAX_AUDIO_SECONDS} mic={ON_WEB ? undefined : voice.mic} onStop={voice.stop} />
+                  ) : saving ? (
+                    <View style={s.status}>
+                      <T v="semi" style={{ fontSize: 16 }}>
+                        Saving your take…
+                      </T>
+                    </View>
+                  ) : (
+                    <Fold title="Record it" hint="Optional" open={!!open.rec} onToggle={() => toggle('rec')}>
+                      <View style={{ gap: 10 }}>
+                        <View style={s.recRow}>
+                          <Btn
+                            label={voice.opening ? 'Getting the mic ready…' : 'Record audio'}
+                            icon="mic"
+                            disabled={voice.opening}
+                            style={{ flex: 1, paddingHorizontal: 10 }}
+                            onPress={async () => {
+                              setError('');
+                              setSaved('');
+                              const problem = await voice.start();
+                              if (problem) setError(problem);
+                            }}
+                          />
+                          {ON_WEB ? null : (
+                            <Btn
+                              label="Record video"
+                              icon="cam"
+                              style={{ flex: 1, paddingHorizontal: 10 }}
+                              onPress={() => {
+                                setError('');
+                                setSaved('');
+                                setCamera(true);
+                              }}
+                            />
+                          )}
+                        </View>
+                        {!ON_WEB ? (
+                          <Btn
+                            label="Hands-free: say start and stop"
+                            icon="mic"
+                            kind="quiet"
+                            onPress={() => {
+                              setError('');
+                              setSaved('');
+                              handsFree.turnOn();
+                            }}
+                          />
+                        ) : null}
+                        <T v="small">{ON_WEB ? 'Takes save privately to your log. Video and hands-free are in the Android app.' : 'Takes save privately to your log. Film yourself, not them.'}</T>
+                      </View>
+                    </Fold>
+                  )}
+                  {handsFree.error ? <T v="error">{handsFree.error}</T> : null}
+                  {saved ? (
+                    <View style={s.saved}>
+                      <T v="semi" style={{ fontSize: 15, lineHeight: 21, color: C.accentText }}>
+                        {saved}
+                      </T>
+                    </View>
+                  ) : null}
+                  {failed && !saving ? (
+                    <View style={s.recRow}>
+                      <Btn label="Try saving again" kind="primary" small onPress={() => saveTake(failed)} />
+                      <Btn label="Discard" kind="quiet" small onPress={() => { setFailed(null); setError(''); }} />
+                    </View>
+                  ) : null}
+                  {error ? <T v="error">{error}</T> : null}
+
+                  <Btn label="I did it" kind="primary" wide disabled={voice.active || saving} onPress={() => goStep('after')} />
+                  <T v="small" style={{ textAlign: 'center' }}>
+                    Go do it, then come back. Your answers stay here.
+                  </T>
+                  <Pressable accessibilityRole="button" onPress={onClose} hitSlop={8} style={{ alignSelf: 'center', padding: 6 }}>
+                    <T style={{ color: C.muted, textDecorationLine: 'underline' }}>Not today</T>
+                  </Pressable>
+                  {folds}
+                </View>
+              ) : (
+                <View style={s.card}>
+                  <T v="semi" style={s.q}>How did it go?</T>
+                  <Choice options={WENT} value={flow.went} onPick={(v) => setFlow({ went: v })} />
+                  <T v="semi" style={s.q}>How nervous were you, really?</T>
+                  <Scale value={flow.after} onPick={(v) => setFlow({ after: v })} />
+                  {fear ? (
+                    <>
+                      <T v="semi" style={s.q}>{`You expected “${fear}”. Did it happen?`}</T>
+                      <Choice options={FEARED} value={flow.feared} onPick={(v) => setFlow({ feared: v })} />
+                    </>
+                  ) : null}
+                  <T v="semi" style={s.q}>What happened? One line.</T>
+                  <TextInput
+                    accessibilityLabel="What happened? One line."
+                    value={text}
+                    onChangeText={setText}
+                    placeholder="Said hi to six people. Two smiled back."
+                    placeholderTextColor={C.muted}
+                    multiline
+                    maxLength={400}
+                    textAlignVertical="top"
+                    style={s.area}
+                  />
+                  {error ? <T v="error">{error}</T> : null}
+                  <Btn label={busy ? 'Dropping…' : 'Drop the line'} kind="primary" wide disabled={busy || locked} onPress={drop} />
+                </View>
+              )}
+            </>
+          )}
+
+          <View>
+            <Fold title="Do it with a friend" open={!!open.together} onToggle={() => toggle('together')} rule>
+              {n.circle.length === 0 ? (
+                <T v="sub">Nobody in your circle yet. Anyone who installs Nerve and signs in shows up here.</T>
+              ) : (
+                <View style={{ gap: 10 }}>
+                  <View style={s.chips}>
+                    {n.circle.map((person) => {
+                      const mine = n.myChallengeTo(person.id, move.id);
+                      const theirs = n.incoming.some((c) => c.author === person.id && c.move === move.id);
+                      return (
+                        <Pill
+                          key={person.id}
+                          label={person.name || 'Someone'}
+                          on={!!mine || theirs}
+                          disabled={pending === person.id || (theirs && !mine)}
+                          onPress={async () => {
+                            setPending(person.id);
+                            const problem = await n.toggleChallenge(person.id, move.id);
+                            setPending('');
+                            if (problem) setError(problem);
+                          }}
+                        />
+                      );
+                    })}
+                  </View>
+                  <T v="sub">
+                    {doneToday.length
+                      ? `Line dropped today: ${doneToday.map(n.nameOf).join(', ')}.`
+                      : partners.length
+                        ? 'Same window, until midnight. A line each is enough.'
+                        : 'Tap a name to challenge them. Same window, until midnight.'}
+                  </T>
+                </View>
+              )}
+            </Fold>
+            <Fold title="Your log" count={mineHere.length} open={!!open.log} onToggle={() => toggle('log')} rule>
+              {mineHere.length === 0 ? (
+                <T v="sub">Nothing here yet. Your first take or line starts the log.</T>
+              ) : (
+                <View style={{ gap: 10 }}>
+                  {mineHere.map((x) => (
+                    <LogItem key={x.id} line={x} onError={setError} />
+                  ))}
+                </View>
+              )}
+            </Fold>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -369,6 +518,115 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           }}
         />
       ) : null}
+    </View>
+  );
+}
+
+// A folded panel: the title row opens and closes it.
+function Fold({ title, hint, count, open, onToggle, rule, children }: { title: string; hint?: string; count?: number; open: boolean; onToggle: () => void; rule?: boolean; children: React.ReactNode }) {
+  return (
+    <View style={[s.fold, rule && s.foldRule]}>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={onToggle} style={s.foldHead}>
+        <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}>
+          <Icon name="chevron" size={18} />
+        </View>
+        <T v="semi" style={{ fontSize: 17, flex: 1 }}>
+          {title}
+          {hint ? <T v="small">{`  ${hint}`}</T> : null}
+        </T>
+        {count != null ? <T v="semi">{count}</T> : null}
+      </Pressable>
+      {open ? <View style={{ paddingBottom: 14 }}>{children}</View> : null}
+    </View>
+  );
+}
+
+function Scale({ value, onPick }: { value: number; onPick: (v: number) => void }) {
+  return (
+    <View style={s.scale} accessibilityRole="radiogroup">
+      {NERVE_WORDS.map((w, i) => {
+        const v = i + 1;
+        const on = value === v;
+        return (
+          <Pressable key={v} accessibilityRole="radio" accessibilityLabel={`${v}, ${w}`} accessibilityState={{ checked: on }} onPress={() => onPick(v)} style={[s.scaleBtn, on && s.on]}>
+            <T style={[s.scaleNum, on && { color: C.surface }]}>{v}</T>
+            <T style={[s.scaleWord, on && { color: C.surface }]}>{i === 0 || i === 4 ? w : ' '}</T>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+function Choice<K extends string>({ options, value, onPick }: { options: [K, string][]; value: K | ''; onPick: (v: K) => void }) {
+  return (
+    <View style={s.choice} accessibilityRole="radiogroup">
+      {options.map(([k, text]) => {
+        const on = value === k;
+        return (
+          <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => onPick(k)} style={[s.choiceBtn, on && s.on]}>
+            <T v="semi" style={{ fontSize: 16, color: on ? C.surface : C.ink }}>
+              {text}
+            </T>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// What you get after dropping the line: nerves before and during, the fear against what happened, your pattern, what next.
+function ResultCard({ r, history, xp, hasUpgrade, onUpgrade, onFeed, onDone }: { r: Reflection; history: Reflection[]; xp: number; hasUpgrade: boolean; onUpgrade: () => void; onFeed: () => void; onDone: () => void }) {
+  const a = analyse(r, history, hasUpgrade);
+  return (
+    <View style={[s.card, s.result]}>
+      <T v="accent">{`Line dropped, +${xp} XP`}</T>
+      {a.nerves ? (
+        <View style={s.resPart}>
+          <T style={s.resBig}>{`Nerves ${a.nerves.b} → ${a.nerves.a}`}</T>
+          <View style={s.bars} accessible={false}>
+            <View style={s.barCol}>
+              <View style={[s.bar1, { height: a.nerves.b * 18 }]} />
+              <T v="small">Before</T>
+            </View>
+            <View style={s.barCol}>
+              <View style={[s.bar1, s.barNow, { height: a.nerves.a * 18 }]} />
+              <T v="small">During</T>
+            </View>
+          </View>
+          <T>{a.nerves.text}</T>
+        </View>
+      ) : (
+        <T style={s.resBig}>Done.</T>
+      )}
+      {a.fear ? (
+        <View style={[s.resPart, s.resRule]}>
+          <T v="small" style={s.resK}>You expected</T>
+          <T v="semi" style={{ fontSize: 18, lineHeight: 24 }}>{`“${a.fear.said}”`}</T>
+          <T>{a.fear.text}</T>
+        </View>
+      ) : null}
+      {a.pattern ? (
+        <View style={[s.resPart, s.resRule]}>
+          <T v="small" style={s.resK}>Your pattern</T>
+          <T>{a.pattern}</T>
+        </View>
+      ) : null}
+      {a.last ? (
+        <View style={[s.resPart, s.resRule]}>
+          <T v="small" style={s.resK}>Last time on this move</T>
+          <T>{a.last}</T>
+        </View>
+      ) : null}
+      <View style={[s.resPart, s.resRule]}>
+        <T v="small" style={s.resK}>Next</T>
+        <T>{a.next}</T>
+        <View style={{ gap: 8, marginTop: 6 }}>
+          {a.upgrade ? <Btn label="Try the upgrade" kind="primary" wide onPress={onUpgrade} /> : null}
+          <Btn label="See it on the feed" kind={a.upgrade ? 'outline' : 'primary'} wide onPress={onFeed} />
+          <Btn label="Done" kind="quiet" wide onPress={onDone} />
+        </View>
+      </View>
     </View>
   );
 }
@@ -477,6 +735,34 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   logHead: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   count: { fontFamily: F.display, fontSize: 34, lineHeight: 34, color: C.accentText },
+  steps: { flexDirection: 'row', gap: 8, marginBottom: -12 },
+  stepTab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.surface },
+  stepTabOn: { borderColor: C.ink, borderBottomWidth: 4, borderBottomColor: C.accent },
+  stepDot: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: C.ink, alignItems: 'center', justifyContent: 'center' },
+  stepDotPast: { backgroundColor: C.ink },
+  stepDotText: { fontFamily: F.semi, fontSize: 13, lineHeight: 16, color: C.ink },
+  card: { gap: 12, padding: 16, borderRadius: 10, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.surface },
+  q: { fontSize: 17, lineHeight: 23, marginTop: 4 },
+  field: { minHeight: 48, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.surface, fontFamily: F.body, fontSize: 16, color: C.ink },
+  scale: { flexDirection: 'row', gap: 6 },
+  scaleBtn: { flex: 1, alignItems: 'center', paddingTop: 10, paddingBottom: 8, borderRadius: 8, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.bg },
+  scaleNum: { fontFamily: F.display, fontSize: 22, lineHeight: 26, color: C.ink },
+  scaleWord: { fontFamily: F.semi, fontSize: 11, lineHeight: 14, color: C.muted },
+  choice: { flexDirection: 'row', gap: 6 },
+  choiceBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: 8, borderWidth: 1.5, borderColor: C.line, backgroundColor: C.bg },
+  on: { backgroundColor: C.ink, borderColor: C.ink },
+  fold: {},
+  foldRule: { borderTopWidth: 1, borderTopColor: C.line },
+  foldHead: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52 },
+  result: { borderTopWidth: 6, borderTopColor: C.accent, gap: 16 },
+  resPart: { gap: 6 },
+  resRule: { paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line },
+  resBig: { fontFamily: F.display, fontSize: 34, lineHeight: 40, color: C.ink },
+  resK: { fontFamily: F.semi, color: C.muted },
+  bars: { flexDirection: 'row', gap: 14, alignItems: 'flex-end', height: 110 },
+  barCol: { alignItems: 'center', gap: 4 },
+  bar1: { width: 44, borderTopLeftRadius: 6, borderTopRightRadius: 6, borderWidth: 1.5, borderColor: C.ink, backgroundColor: C.bgDeep },
+  barNow: { backgroundColor: C.accent },
   logItem: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });
 
