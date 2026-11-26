@@ -8,13 +8,13 @@ import { useRope } from './rope';
 export type Stage = 0 | 1 | 2;
 
 export const STAGE_NOTE = [
-  'After your first move: a daily side quest and the full list of moves.',
+  'After your first move: the full list of moves.',
   'After three moves: places to practise, a rope team with friends and the leaderboard.',
 ];
 const STAGE_NEW = [
   '',
-  'A daily side quest and your full list of moves are now on Tonight.',
-  'Places are now on Tonight. A rope team and the leaderboard are on the feed, and paths and patches are under You.',
+  'Your full list of moves is now on Moves.',
+  'Places are now on Moves. A rope team and the leaderboard are in Community, and paths and awards are under You.',
 ];
 
 type Api = {

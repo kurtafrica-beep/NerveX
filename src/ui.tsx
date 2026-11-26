@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import {
   Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -21,6 +25,7 @@ const ICONS = {
   comment: 'M4 5h16v11H10l-5 4v-4H4z',
   back: 'M19 12H5M11 6l-6 6 6 6',
   chevron: 'M9 6l6 6-6 6',
+  cal: 'M5.5 5h13a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3.5 10h17M8 3v4M16 3v4',
   mic: 'M12 3a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
   cam: 'M4 7h11v10H4zM15 11l5-3v8l-5-3z',
   play: 'M8 5l11 7-11 7z',
@@ -272,3 +277,41 @@ export function ConfirmLink({ label, onConfirm }: { label: string; onConfirm: ()
 const link = StyleSheet.create({
   text: { fontFamily: F.body, fontSize: 14, color: C.muted, textDecorationLine: 'underline' },
 });
+
+// A bottom sheet: a title, Close, and whatever goes in it.
+export function Sheet({ visible, title, onClose, children }: { visible: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <Pressable style={sheet.shade} accessibilityLabel="Close" onPress={onClose} />
+        <View style={sheet.box}>
+          <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+            <View style={sheet.head}>
+              <T v="h" style={{ flex: 1 }}>
+                {title}
+              </T>
+              <Btn label="Close" kind="quiet" small onPress={onClose} />
+            </View>
+            {children}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+const sheet = StyleSheet.create({
+  shade: { flex: 1, backgroundColor: 'rgba(20,28,24,0.45)' },
+  box: { maxHeight: '88%', paddingHorizontal: 16, paddingTop: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16, borderTopWidth: 2, borderColor: C.ink, backgroundColor: C.surface },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+});
+
+// Progress as dots: filled for done, ringed for the one up next.
+export function Dots({ done, now, color }: { done: boolean[]; now: number; color: string }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 5 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      {done.map((d, i) => (
+        <View key={i} style={{ width: 10, height: 10, borderRadius: 5, borderWidth: 1.5, borderColor: d || i === now ? color : C.line, backgroundColor: d ? color : 'transparent' }} />
+      ))}
+    </View>
+  );
+}

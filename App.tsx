@@ -9,6 +9,7 @@ import { VideoHost } from './src/components/VideoSheet';
 import { RewardSheet, XpToast, diff, isBig, snap, type Reward, type Snap } from './src/components/Reward';
 import { DataProvider, useNerve } from './src/data';
 import { Intro } from './src/components/Intro';
+import { ProProvider } from './src/components/Pro';
 import { RopeProvider, useRope } from './src/rope';
 import { StageProvider, useStage } from './src/stage';
 import { Feed } from './src/screens/Feed';
@@ -54,7 +55,9 @@ function Root() {
     <DataProvider key={session.user.id} uid={session.user.id}>
       <RopeProvider>
         <StageProvider>
-          <Shell />
+          <ProProvider>
+            <Shell />
+          </ProProvider>
         </StageProvider>
       </RopeProvider>
     </DataProvider>
@@ -129,7 +132,7 @@ function Shell() {
     xpTimer.current = setTimeout(() => setXpText(''), 1800);
   }, [progress, test, loaded]);
 
-  // Android back from Feed or You returns to Tonight; from Tonight it leaves the app.
+  // Android back from Community or You returns to Moves; from Moves it leaves the app.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (tab !== 'tonight') {
@@ -185,7 +188,7 @@ function Shell() {
 
       <View style={{ flex: 1 }}>
         {tab === 'feed' ? <Feed onOpenMove={setMoveId} onError={showError} /> : null}
-        {tab === 'tonight' ? <Tonight onOpenMove={setMoveId} /> : null}
+        {tab === 'tonight' ? <Tonight onOpenMove={setMoveId} onToast={setNote} /> : null}
         {tab === 'you' ? (
           <You
             onOpenMove={setMoveId}
@@ -202,7 +205,7 @@ function Shell() {
       <QuickRecorder visible={recOpen} onClose={() => setRecOpen(false)} onError={showError} onMode={setRecMode} />
 
       <View style={[s.nav, { paddingBottom: insets.bottom + 8 }]}>
-        <NavItem icon="tonight" label="Tonight" on={tab === 'tonight'} onPress={() => setTab('tonight')} />
+        <NavItem icon="tonight" label="Moves" on={tab === 'tonight'} onPress={() => setTab('tonight')} />
         <View style={s.navSlot}>
           <Pressable
             accessibilityRole="tab"
@@ -214,7 +217,7 @@ function Shell() {
             <T style={s.youLv}>You</T>
           </Pressable>
         </View>
-        <NavItem icon="feed" label="Feed" on={tab === 'feed'} dot={rope.unseen > 0} onPress={() => setTab('feed')} />
+        <NavItem icon="feed" label="Community" on={tab === 'feed'} dot={rope.unseen > 0} onPress={() => setTab('feed')} />
       </View>
 
       {xpText ? <XpToast text={xpText} /> : null}
@@ -247,6 +250,10 @@ function Shell() {
           key={moveId}
           moveId={moveId}
           onClose={closeMove}
+          onMoves={() => {
+            setMoveId(null);
+            setTab('tonight');
+          }}
           onPosted={() => {
             setMoveId(null);
             setTab('feed');

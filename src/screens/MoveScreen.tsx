@@ -13,7 +13,7 @@ import { clockText, stamp, useNerve, type Line, type Recording } from '../data';
 import { GUIDE } from '../guides';
 import { MentorLine, MENTOR } from '../components/Mentor';
 import { parseMoveKey } from '../placePaths';
-import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked } from '../moves';
+import { BRANCH, CAP_REACTS, isPath, label, lvWord, unlocked, type PathKey } from '../moves';
 import { HUE, PLACE_HUE, QUEST_BONUS, dayNum, moveXp, todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
 import { useStage } from '../stage';
@@ -22,9 +22,10 @@ import { FEARED, NERVE_WORDS, WENT, addReflection, analyse, freshFlow, loadFlow,
 import { C, F } from '../theme';
 import { Btn, ConfirmLink, Fold, Icon, Pill, Seg, T } from '../ui';
 
-type Props = { moveId: string; onClose: () => void; onPosted: () => void };
+// onMoves: after a move, close it and go to the Moves tab.
+type Props = { moveId: string; onClose: () => void; onPosted: () => void; onMoves?: () => void };
 
-export function MoveScreen({ moveId, onClose, onPosted }: Props) {
+export function MoveScreen({ moveId, onClose, onPosted, onMoves }: Props) {
   const n = useNerve();
   const insets = useSafeAreaInsets();
   const { move, via } = useMemo(() => parseMoveKey(moveId), [moveId]);
@@ -59,7 +60,9 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
     : move.retired
     ? 'This move was taken out of the levels. Lines already posted on it stay, but new ones go on the current moves.'
     : pathShut
-    ? `Locked. This move is on the ${BRANCH[bk].name} path. The You tab shows what opens it.`
+    ? n.progress.paths[move.b as PathKey]?.met
+      ? `Locked. You’ve earned the ${BRANCH[bk].name} path. Paths are part of Nerve Pro.`
+      : `Locked. This move is on the ${BRANCH[bk].name} path. The You tab shows what opens it.`
     : locked
       ? `Locked. Do every ${BRANCH[bk].name} ${lvWord(bk)} ${move.lv - 1} move to open ${move.cap ? 'the capstone' : `${lvWord(bk)} ${move.lv}`}.`
       : !move.cap
@@ -69,8 +72,8 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
           : pend?.posted
             ? `Posted. ${pend.reacts} of ${CAP_REACTS} reactions so far. It counts at ${CAP_REACTS}.`
             : pend
-              ? `Saved. Now post it to the feed. It counts once ${CAP_REACTS} people react.`
-              : `This is the capstone. It counts once your line is posted to the feed and ${CAP_REACTS} people react.`;
+              ? `Saved. Now post it to Community. It counts once ${CAP_REACTS} people react.`
+              : `This is the capstone. It counts once your line is posted to Community and ${CAP_REACTS} people react.`;
   const { dropLine } = n;
   const off = locked || !!move.retired;
 
@@ -294,7 +297,7 @@ export function MoveScreen({ moveId, onClose, onPosted }: Props) {
                 scroller.current?.scrollTo({ y: 0, animated: false });
               }}
               onFeed={onPosted}
-              onDone={onClose}
+              onDone={onMoves ?? onClose}
             />
           ) : off ? (
             folds
@@ -639,8 +642,8 @@ function ResultCard({ r, history, xp, hasUpgrade, onUpgrade, onFeed, onDone }: {
         <T>{a.next}</T>
         <View style={{ gap: 8, marginTop: 6 }}>
           {a.upgrade ? <Btn label="Try the upgrade" kind="primary" wide onPress={onUpgrade} /> : null}
-          <Btn label="See it on the feed" kind={a.upgrade ? 'outline' : 'primary'} wide onPress={onFeed} />
-          <Btn label="Done" kind="quiet" wide onPress={onDone} />
+          <Btn label="See it in Community" kind={a.upgrade ? 'outline' : 'primary'} wide onPress={onFeed} />
+          <Btn label="Back to Moves" kind="quiet" wide onPress={onDone} />
         </View>
       </View>
     </View>
@@ -729,7 +732,7 @@ function LogItem({ line, reflection, onError }: { line: Line; reflection: Reflec
           )}
           {isPrivate ? null : (
             <View style={{ gap: 6 }}>
-              <T v="small" style={{ fontFamily: F.semi }}>On the feed</T>
+              <T v="small" style={{ fontFamily: F.semi }}>In Community</T>
               {kudos.length ? (
                 <T>{Object.entries(counts).map(([k, c]) => `${REACT[k]?.e ?? ''} ${c}`).join('   ')}</T>
               ) : (
@@ -861,14 +864,13 @@ const s = StyleSheet.create({
   logItem: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: C.line, backgroundColor: C.surface, gap: 8 },
 });
 
-// Tells you when a move also moves your rope team's mountain or this month's expedition.
+// Tells you when a move also moves your rope team's mountain.
 function CountsFor({ id }: { id: string }) {
   const r = useRope();
   const { stage, roped } = useStage();
   const tags: string[] = [];
   if (stage < 2 && !roped) return null;
   if (r.team && r.mountain && countsFor(r.mountain, id)) tags.push(`your rope team (${MOUNTAINS[r.mountain].name})`);
-  if (countsFor('strangers', id)) tags.push('this month’s expedition');
   if (!tags.length) return null;
   const hue = r.team && r.mountain && countsFor(r.mountain, id) ? MOUNTAINS[r.mountain].hue : C.accent;
   return (

@@ -5,6 +5,7 @@ import { useAuth } from '../auth';
 import { useNerve } from '../data';
 import { useStage } from '../stage';
 import { inviteCode, sendInvite } from '../invite';
+import { proText, useProSheet } from './Pro';
 import { PATH_KEYS } from '../moves';
 import { lastMic, micsSeen } from '../mic';
 import { ON_WEB } from '../platform';
@@ -15,6 +16,7 @@ import { Btn, T } from '../ui';
 // Account settings: a sheet from the gear on the You screen.
 export function Settings({ onClose, onError, onPreview }: { onClose: () => void; onError: (message: string) => void; onPreview: (r: Reward) => void }) {
   const n = useNerve();
+  const { openPro } = useProSheet();
   const stage = useStage();
   const { session, signOut, resetPassword } = useAuth();
   const insets = useSafeAreaInsets();
@@ -134,6 +136,20 @@ export function Settings({ onClose, onError, onPreview }: { onClose: () => void;
               onPress={() => {
                 onClose();
                 stage.replayIntro();
+              }}
+            />
+          </View>
+
+          <View style={s.group}>
+            <T style={s.h3}>Nerve Pro</T>
+            <T v="small">{proText(n.pro)}</T>
+            <Btn
+              label={n.isPro ? 'Manage Pro' : 'See Nerve Pro'}
+              small
+              style={{ alignSelf: 'flex-start' }}
+              onPress={() => {
+                onClose();
+                openPro();
               }}
             />
           </View>

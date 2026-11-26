@@ -98,7 +98,7 @@ export const ACH: { k: AchKey; e: string; t: string; d: string; of: number }[] =
   { k: 'streak7', e: '⚡', t: 'Seven-Day Run', d: 'Log moves 7 days in a row', of: 7 },
   { k: 'allround', e: '🧭', t: 'All-Rounder', d: 'Do a move in every branch', of: 5 },
   { k: 'record10', e: '🎙️', t: 'On the Record', d: 'Save 10 recordings', of: 10 },
-  { k: 'post5', e: '📣', t: 'Out Loud', d: 'Post 5 lines to the feed', of: 5 },
+  { k: 'post5', e: '📣', t: 'Out Loud', d: 'Post 5 lines to Community', of: 5 },
   { k: 'react10', e: '❤️', t: 'Crowd Favourite', d: 'Get 10 reactions', of: 10 },
   { k: 'upgrade', e: '⏫', t: 'One Notch Harder', d: 'Log an upgrade', of: 1 },
   { k: 'base5', e: '🏕️', t: 'Base Camp', d: 'Finish every base level', of: 5 },
@@ -185,6 +185,8 @@ export function computeProgress(
   uid: string,
   test: boolean,
   cardUses: Record<string, number> = {},
+  // Paths are Nerve Pro: earned without Pro, a path stays shut.
+  pro = true,
 ): Progress {
   const count: Record<string, number> = {};
   for (const x of mine) count[x.move] = (count[x.move] ?? 0) + 1;
@@ -241,8 +243,8 @@ export function computeProgress(
       reqs.unshift({ text: `Finish the ${BRANCH[after].name} path, capstone included`, now: done ? 'Summit' : `Stage ${(levels[after] ?? 0) + 1}`, ok: done });
     }
     const met = reqs.every((r) => r.ok);
-    paths[b] = { reqs, met, open: met || test };
-    open[b] = met || test;
+    paths[b] = { reqs, met, open: test || (met && pro) };
+    open[b] = test || (met && pro);
     let k = 0;
     if (open[b]) while (k < 5 && levelDone(b, k + 1, count)) k++;
     levels[b] = k;

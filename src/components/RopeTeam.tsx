@@ -128,7 +128,7 @@ export function RopeTeam({ onError, onOpenMove }: { onError: (message: string) =
         ))}
         <T v="sub">Invite up to three friends. You share one mountain for the week: everyone’s moves move the rope. Only the team sees it.</T>
         {r.mutuals.length === 0 && followsMe.length === 0 ? (
-          <T v="small">Rope teams are for friends who follow each other. Follow a few people from the feed, and once they follow you back they’ll show up here.</T>
+          <T v="small">Rope teams are for friends who follow each other. Follow a few people from Community, and once they follow you back they’ll show up here.</T>
         ) : null}
         <View style={{ gap: 6 }}>
           {r.mutuals.map((id) => {

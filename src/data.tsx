@@ -32,6 +32,29 @@ export type BoardRow = { uid: string; pts: number; lines: number; reacts: number
 export type Challenge = { id: string; author: string; target: string; move: string; until: string; created_at: string };
 // wav marks a hands-free take: the speech recognizer saves raw WAV audio.
 export type Recording = { kind: MediaKind; uri: string; seconds: number; wav?: boolean };
+// Toronto meetups. Only the host posts them. The exact address is never in this row.
+export type IrlEvent = {
+  id: string;
+  title: string;
+  theme: string;
+  starts_at: string;
+  ends_at: string;
+  venue: string;
+  area: string;
+  what: string;
+  cap: number;
+  off: boolean;
+  created_by: string;
+};
+export type EventInput = { title: string; theme: string; start: number; end: number; venue: string; area: string; address: string; what: string; cap: number };
+export type Rsvp = { event: string; member: string };
+// Nerve Pro. A test switch for now: no payment is taken.
+export type ProState = { on: boolean; plan?: 'year' | 'month'; since?: number; trialEnds?: number | null };
+// A warm-up: a small thing on a day without a move. Kept on this phone only.
+export type WarmKind = 'plan' | 'reflect' | 'back';
+export type Warm = { k: WarmKind; at: number; move?: string; prompt?: string; text?: string; voice?: boolean; line?: string };
+export type Plan = { day: string; move: string; when: string; where: string };
+export const WARM_MAX = 2;
 
 type Store = {
   profiles: Record<string, Profile>;
@@ -42,13 +65,18 @@ type Store = {
   follows: Follow[];
   // when you used each playbook patch (private to you)
   cardUses: { card: string; created_at: string }[];
+  events: IrlEvent[];
+  rsvps: Rsvp[];
+  // addresses you can see: the host's, or events you're going to
+  addresses: Record<string, string>;
+  host: boolean;
   loaded: boolean;
   error: string;
 };
 
-const EMPTY: Store = { profiles: {}, lines: [], comments: [], kudos: [], challenges: [], follows: [], cardUses: [], loaded: false, error: '' };
+const EMPTY: Store = { profiles: {}, lines: [], comments: [], kudos: [], challenges: [], follows: [], cardUses: [], events: [], rsvps: [], addresses: {}, host: false, loaded: false, error: '' };
 
-export type Tonight = { move: Move; together: boolean; path: boolean };
+export type Tonight = { move: Move; together: boolean; path: boolean; own?: boolean };
 
 type Api = Store & {
   uid: string;
@@ -99,13 +127,34 @@ type Api = Store & {
   redeemInvite: (code: string) => Promise<{ who?: string; problem?: string }>;
   board: (period: 'week' | 'all', circleOnly: boolean) => BoardRow[];
   useCard: (id: string) => Promise<string>;
+  // Nerve Pro
+  pro: ProState;
+  isPro: boolean;
+  setPro: (p: ProState) => void;
+  // warm-ups
+  warm: Record<string, Warm>;
+  warmToday: Warm | null;
+  saveWarm: (k: WarmKind, extra?: Partial<Warm>) => void;
+  plan: Plan | null;
+  savePlan: (p: Omit<Plan, 'day'>) => void;
+  movedToday: boolean;
+  lineToBack: Line | null;
+  // In real life
+  events: IrlEvent[];
+  isHost: boolean;
+  goingTo: (eventId: string) => string[];
+  amGoing: (eventId: string) => boolean;
+  addressOf: (eventId: string) => string;
+  toggleGoing: (e: IrlEvent) => Promise<string>;
+  saveEvent: (input: EventInput, id?: string) => Promise<string>;
+  cancelEvent: (id: string) => Promise<string>;
 };
 
 const Ctx = createContext<Api | null>(null);
 
 const SAVE_FAILED = 'That did not save. Check your connection and try again.';
 
-function dayKey(ms: number): string {
+export function dayKey(ms: number): string {
   const d = new Date(ms);
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
 }
@@ -148,11 +197,47 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     setTestState(on);
     AsyncStorage.setItem('nerve.test', on ? '1' : '0').catch(() => {});
   }, []);
+  const [pro, setProState] = useState<ProState>({ on: false });
+  const [warm, setWarm] = useState<Record<string, Warm>>({});
+  const [plan, setPlan] = useState<Plan | null>(null);
+  useEffect(() => {
+    const read = async (k: string) => {
+      try {
+        const v = await AsyncStorage.getItem(k);
+        return v ? JSON.parse(v) : null;
+      } catch {
+        return null;
+      }
+    };
+    read('nerve.pro').then((v) => v && typeof v === 'object' && setProState({ ...v, on: !!v.on }));
+    read('nerve.warm').then((v) => v && typeof v === 'object' && setWarm(v));
+    read('nerve.plan').then((v) => v && typeof v === 'object' && setPlan(v));
+  }, []);
+  const setPro = useCallback((p: ProState) => {
+    setProState(p);
+    AsyncStorage.setItem('nerve.pro', JSON.stringify(p)).catch(() => {});
+  }, []);
+  const saveWarm = useCallback((k: WarmKind, extra: Partial<Warm> = {}) => {
+    setWarm((prev) => {
+      const now = Date.now();
+      const cut = now - 60 * 86400000;
+      const next: Record<string, Warm> = {};
+      for (const [day, w] of Object.entries(prev)) if (w && w.at >= cut) next[day] = w;
+      next[dayKey(now)] = { ...extra, k, at: now };
+      AsyncStorage.setItem('nerve.warm', JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+  }, []);
+  const savePlan = useCallback((p: Omit<Plan, 'day'>) => {
+    const next = { ...p, day: dayKey(Date.now()) };
+    setPlan(next);
+    AsyncStorage.setItem('nerve.plan', JSON.stringify(next)).catch(() => {});
+  }, []);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async () => {
     const since = new Date(Date.now() - 7 * 86400000).toISOString();
-    const [p, l, c, k, ch, fo, cu] = await Promise.all([
+    const [p, l, c, k, ch, fo, cu, ev, rs, ad, ho] = await Promise.all([
       supabase.from('profiles').select('id,name,avatar_url,title,allow_nudges'),
       supabase.from('lines').select('*').order('created_at', { ascending: false }).limit(300),
       supabase.from('comments').select('*').order('created_at', { ascending: true }).limit(3000),
@@ -160,9 +245,13 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       supabase.from('challenges').select('*').gt('until', since),
       supabase.from('follows').select('follower,followee').limit(10000),
       supabase.from('card_uses').select('card,created_at').limit(2000),
+      supabase.from('irl_events').select('id,title,theme,starts_at,ends_at,venue,area,what,cap,off,created_by').order('starts_at').limit(200),
+      supabase.from('irl_rsvps').select('event,member').limit(5000),
+      supabase.rpc('irl_addresses'),
+      supabase.rpc('is_host'),
     ]);
     if (p.error || l.error || c.error || k.error || ch.error) {
-      setStore((prev) => ({ ...prev, loaded: true, error: 'Could not load the feed. Pull down to try again.' }));
+      setStore((prev) => ({ ...prev, loaded: true, error: 'Could not load Community. Pull down to try again.' }));
       return;
     }
     const profiles: Record<string, Profile> = {};
@@ -176,6 +265,10 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       // follows and patch uses are newer: if they fail to load, the rest still works
       follows: fo.error ? [] : ((fo.data ?? []) as Follow[]),
       cardUses: cu.error ? [] : ((cu.data ?? []) as { card: string; created_at: string }[]),
+      events: ev.error ? [] : ((ev.data ?? []) as IrlEvent[]),
+      rsvps: rs.error ? [] : ((rs.data ?? []) as Rsvp[]),
+      addresses: ad.error ? {} : Object.fromEntries(((ad.data ?? []) as { event: string; address: string }[]).map((x) => [x.event, x.address])),
+      host: !ho.error && ho.data === true,
       loaded: true,
       error: '',
     });
@@ -194,6 +287,8 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       .on('postgres_changes', { event: '*', schema: 'public', table: 'kudos' }, () => soon())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'challenges' }, () => soon())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'follows' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'irl_events' }, () => soon())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'irl_rsvps' }, () => soon())
       .subscribe();
     const app = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
@@ -211,7 +306,7 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
   }, [reload]);
 
   const api = useMemo<Api>(() => {
-    const { profiles, lines, comments, kudos, challenges, follows, cardUses } = store;
+    const { profiles, lines, comments, kudos, challenges, follows, cardUses, events, rsvps, addresses, host } = store;
     // Your log includes private takes; the feed only shows posted lines.
     const mine = lines.filter((x) => x.author === uid);
     const feed = lines.filter((x) => x.posted !== false);
@@ -221,19 +316,73 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
     for (const k of kudos) (reactors[k.line_id] ??= []).push(k.author);
     const useCount: Record<string, number> = {};
     for (const u of cardUses) useCount[u.card] = (useCount[u.card] ?? 0) + 1;
-    const progress = computeProgress(mine, (id) => reactors[id] ?? [], uid, test, useCount);
+    const isPro = !!pro.on;
+    const progress = computeProgress(mine, (id) => reactors[id] ?? [], uid, test, useCount, isPro);
     const count = progress.count;
     const open = progress.open;
     const mineIds = new Set(mine.map((x) => x.id));
     const kudosReceived = kudos.filter((x) => mineIds.has(x.line_id)).length;
 
+    // A day counts with a move or a warm-up, but warm-ups alone hold it for at most two days in a row.
     let streak = 0;
     let cursor = clock;
-    if (!days[dayKey(cursor)]) cursor -= 86400000;
-    while (days[dayKey(cursor)]) {
+    let warmRun = 0;
+    if (!days[dayKey(cursor)] && !warm[dayKey(cursor)]) cursor -= 86400000;
+    while (days[dayKey(cursor)] || warm[dayKey(cursor)]) {
+      if (days[dayKey(cursor)]) warmRun = 0;
+      else if (++warmRun > WARM_MAX) break;
       streak++;
       cursor -= 86400000;
     }
+    const movedToday = !!days[dayKey(clock)];
+    const warmToday = warm[dayKey(clock)] ?? null;
+    const planToday = plan && plan.day === dayKey(clock) ? plan : null;
+    // The newest line from someone else in the last two days that you haven't reacted to.
+    const reacted = new Set(kudos.filter((x) => x.author === uid).map((x) => x.line_id));
+    const lineToBack = feed.find((x) => x.author !== uid && ms(x.created_at) > clock - 2 * 86400000 && !reacted.has(x.id)) ?? null;
+
+    const goingBy: Record<string, string[]> = {};
+    for (const r of rsvps) (goingBy[r.event] ??= []).push(r.member);
+    const toggleGoing: Api['toggleGoing'] = async (e) => {
+      const on = (goingBy[e.id] ?? []).includes(uid);
+      const { error } = on
+        ? await supabase.from('irl_rsvps').delete().eq('event', e.id).eq('member', uid)
+        : await supabase.from('irl_rsvps').insert({ event: e.id, member: uid });
+      if (error) return /full/i.test(error.message) ? 'This event is full.' : /no longer open/i.test(error.message) ? 'This event is no longer open.' : SAVE_FAILED;
+      await reload();
+      return '';
+    };
+    const saveEvent: Api['saveEvent'] = async (input, id) => {
+      const row = {
+        title: input.title.slice(0, 60),
+        theme: input.theme,
+        starts_at: new Date(input.start).toISOString(),
+        ends_at: new Date(input.end).toISOString(),
+        venue: input.venue.slice(0, 60),
+        area: input.area.slice(0, 40),
+        what: input.what.slice(0, 300),
+        cap: Math.max(2, Math.min(200, Math.round(input.cap) || 16)),
+      };
+      let eventId = id;
+      if (id) {
+        const { error } = await supabase.from('irl_events').update(row).eq('id', id);
+        if (error) return SAVE_FAILED;
+      } else {
+        const { data, error } = await supabase.from('irl_events').insert(row).select('id').single();
+        if (error || !data) return SAVE_FAILED;
+        eventId = (data as { id: string }).id;
+      }
+      const { error: e2 } = await supabase.from('irl_event_private').upsert({ event: eventId, address: input.address.slice(0, 100) });
+      if (e2) return 'The event saved, but the address did not. Edit it to try again.';
+      await reload();
+      return '';
+    };
+    const cancelEvent: Api['cancelEvent'] = async (id) => {
+      const { error } = await supabase.from('irl_events').update({ off: true }).eq('id', id);
+      if (error) return SAVE_FAILED;
+      await reload();
+      return '';
+    };
 
     const active = challenges.filter((x) => ms(x.until) > clock);
     const loggedSince = (moveId: string, at: string) => mine.some((x) => x.move === moveId && ms(x.created_at) >= ms(at));
@@ -250,13 +399,21 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       // Tonight's move comes from what you're training: a base branch, or a path once it's open.
       const onPath = isPath(branch) && !!open[branch];
       const own = !isPath(branch) || onPath;
-      const pool = own ? MOVES.filter((m) => m.b === branch && !m.retired).map((m) => m.id) : ORDER;
-      // Unlogged moves from what you're training, then unlogged moves anywhere, then repeats.
+      // The next one in your branch or open path, in order, so the card at the top always matches it.
+      let pool = own
+        ? MOVES.filter((m) => m.b === branch && !m.retired)
+            .sort((x, y) => x.lv - y.lv || x.i - y.i)
+            .map((m) => m.id)
+        : ORDER;
       let ready = pool.filter((id) => !count[id] && unlocked(BY[id], count, open));
-      if (!ready.length) ready = ORDER.filter((id) => !count[id] && unlocked(BY[id], count, open));
       if (!ready.length) ready = pool.filter((id) => unlocked(BY[id], count, open));
-      if (!ready.length) ready = ORDER.filter((id) => unlocked(BY[id], count, open));
-      tonight = { move: BY[ready[skip % ready.length]], together: false, path: onPath && BY[ready[skip % ready.length]].b === branch };
+      if (!ready.length) {
+        pool = ORDER;
+        ready = ORDER.filter((id) => !count[id] && unlocked(BY[id], count, open));
+        if (!ready.length) ready = ORDER.filter((id) => unlocked(BY[id], count, open));
+      }
+      const m = BY[ready[skip % ready.length]];
+      tonight = { move: m, together: false, path: onPath && m.b === branch, own: own && pool !== ORDER };
     }
 
     const nameOf = (id: string) => (id === uid ? profiles[id]?.name || 'You' : profiles[id]?.name || 'Someone');
@@ -518,8 +675,26 @@ export function DataProvider({ uid, children }: { uid: string; children: React.R
       redeemInvite,
       board,
       useCard,
+      pro,
+      isPro,
+      setPro,
+      warm,
+      warmToday,
+      saveWarm,
+      plan: planToday,
+      savePlan,
+      movedToday,
+      lineToBack,
+      events,
+      isHost: host,
+      goingTo: (id) => goingBy[id] ?? [],
+      amGoing: (id) => (goingBy[id] ?? []).includes(uid),
+      addressOf: (id) => addresses[id] ?? '',
+      toggleGoing,
+      saveEvent,
+      cancelEvent,
     };
-  }, [store, uid, skip, clock, reload, test, setTest, branch, setBranch]);
+  }, [store, uid, skip, clock, reload, test, setTest, branch, setBranch, pro, setPro, warm, saveWarm, plan, savePlan]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

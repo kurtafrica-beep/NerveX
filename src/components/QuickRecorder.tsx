@@ -15,7 +15,6 @@ import { Modal, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-na
 import { MAX_AUDIO_SECONDS } from '../config';
 import { clockText, useNerve } from '../data';
 import { BRANCH, BRANCH_KEYS, BY, MOVES, PATH_KEYS, unlocked, type Move } from '../moves';
-import { todaysQuest } from '../progress';
 import { PLACES } from '../rpgData';
 import { C, F } from '../theme';
 import { Btn, Icon, T } from '../ui';
@@ -364,7 +363,7 @@ function MovePicker({ take, busy, onPick, onBack }: { take: Take; busy: boolean;
   const p = n.progress;
   const open = (m: Move) => !m.retired && unlocked(m, n.count, p.open, p.level, n.test);
   const groups: { title: string; moves: Move[] }[] = [];
-  groups.push({ title: 'Tonight', moves: [n.tonight.move, todaysQuest()] });
+  groups.push({ title: 'Next up', moves: [n.tonight.move] });
   for (const b of BRANCH_KEYS) groups.push({ title: BRANCH[b].name, moves: MOVES.filter((m) => m.b === b && open(m)) });
   PLACES.forEach((pl, k) => {
     const ms = MOVES.filter((m) => m.b === 'x' && m.place === k && open(m));

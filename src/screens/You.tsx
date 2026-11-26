@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { MENTOR, MentorFace } from '../components/Mentor';
-import { LineCard, TitleChip } from '../components/LineCard';
+import { TitleChip } from '../components/LineCard';
 import { BaseMountains, PathMountains } from '../components/Mountains';
 import { BranchBanner, CardSheet, PatchWall } from '../components/Patches';
 import { ArtImage, Emo } from '../components/ArtIcon';
@@ -18,6 +18,7 @@ import { Gate } from './Tonight';
 import { C, F } from '../theme';
 import { Avatar, Btn, Card, Fold, Seg, T } from '../ui';
 import { Settings } from '../components/Settings';
+import { useProSheet } from '../components/Pro';
 import { Profile } from '../components/Profile';
 
 export function You({
@@ -36,9 +37,13 @@ export function You({
   const [busy, setBusy] = useState('');
   const [card, setCard] = useState<PlayCard | null>(null);
   const { stage } = useStage();
-  const [picked, setTab] = useState<'progress' | 'paths' | 'patches' | 'people' | 'lines'>('progress');
-  // Paths and patches show after three moves.
-  const tab = stage < 2 && (picked === 'paths' || picked === 'patches') ? 'progress' : picked;
+  const { openPro } = useProSheet();
+  // Paths is the first tab and opens by default once it's unlocked (three moves); until then Awards does.
+  const [picked, setTab] = useState<'paths' | 'awards' | 'people' | null>(null);
+  const tab = (() => {
+    const t = picked ?? (stage >= 2 ? 'paths' : 'awards');
+    return stage < 2 && t === 'paths' ? 'awards' : t;
+  })();
   const [workOpen, setWorkOpen] = useState(false);
   const [settings, setSettings] = useState(false);
   const [profile, setProfile] = useState('');
@@ -71,7 +76,7 @@ export function You({
               <View style={[s.pathHead, { marginTop: -34 }]}>
                 <T style={s.pathName}>{BRANCH[b].name}</T>
                 <T v="small" style={{ fontFamily: F.semi, color: 'rgba(255,255,255,0.8)' }}>
-                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : `${met} of ${info.reqs.length} met`}
+                  {info.open ? `${branchState(b, p)}${info.met ? '' : ', tester'}` : info.met ? 'Earned. Part of Nerve Pro.' : `${met} of ${info.reqs.length} met`}
                 </T>
               </View>
               {MENTOR[b] ? (
@@ -83,8 +88,12 @@ export function You({
               <T v="small" style={{ color: 'rgba(255,255,255,0.86)' }}>
                 {BRANCH[b].tag}
               </T>
-              {info.open ? null : <Gate reqs={info.reqs} light />}
-              <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
+              {info.open || info.met ? null : <Gate reqs={info.reqs} light />}
+              {!info.open && info.met ? (
+                <Btn label="Unlock with Pro" kind="primary" small onPress={() => openPro(b)} style={{ alignSelf: 'flex-start' }} />
+              ) : (
+                <Btn label={info.open ? 'Open the path' : 'See the moves'} kind="light" small onPress={() => onOpenBranch(b)} style={{ alignSelf: 'flex-start' }} />
+              )}
             </View>
     );
   };
@@ -138,39 +147,43 @@ export function You({
           <Stat value={String(n.kudosReceived)} label="Reactions" />
         </View>
       </Card>
+      {stage > 0 ? (
+        <Card>
+          <T v="h">Stats</T>
+          <StatsBlock p={p} />
+          <T v="small">Every move trains one or two of these. Confidence builds Courage, Talk builds Warmth, Cues and Voice build Presence, Sell builds Persuasion.</T>
+        </Card>
+      ) : null}
       <Seg
         value={tab}
         onChange={setTab}
-        options={
-          stage < 2
-            ? [
-                { key: 'progress', label: 'Progress' },
-                { key: 'people', label: 'People' },
-                { key: 'lines', label: 'Lines' },
-              ]
-            : [
-                { key: 'progress', label: 'Progress' },
-                { key: 'paths', label: 'Paths' },
-                { key: 'patches', label: 'Patches' },
-                { key: 'people', label: 'People' },
-                { key: 'lines', label: 'Lines' },
-              ]
-        }
+        options={[
+          ...(stage < 2 ? [] : [{ key: 'paths' as const, label: 'Paths' }]),
+          { key: 'awards' as const, label: 'Awards' },
+          { key: 'people' as const, label: 'People' },
+        ]}
       />
-      {tab === 'progress' && stage === 0 ? (
+      {tab === 'awards' && stage === 0 ? (
         <View style={s.later}>
           <T v="sub" style={{ fontSize: 15, lineHeight: 21 }}>
-            Your stats, titles and achievements show here after your first move.
+            Your titles, patches and achievements show here after your first move.
           </T>
         </View>
       ) : null}
-      {tab === 'progress' && stage > 0 ? (
+      {tab === 'awards' && stage > 0 ? (
         <>
-      <Card>
-        <T v="h">Stats</T>
-        <StatsBlock p={p} />
-        <T v="small">Every move trains one or two of these. Confidence builds Courage, Talk builds Warmth, Cues and Voice build Presence, Sell builds Persuasion.</T>
-      </Card>
+      {stage >= 2 ? (
+        <Card>
+          <View style={{ gap: 4 }}>
+            <T v="h">Patches</T>
+            <T v="sub">
+              Each patch is a playbook for a real situation: how to open, what to do if it goes flat or goes well, and how to leave. Finish a branch level or
+              become a regular to earn one. Use it in three real conversations and it turns gold.
+            </T>
+          </View>
+          <PatchWall onOpen={setCard} />
+        </Card>
+      ) : null}
       <Card>
         <View style={{ gap: 4 }}>
           <T v="eyebrow">Rewards</T>
@@ -263,20 +276,6 @@ export function You({
         </>
       ) : null}
 
-      {tab === 'patches' ? (
-        <>
-      <Card>
-        <View style={{ gap: 4 }}>
-          <T v="h">Patches</T>
-          <T v="sub">
-            Each patch is a playbook for a real situation: how to open, what to do if it goes flat or goes well, and how to leave. Finish a branch level or
-            become a regular to earn one. Use it in three real conversations and it turns gold.
-          </T>
-        </View>
-        <PatchWall onOpen={setCard} />
-      </Card>
-        </>
-      ) : null}
       {tab === 'people' ? (
         <>
       <Card>
@@ -287,7 +286,7 @@ export function You({
           </T>
         </View>
         {n.circle.length === 0 ? (
-          <T v="sub">Nobody yet. Invite a friend from Account settings (the gear above), or tap Follow on someone’s line in the feed.</T>
+          <T v="sub">Nobody yet. Invite a friend from Account settings (the gear above), or tap Follow on someone’s line in Community.</T>
         ) : (
           n.circle.map((person, i) => {
             const shared = n.challengeWith(person.id);
@@ -340,22 +339,8 @@ export function You({
             );
           })
         )}
-        {n.circle.length > 0 ? <T v="small">Tap a name to see their titles, patches and lines. Challenge sends them tonight’s move ({tonight.title}) until midnight.</T> : null}
+        {n.circle.length > 0 ? <T v="small">Tap a name to see their titles, patches and lines. Challenge sends them your next move ({tonight.title}) until midnight.</T> : null}
       </Card>
-        </>
-      ) : null}
-      {tab === 'lines' ? (
-        <>
-      {n.mine.some((x) => x.posted !== false) ? (
-        <T v="eyebrow" style={{ paddingTop: 6, paddingHorizontal: 2 }}>
-          Your lines
-        </T>
-      ) : null}
-      {n.mine.filter((x) => x.posted !== false).map((line) => (
-        <LineCard key={line.id} line={line} onOpenMove={onOpenMove} onError={onError} />
-      ))}
-
-      {n.mine.some((x) => x.posted !== false) ? null : <T v="sub">No lines yet. Do tonight’s move, post what happened, and it shows up here.</T>}
         </>
       ) : null}
       {profile ? <Profile uid={profile} onClose={() => setProfile('')} onOpenMove={onOpenMove} onError={onError} /> : null}

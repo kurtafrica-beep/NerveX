@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Dimensions, Image, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { Animated, Dimensions, Image, Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { LevelVideoRow } from '../components/Example';
 import { BranchBanner, Patch, PlaceBanner, PlacePoster } from '../components/Patches';
 import { ArtImage, Emo } from '../components/ArtIcon';
 import { BRANCH_ICON, PLACE_ICON, PLACE_POSTER } from '../artImages';
 import { PLACES } from '../rpgData';
-import { PLACE_HUE, QUEST_BONUS, REGULAR_XP, REP_BONUS, dayNum, placeCard, todaysQuest } from '../progress';
+import { PLACE_HUE, REGULAR_XP, REP_BONUS, dayNum, placeCard } from '../progress';
 import { useNerve } from '../data';
 import { STAGE_NOTE, useStage } from '../stage';
 import { BRANCH, BRANCH_KEYS, BY, CAP_REACTS, LEVELS, MOVES, PATH, PATH_KEYS, SOCIAL_PATHS, WORK_PATHS, isPath, label, levelDone, levelMoves, lvTitle, lvWord, type BranchKey, type PathKey } from '../moves';
@@ -14,14 +14,18 @@ import { MENTOR, MentorFace } from '../components/Mentor';
 import { levelVideo } from '../videos';
 import { HUE, TIERS, TIER_EMOJI, TITLES, branchState, levelBonus, moveXp, type Req } from '../progress';
 import { C, F } from '../theme';
-import { Btn, Card, Fold, Seg, T } from '../ui';
+import { Btn, Card, Dots, Fold, Seg, Sheet, T } from '../ui';
+import { useProSheet } from '../components/Pro';
+import { WarmCard } from '../components/Warm';
 
-export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
+export function Tonight({ onOpenMove, onToast }: { onOpenMove: (id: string) => void; onToast?: (msg: string) => void }) {
   const n = useNerve();
   const { stage } = useStage();
+  const { openPro } = useProSheet();
   const branch = n.branch;
   const [picking, setPicking] = useState(false);
   const [workOpen, setWorkOpen] = useState(false);
+  const [allOpen, setAllOpen] = useState(false);
   const [stagePick, setStagePick] = useState<Partial<Record<BranchKey, number>>>({});
   const scroller = useRef<{ scrollTo: (o: { y: number; animated: boolean }) => void } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,18 +34,30 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   const p = n.progress;
   const path = isPath(branch);
   const pOpen = !path || !!p.open[branch];
-  const [bc, bs] = HUE[branch];
+  const [bc] = HUE[branch];
   const current = (() => {
     if (!pOpen) return 1;
     for (const k of LEVELS) if (!levelDone(branch, k, n.count)) return k;
     return 5;
   })();
   const shown = stagePick[branch] ?? current;
+  // Earned but no Pro: the gate offers Pro instead of a list of requirements.
+  const proWall = path && !n.test && !n.isPro;
+  const earnedNoPro = proWall && !!p.paths[branch as PathKey]?.met;
   const pick = (b: BranchKey) => {
+    if (isPath(b) && !n.test && !n.isPro && p.paths[b as PathKey]?.met) {
+      setPicking(false);
+      openPro(b);
+      return;
+    }
     n.setBranch(b);
     setPicking(false);
     scroller.current?.scrollTo({ y: 0, animated: true });
   };
+  // Where you are in one line: this level, how many to go, a dot per move.
+  const lvMoves = levelMoves(branch, current);
+  const nextIdx = lvMoves.findIndex((m) => !n.count[m.id]);
+  const left = lvMoves.filter((m) => !n.count[m.id]).length;
 
   return (
     <ScrollView
@@ -65,11 +81,7 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
           <T v="h">Your first move</T>
           <T style={{ fontSize: 18, lineHeight: 25 }}>Nerve is practice for being less nervous around people. One small move a day.</T>
         </View>
-      ) : (
-        <View style={s.topRow}>
-          <PathBar key={branch} b={branch} open={pOpen} onPress={() => setPicking(true)} />
-        </View>
-      )}
+      ) : null}
 
       {n.incoming.map((c) => (
         <View key={c.id} style={s.invite}>
@@ -83,50 +95,16 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
         </View>
       ))}
 
-      <TonightPoster onOpenMove={onOpenMove} mates={mates.map(n.nameOf)} />
-      {/* Day one is the move and your branch. The rest arrives as you use it. */}
-      {stage === 0 ? (
-        <View style={s.topRow}>
-          <PathBar key={branch} b={branch} open={pOpen} first onPress={() => setPicking(true)} />
-        </View>
-      ) : null}
-      {stage >= 1 ? <QuestCard onOpenMove={onOpenMove} /> : null}
-      {stage >= 1 && path && pOpen ? <BaseRep onOpenMove={onOpenMove} /> : null}
-      {stage >= 2 ? <Places onOpenMove={onOpenMove} lens={path ? (branch as PathKey) : null} /> : null}
-
-      <Modal visible={picking} transparent animationType="slide" onRequestClose={() => setPicking(false)}>
-        <Pressable style={s.sheetShade} accessibilityLabel="Close" onPress={() => setPicking(false)} />
-        <View style={s.sheet}>
-          <ScrollView contentContainerStyle={{ gap: 10, paddingBottom: 28 }}>
-            <View style={s.sheetHead}>
-              <T v="h">What to train</T>
-              <Btn label="Close" kind="quiet" small onPress={() => setPicking(false)} />
-            </View>
-            <T v="sub">
-              {stage < 2 ? 'Five branches with five levels each. Pick the one that feels most like you.' : 'Five branches with five levels each. Paths open once your base is strong enough.'}
-            </T>
-            <T v="eyebrow">Branches</T>
-            <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} options={BRANCH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
-            {stage < 2 ? null : (
-              <>
-                <T v="eyebrow">Paths</T>
-                <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={SOCIAL_PATHS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
-                <Fold title="Paths for work and an audience" rule open={workOpen || (WORK_PATHS as BranchKey[]).includes(branch)} onToggle={() => setWorkOpen((o) => !o)}>
-                  <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={WORK_PATHS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
-                </Fold>
-              </>
-            )}
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {stage === 0 ? null : (
-      <Card>
+      {/* One card: what you're training, where you are in it, and the one move to do next. */}
+      <Card style={[s.branchCard, { borderLeftColor: bc }]}>
         <View style={s.movesHead}>
-          <T v="h" style={{ flex: 1 }}>
-            {BRANCH[branch].name}
-            {path ? ' path' : ''}
-          </T>
+          <View style={{ flex: 1 }}>
+            <T style={s.pathKicker}>{path ? 'Your path' : 'Your branch'}</T>
+            <T style={[s.branchName, { color: bc }]} accessibilityRole="header">
+              {BRANCH[branch].name}
+              {path ? ' path' : ''}
+            </T>
+          </View>
           <Btn label="Change" small onPress={() => setPicking(true)} />
         </View>
         {MENTOR[branch] ? (
@@ -137,114 +115,81 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
               <T v="sub">{BRANCH[branch].tag}</T>
             </View>
           </View>
-        ) : (
-          <T v="sub">{BRANCH[branch].tag}</T>
-        )}
+        ) : null}
         {path && !pOpen ? (
           <View style={s.gate}>
-            <T v="semi">This path is locked</T>
-            <T v="small">It opens when you have all of these:</T>
-            <Gate reqs={p.paths[branch as 'n' | 'f'].reqs} />
+            <T v="semi">Locked for now</T>
+            {earnedNoPro ? (
+              <>
+                <T v="small">You’ve earned it. Paths are part of Nerve Pro.</T>
+                <Btn label="Unlock with Pro" kind="primary" small onPress={() => openPro(branch)} />
+              </>
+            ) : (
+              <>
+                <T v="small">It opens when you have all of these:</T>
+                <Gate reqs={p.paths[branch as PathKey].reqs} />
+              </>
+            )}
           </View>
-        ) : null}
-        <View style={s.tabs} accessibilityRole="tablist">
-          {LEVELS.map((k) => {
-            const open = pOpen && (k === 1 || levelDone(branch, k - 1, n.count));
-            const done = pOpen && levelDone(branch, k, n.count);
-            const st = done ? 'Done' : open ? (k === current ? 'Now' : 'Open') : 'Locked';
-            const on = k === shown;
-            return (
-              <Pressable
-                key={k}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={`${lvWord(branch)} ${k}, ${st}`}
-                onPress={() => setStagePick((sp) => ({ ...sp, [branch]: k }))}
-                style={[s.tab, on && [s.tabOn, { borderBottomColor: bc }]]}>
-                <T style={[s.tabNum, !open && { color: C.muted }]}>{path && k === 5 ? '★' : String(k)}</T>
-                <T style={[s.tabSt, done && { color: bc }, on && { color: C.ink }]}>{st}</T>
-              </Pressable>
-            );
-          })}
-        </View>
-        {LEVELS.filter((k) => k === shown).map((k) => {
-          const moves = levelMoves(branch, k);
-          const open = pOpen && (k === 1 || levelDone(branch, k - 1, n.count));
-          const done = moves.filter((m) => n.count[m.id]).length;
-          const earned = open && done === moves.length;
-          const by = path ? PATH[branch as 'n' | 'f'].by[k - 1] : '';
-          return (
-            <View key={k} style={{ gap: 8 }}>
-              <View style={s.levelHead}>
-                <T style={[s.levelName, !open && { color: C.muted }]}>{lvTitle(branch, k)}</T>
-                <T style={[s.count, { color: open ? bc : C.muted }]}>{open ? `${done}/${moves.length}` : 'Locked'}</T>
+        ) : (
+          <View style={s.nextLine} accessibilityLabel={`${lvWord(branch)} ${current}${left ? `, ${left} more for ${TITLES[branch][current - 1]}` : ', done'}`}>
+            <T v="semi" style={{ flex: 1, fontSize: 15 }}>
+              {`${lvWord(branch)} ${current}${left ? `, ${left} more for ${TITLES[branch][current - 1]}` : ', done'}`}
+            </T>
+            <Dots done={lvMoves.map((m) => !!n.count[m.id])} now={nextIdx} color={bc} />
+          </View>
+        )}
+        <TonightPoster onOpenMove={onOpenMove} mates={mates.map(n.nameOf)} />
+        {stage >= 1 ? (
+          <Fold title="See all moves" rule open={allOpen} onToggle={() => setAllOpen((o) => !o)}>
+            <View style={{ gap: 12 }}>
+                            <View style={s.tabs} accessibilityRole="tablist">
+                {LEVELS.map((k) => {
+                  const open = pOpen && (k === 1 || levelDone(branch, k - 1, n.count));
+                  const done = pOpen && levelDone(branch, k, n.count);
+                  const st = done ? 'Done' : open ? (k === current ? 'Now' : 'Open') : 'Locked';
+                  const on = k === shown;
+                  return (
+                    <Pressable
+                      key={k}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={`${lvWord(branch)} ${k}, ${st}`}
+                      onPress={() => setStagePick((sp) => ({ ...sp, [branch]: k }))}
+                      style={[s.tab, on && [s.tabOn, { borderBottomColor: bc }]]}>
+                      <T style={[s.tabNum, !open && { color: C.muted }]}>{path && k === 5 ? '★' : String(k)}</T>
+                      <T style={[s.tabSt, done && { color: bc }, on && { color: C.ink }]}>{st}</T>
+                    </Pressable>
+                  );
+                })}
               </View>
-              {open ? (
-                <View style={s.bar}>
-                  <View style={{ width: `${Math.round((100 * done) / moves.length)}%`, height: '100%', borderRadius: 3, backgroundColor: bc }} />
-                </View>
-              ) : null}
-              {by ? <T v="small">Built on ideas from {by}.</T> : null}
-              {open && levelVideo(branch, k) ? <LevelVideoRow v={levelVideo(branch, k)!} /> : null}
-              {!open && pOpen ? (
-                <T v="small">
-                  Do every {lvWord(branch)} {k - 1} move to open {moves.length === 1 ? 'the capstone' : `these ${moves.length}`}.
-                </T>
-              ) : null}
-              {open && path && k === 5 ? (
-                <T v="small">The capstone counts once it is posted to the feed and {CAP_REACTS} people react.</T>
-              ) : null}
-              {moves.map((m) => {
-                const lines = n.count[m.id] ?? 0;
-                const pend = p.pending[m.id];
-                return (
-                  <Pressable
-                    key={m.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={open ? undefined : `${m.title}, locked`}
-                    onPress={() => onOpenMove(m.id)}
-                    style={({ pressed }) => [s.moveRow, !open && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
-                    <View style={[s.tile, { backgroundColor: lines > 0 ? bc : bs }]}>
-                      {open ? <T style={[s.tileText, { color: lines > 0 ? C.accentInk : bc }]}>{m.cap ? '★' : m.i}</T> : <Emo e="🔒" size={32} />}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <T v="semi" style={{ lineHeight: 21 }}>
-                        {m.title}
-                      </T>
-                      {!open ? (
-                        <T v="eyebrow" style={{ fontSize: 12 }}>
-                          Locked
-                        </T>
-                      ) : null}
-                    </View>
-                    {lines > 0 ? (
-                      <T style={[s.count, { color: bc }]}>{lines === 1 ? '1 line' : `${lines} lines`}</T>
-                    ) : pend ? (
-                      <T style={[s.count, { color: bc }]}>{pend.posted ? `${pend.reacts}/${CAP_REACTS} reactions` : 'Post it'}</T>
-                    ) : open ? (
-                      <T style={[s.count, { color: C.muted }]}>+{moveXp(m)} XP</T>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-              <View style={[s.reward, { borderColor: open ? bc : C.line, backgroundColor: open ? bs : 'transparent', borderStyle: earned ? 'solid' : 'dashed' }, !open && { opacity: 0.7 }]}>
-                <Emo e={open ? TIER_EMOJI[k - 1] : '🔒'} size={30} />
-                <View style={{ flex: 1 }}>
-                  <T v="semi" style={{ fontSize: 16 }}>
-                    {earned ? 'Earned: ' : 'Reward: '}
-                    {TITLES[branch][k - 1]}
-                  </T>
-                  <T v="small" style={{ fontSize: 13 }}>
-                    Title, {TIERS[k - 1]} badge, +{levelBonus(k, branch)} XP
-                  </T>
-                </View>
-                {open ? <T style={[s.count, { color: earned ? bc : C.muted }]}>{earned ? '✓ Earned' : `${moves.length - done} to go`}</T> : null}
-              </View>
+              <LevelList k={shown} pOpen={pOpen} onOpenMove={onOpenMove} />
             </View>
-          );
-        })}
+          </Fold>
+        ) : null}
       </Card>
-      )}
+      {stage === 0 ? null : <WarmCard onDone={(m) => onToast?.(m)} />}
+      {stage >= 1 && path && pOpen ? <BaseRep onOpenMove={onOpenMove} /> : null}
+      {stage >= 2 ? <Places onOpenMove={onOpenMove} lens={path && pOpen ? (branch as PathKey) : null} /> : null}
+
+      <Sheet visible={picking} title="What to train" onClose={() => setPicking(false)}>
+        <T v="sub">
+          {stage < 2 ? 'Five branches with five levels each. Pick the one that feels most like you.' : 'Five branches with five levels each. Paths open once your base is strong enough.'}
+        </T>
+        <T v="eyebrow">Branches</T>
+        <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} options={BRANCH_KEYS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+        {stage < 2 ? null : (
+          <>
+            <T v="eyebrow">Paths</T>
+            <T v="small">Paths are part of Nerve Pro.</T>
+            <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={SOCIAL_PATHS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+            <Fold title="Paths for work and an audience" rule open={workOpen || (WORK_PATHS as BranchKey[]).includes(branch)} onToggle={() => setWorkOpen((o) => !o)}>
+              <Seg tall value={branch} onChange={pick} color={HUE[branch][0]} wrap options={WORK_PATHS.map((b) => ({ key: b, label: BRANCH[b].name, sub: branchState(b, p) }))} />
+            </Fold>
+          </>
+        )}
+      </Sheet>
+
       {stage < 2 ? (
         <View style={s.later}>
           <T v="sub" style={{ fontSize: 15, lineHeight: 21 }}>
@@ -256,39 +201,84 @@ export function Tonight({ onOpenMove }: { onOpenMove: (id: string) => void }) {
   );
 }
 
-// The bar at the top of Tonight: what you're training, so a switch never goes unnoticed.
-function PathBar({ b, open, first, onPress }: { b: BranchKey; open: boolean; first?: boolean; onPress: () => void }) {
-  const [glow] = useState(() => new Animated.Value(1));
-  useEffect(() => {
-    Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: false }).start();
-  }, [glow]);
-  const [bc] = HUE[b];
-  const mentor = MENTOR[b];
-  const sub = `${mentor ? `Guide: ${mentor.name}. ` : ''}${isPath(b) ? (open ? 'Tonight’s move and places follow it.' : 'Locked for now, so tonight is a base move.') : first ? 'Where you start. Change it any time.' : 'Tonight’s move comes from it.'}`;
+// One level of the branch: its moves, an example video, and what finishing it earns.
+function LevelList({ k, pOpen, onOpenMove }: { k: number; pOpen: boolean; onOpenMove: (id: string) => void }) {
+  const n = useNerve();
+  const branch = n.branch;
+  const p = n.progress;
+  const path = isPath(branch);
+  const [bc, bs] = HUE[branch];
+  const moves = levelMoves(branch, k);
+  const open = pOpen && (k === 1 || levelDone(branch, k - 1, n.count));
+  const done = moves.filter((m) => n.count[m.id]).length;
+  const earned = open && done === moves.length;
+  const by = path ? PATH[branch as PathKey].by[k - 1] : '';
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${isPath(b) ? 'Your path' : 'Your branch'}: ${BRANCH[b].name}. ${sub} Change`}
-      onPress={onPress}
-      style={{ flex: 1 }}>
-      <Animated.View
-        style={[
-          s.pathBar,
-          { borderLeftColor: bc, shadowColor: bc, borderColor: glow.interpolate({ inputRange: [0, 1], outputRange: [C.ink, bc] }), borderWidth: glow.interpolate({ inputRange: [0, 1], outputRange: [1.5, 3] }) },
-        ]}>
-        {mentor ? <MentorFace b={b} size={40} /> : <View style={[s.pathDot, { backgroundColor: bc }]} />}
+    <View style={{ gap: 8 }}>
+      <View style={s.levelHead}>
+        <T style={[s.levelName, !open && { color: C.muted }]}>{lvTitle(branch, k)}</T>
+        <T style={[s.count, { color: open ? bc : C.muted }]}>{open ? `${done}/${moves.length}` : 'Locked'}</T>
+      </View>
+      {open ? (
+        <View style={s.bar}>
+          <View style={{ width: `${Math.round((100 * done) / moves.length)}%`, height: '100%', borderRadius: 3, backgroundColor: bc }} />
+        </View>
+      ) : null}
+      {by ? <T v="small">Built on ideas from {by}.</T> : null}
+      {open && levelVideo(branch, k) ? <LevelVideoRow v={levelVideo(branch, k)!} /> : null}
+      {!open && pOpen ? (
+        <T v="small">
+          Do every {lvWord(branch)} {k - 1} move to open {moves.length === 1 ? 'the capstone' : `these ${moves.length}`}.
+        </T>
+      ) : null}
+      {open && path && k === 5 ? <T v="small">The capstone counts once it is posted to Community and {CAP_REACTS} people react.</T> : null}
+      {moves.map((m) => {
+        const lines = n.count[m.id] ?? 0;
+        const pend = p.pending[m.id];
+        return (
+          <Pressable
+            key={m.id}
+            accessibilityRole="button"
+            accessibilityLabel={open ? undefined : `${m.title}, locked`}
+            onPress={() => onOpenMove(m.id)}
+            style={({ pressed }) => [s.moveRow, !open && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
+            <View style={[s.tile, { backgroundColor: lines > 0 ? bc : bs }]}>
+              {open ? <T style={[s.tileText, { color: lines > 0 ? C.accentInk : bc }]}>{m.cap ? '★' : m.i}</T> : <Emo e="🔒" size={32} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <T v="semi" style={{ lineHeight: 21 }}>
+                {m.title}
+              </T>
+              {!open ? (
+                <T v="eyebrow" style={{ fontSize: 12 }}>
+                  Locked
+                </T>
+              ) : null}
+            </View>
+            {lines > 0 ? (
+              <T style={[s.count, { color: bc }]}>{lines === 1 ? '1 line' : `${lines} lines`}</T>
+            ) : pend ? (
+              <T style={[s.count, { color: bc }]}>{pend.posted ? `${pend.reacts}/${CAP_REACTS} reactions` : 'Post it'}</T>
+            ) : open ? (
+              <T style={[s.count, { color: C.muted }]}>+{moveXp(m)} XP</T>
+            ) : null}
+          </Pressable>
+        );
+      })}
+      <View style={[s.reward, { borderColor: open ? bc : C.line, backgroundColor: open ? bs : 'transparent', borderStyle: earned ? 'solid' : 'dashed' }, !open && { opacity: 0.7 }]}>
+        <Emo e={open ? TIER_EMOJI[k - 1] : '🔒'} size={30} />
         <View style={{ flex: 1 }}>
-          <T style={s.pathKicker}>{isPath(b) ? 'Your path' : 'Your branch'}</T>
-          <T style={[s.pathName, { color: bc }]} numberOfLines={1}>
-            {BRANCH[b].name}
+          <T v="semi" style={{ fontSize: 16 }}>
+            {earned ? 'Earned: ' : 'Reward: '}
+            {TITLES[branch][k - 1]}
           </T>
-          <T style={s.pathSub} numberOfLines={2}>
-            {sub}
+          <T v="small" style={{ fontSize: 13 }}>
+            Title, {TIERS[k - 1]} badge, +{levelBonus(k, branch)} XP
           </T>
         </View>
-        <T style={s.pathChange}>Change</T>
-      </Animated.View>
-    </Pressable>
+        {open ? <T style={[s.count, { color: earned ? bc : C.muted }]}>{earned ? '✓ Earned' : `${moves.length - done} to go`}</T> : null}
+      </View>
+    </View>
   );
 }
 
@@ -356,7 +346,7 @@ function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void
       </View>
       <View style={s.pill}>
         <T style={s.pillText} numberOfLines={2}>
-          Tonight: {label(move)}
+          {n.tonight.own && !n.tonight.together ? `Next up, ${move.i} of ${move.of}${move.cap ? ', capstone' : ''}` : label(move)}
         </T>
       </View>
       <View style={{ padding: 18, paddingTop: 0, gap: 12, marginTop: -40 }}>
@@ -372,34 +362,6 @@ function TonightPoster({ onOpenMove, mates }: { onOpenMove: (id: string) => void
       </View>
     </View>
   );
-}
-
-function QuestCard({ onOpenMove }: { onOpenMove: (id: string) => void }) {
-  const n = useNerve();
-  const [today] = useState(() => dayNum(Date.now()));
-  const q = todaysQuest();
-  const done = !!n.progress.questDays[today];
-  return (
-    <View style={s.quest}>
-      <View style={s.questTag}>
-        <T style={s.questTagText}>{done ? 'Side quest done ✓' : `Bonus: today’s side quest, +${QUEST_BONUS + moveXp(q)} XP`}</T>
-      </View>
-      <T style={s.questTitle}>{q.title}</T>
-      {echoes(q.title, q.doIt) ? null : <T>{q.doIt}</T>}
-      <View style={[s.row, { alignItems: 'center' }]}>
-        <Btn label={done ? 'Log it again' : 'Do it'} kind={done ? 'outline' : 'primary'} small onPress={() => onOpenMove(q.id)} />
-        <T v="small" style={{ flex: 1 }}>The bonus only counts today.</T>
-      </View>
-    </View>
-  );
-}
-
-// True when a short line mostly restates the title, so the card doesn't say it twice.
-function echoes(title: string, line: string) {
-  const words = (t: string) => t.toLowerCase().match(/[a-z’']{3,}/g) ?? [];
-  const head = new Set(words(title));
-  const body = words(line);
-  return line.split(/\s+/).length <= 9 && body.filter((w) => head.has(w)).length >= 2;
 }
 
 // Places: poster cards in a swipeable cover-flow. The centred card is where you are tonight.
@@ -421,11 +383,13 @@ function Places({ onOpenMove, lens }: { onOpenMove: (id: string) => void; lens: 
   const reg = p.regulars.includes(at);
   const left = moves.filter((m) => !n.count[m.id]).length;
   const card = placeCard(at);
+  const nextUp = moves.find((m) => !n.count[m.id]);
+  const [allOpen, setAllOpen] = useState(false);
   return (
     <Card>
       <View style={{ gap: 4 }}>
         <T v="h">Places</T>
-        <T v="sub">Where are you tonight? Swipe to pick a place. Do all five actions there to become a regular and earn its patch.</T>
+        <T v="sub">Where are you today? Swipe to pick a place. Do all five there to become a regular.</T>
       </View>
       <Animated.ScrollView
         ref={scroller as never}
@@ -500,37 +464,60 @@ function Places({ onOpenMove, lens }: { onOpenMove: (id: string) => void; lens: 
           <T v="small" style={{ color: C.muted }}>{`Tuned for ${BRANCH[lens].name}. Recordings here count toward that path. Pick another path or branch below to change it.`}</T>
         </View>
       ) : null}
-      {moves.map((m) => {
-        const lines = n.count[m.id] ?? 0;
-        const isOpen = open(at);
-        return (
-          <Pressable
-            key={m.id}
-            accessibilityRole="button"
-            onPress={() => onOpenMove(moveKey(m.id, lens))}
-            style={({ pressed }) => [s.moveRow, !isOpen && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
-            <View style={[s.tile, { backgroundColor: lines > 0 ? PLACE_HUE[pl.id][0] : PLACE_HUE[pl.id][1] }]}>
-              {isOpen ? <T style={[s.tileText, { color: lines > 0 ? '#FFFFFF' : PLACE_HUE[pl.id][0] }]}>{m.i}</T> : <Emo e="🔒" size={32} />}
-            </View>
-            <T v="semi" style={{ flex: 1, lineHeight: 21 }}>
-              {m.title}
-            </T>
-            {lines > 0 ? <T style={s.count}>{lines === 1 ? '1 line' : `${lines} lines`}</T> : isOpen ? <T style={[s.count, { color: C.muted }]}>+{moveXp(m)} XP</T> : null}
-          </Pressable>
-        );
-      })}
-      <View style={[s.reward, { borderColor: reg ? C.gold : C.line, borderStyle: reg ? 'solid' : 'dashed' }]}>
-        <Patch card={card} mode={reg ? 'earned' : 'locked'} size={38} />
-        <View style={{ flex: 1 }}>
-          <T v="semi" style={{ fontSize: 16 }}>
-            {reg ? 'You’re a regular here' : 'Become a regular'}
+      {open(at) ? (
+        <View style={s.nextLine}>
+          <T v="semi" style={{ flex: 1, fontSize: 15 }}>
+            {reg ? 'You’re a regular here' : `${left} more to become a regular`}
           </T>
-          <T v="small" style={{ fontSize: 13 }}>
-            Patch: {card.t}, +{REGULAR_XP} XP
-          </T>
+          <Dots done={moves.map((m) => !!n.count[m.id])} now={moves.findIndex((m) => !n.count[m.id])} color={PLACE_HUE[pl.id][0]} />
         </View>
-        <T style={[s.count, { color: reg ? C.goldText : C.muted }]}>{reg ? '✓ Earned' : open(at) ? `${left} to go` : ''}</T>
-      </View>
+      ) : null}
+      {open(at) && nextUp ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={`${nextUp.title}. ${nextUp.doIt} Start`} onPress={() => onOpenMove(moveKey(nextUp.id, lens))} style={({ pressed }) => [s.focusCard, pressed && { opacity: 0.85 }]}>
+          <T v="semi" style={{ fontSize: 18, lineHeight: 23 }}>
+            {nextUp.title}
+          </T>
+          <T v="sub">{nextUp.doIt}</T>
+          <View style={{ alignSelf: 'flex-start', marginTop: 4 }} pointerEvents="none">
+            <Btn label="Start" kind="primary" small onPress={() => {}} />
+          </View>
+        </Pressable>
+      ) : null}
+      <Fold title={open(at) ? `See all ${moves.length}` : 'See what’s in it'} rule open={allOpen} onToggle={() => setAllOpen((o) => !o)}>
+        <View style={{ gap: 8 }}>
+          {moves.map((m) => {
+            const lines = n.count[m.id] ?? 0;
+            const isOpen = open(at);
+            return (
+              <Pressable
+                key={m.id}
+                accessibilityRole="button"
+                onPress={() => onOpenMove(moveKey(m.id, lens))}
+                style={({ pressed }) => [s.moveRow, !isOpen && { opacity: 0.55 }, pressed && { opacity: 0.8 }]}>
+                <View style={[s.tile, { backgroundColor: lines > 0 ? PLACE_HUE[pl.id][0] : PLACE_HUE[pl.id][1] }]}>
+                  {isOpen ? <T style={[s.tileText, { color: lines > 0 ? '#FFFFFF' : PLACE_HUE[pl.id][0] }]}>{m.i}</T> : <Emo e="🔒" size={32} />}
+                </View>
+                <T v="semi" style={{ flex: 1, lineHeight: 21 }}>
+                  {m.title}
+                </T>
+                {lines > 0 ? <T style={s.count}>{lines === 1 ? '1 line' : `${lines} lines`}</T> : isOpen ? <T style={[s.count, { color: C.muted }]}>+{moveXp(m)} XP</T> : null}
+              </Pressable>
+            );
+          })}
+          <View style={[s.reward, { borderColor: reg ? C.gold : C.line, borderStyle: reg ? 'solid' : 'dashed' }]}>
+            <Patch card={card} mode={reg ? 'earned' : 'locked'} size={38} />
+            <View style={{ flex: 1 }}>
+              <T v="semi" style={{ fontSize: 16 }}>
+                {reg ? 'You’re a regular here' : 'Become a regular'}
+              </T>
+              <T v="small" style={{ fontSize: 13 }}>
+                Patch: {card.t}, +{REGULAR_XP} XP
+              </T>
+            </View>
+            <T style={[s.count, { color: reg ? C.goldText : C.muted }]}>{reg ? '✓ Earned' : open(at) ? `${left} to go` : ''}</T>
+          </View>
+        </View>
+      </Fold>
     </Card>
   );
 }
@@ -556,6 +543,10 @@ export function Gate({ reqs, light }: { reqs: Req[]; light?: boolean }) {
 }
 
 const s = StyleSheet.create({
+  branchCard: { borderLeftWidth: 6, gap: 14 },
+  branchName: { fontFamily: F.display, fontSize: 26, lineHeight: 30 },
+  nextLine: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  focusCard: { gap: 6, padding: 14, borderRadius: 8, borderWidth: 2, borderColor: C.ink, backgroundColor: C.surface },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   firstDay: { gap: 6, paddingHorizontal: 2, paddingTop: 4 },
   later: { paddingVertical: 14, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.line },
